@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
@@ -9,7 +9,6 @@ import {
   Shield,
   Zap,
   ArrowRight,
-  Terminal,
   Users,
   Star,
   Mic,
@@ -22,10 +21,12 @@ import {
   VideoOff,
   MonitorOff,
   Phone,
+  Rocket,
 } from "lucide-react";
 import { MotionWrapper, fadeInUp } from "@/components/MotionWrapper";
 import { Button } from "@/components/ui/button";
 import heroBg from "@/assets/hero-bg.jpg";
+import logo from "@/assets/logo.png";
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
@@ -100,37 +101,48 @@ export default function LandingPage() {
 
   const [currentChatStep, setCurrentChatStep] = useState(0);
 
+  // track which preview line currently has the blinking caret
+  const [activeLine, setActiveLine] = useState(0);
+
   useEffect(() => {
     let timeout: NodeJS.Timeout;
-    
+
     const runLoop = () => {
       setCurrentChatStep((prev) => {
         const totalSteps = previewChatLines.length * 2;
-        // Loop: 0 -> 1(Msg0 Type) -> 2(Msg0 Text) -> 3(Msg1 Type) -> 4(Msg1 Text)... -> End -> 0
-        const next = (prev + 1) % (totalSteps + 2); 
-        
+        const next = (prev + 1) % (totalSteps + 2);
+
         let delay = 1000;
         if (next === 0) {
-            delay = 500; // Restart
+          delay = 500;
         } else if (next > totalSteps) {
-           delay = 3000; // End pause
+          delay = 3000;
         } else if (next % 2 === 1) {
-           // Typing step (1, 3, 5). Duration of typing.
-           delay = 1500;
+          delay = 1500;
         } else {
-           // Text revealed step (2, 4, 6). Duration of reading.
-           delay = 3000;
+          delay = 3000;
         }
-        
+
         timeout = setTimeout(runLoop, delay);
         return next;
       });
     };
-    
+
     timeout = setTimeout(runLoop, 1000);
     return () => clearTimeout(timeout);
   }, []);
 
+  useEffect(() => {
+    let i = 0;
+    const step = () => {
+      setActiveLine(i);
+      if (i < previewCodeLines.length - 1) {
+        i += 1;
+        setTimeout(step, 500);
+      }
+    };
+    step();
+  }, []);
 
   const previewCodeLines: React.ReactNode[] = [
     <>
@@ -174,8 +186,6 @@ export default function LandingPage() {
     <>{"}"}</>,
   ];
 
-
-
   const testimonials = [
     {
       name: "Shubham Tandon",
@@ -207,16 +217,15 @@ export default function LandingPage() {
     <div className="min-h-screen bg-background">
       {/* Nav */}
       <nav className="fixed top-0 left-0 right-0 z-50 glass">
-        <div className="container flex items-center justify-between h-16">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-primary">
-              <Terminal className="w-4 h-4 text-primary-foreground" />
-            </div>
-            <span className="text-lg font-display font-bold text-foreground">
-              InterviewOS
-            </span>
-          </Link>
-          <div className="hidden md:flex items-center gap-12">
+        <div className="container relative flex items-center justify-between h-16">
+          <a href="/" className="flex items-center gap-2">
+            <img
+              src={logo}
+              alt="InterviewOS Logo"
+              className="w-30 h-10 object-contain"
+            />
+          </a>
+          <div className="absolute left-1/2 -translate-x-1/2 hidden md:flex items-center gap-12">
             <a
               href="/"
               className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors duration-200"
@@ -240,14 +249,14 @@ export default function LandingPage() {
             </a>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="ghost" asChild>
-              <Link to="/login">Sign In</Link>
-            </Button>
             <Button
               asChild
-              className="bg-gradient-primary hover:opacity-90 transition-opacity"
+              className="group rounded-full bg-gradient-primary hover:opacity-90 transition-all duration-300 text-base px-8 h-12 font-semibold relative overflow-hidden"
             >
-              <Link to="/register">Get Started</Link>
+              <Link to="/login" className="flex items-center gap-2">
+                Get Started
+                <Rocket className="w-5 h-5 origin-[100%_0]" />
+              </Link>
             </Button>
           </div>
         </div>
@@ -266,8 +275,13 @@ export default function LandingPage() {
             initial="hidden"
             animate="visible"
           >
-            <motion.div variants={fadeInUp} custom={0} className="inline-flex items-center gap-2 px-4 py-1.5 mb-8 text-xs font-medium rounded-full border border-primary/50 bg-primary/20 text-purple-200 shadow-[0_0_15px_rgba(168,85,247,0.15)] backdrop-blur-sm">
-              <Star className="w-3 h-3 text-primary" /> Built for engineering interviews
+            <motion.div
+              variants={fadeInUp}
+              custom={0}
+              className="inline-flex items-center gap-2 px-4 py-1.5 mb-8 text-xs font-medium rounded-full border border-primary/50 bg-primary/20 text-purple-200 shadow-[0_0_15px_rgba(168,85,247,0.15)] backdrop-blur-sm"
+            >
+              <Star className="w-3 h-3 text-primary" /> Built for engineering
+              interviews
             </motion.div>
 
             <motion.h1
@@ -295,8 +309,12 @@ export default function LandingPage() {
               custom={3}
               className="flex flex-col sm:flex-row items-center justify-center gap-4"
             >
-              <Button size="lg" asChild className="group rounded-full bg-gradient-primary hover:opacity-90 transition-all duration-300 text-base px-8 h-12 font-semibold relative overflow-hidden">
-                <Link to="/register" className="flex items-center gap-3">
+              <Button
+                size="lg"
+                asChild
+                className="group rounded-full bg-gradient-primary hover:opacity-90 transition-all duration-300 text-base px-8 h-12 font-semibold relative overflow-hidden"
+              >
+                <Link to="/login" className="flex items-center gap-3">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="20"
@@ -396,7 +414,11 @@ export default function LandingPage() {
                           : "bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       }`}
                     >
-                      {isMicOn ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
+                      {isMicOn ? (
+                        <Mic className="w-4 h-4" />
+                      ) : (
+                        <MicOff className="w-4 h-4" />
+                      )}
                     </button>
                     <button
                       onClick={() => setIsVideoOn(!isVideoOn)}
@@ -406,7 +428,11 @@ export default function LandingPage() {
                           : "bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       }`}
                     >
-                      {isVideoOn ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
+                      {isVideoOn ? (
+                        <Video className="w-4 h-4" />
+                      ) : (
+                        <VideoOff className="w-4 h-4" />
+                      )}
                     </button>
                     <button
                       onClick={() => setIsScreenShareOn(!isScreenShareOn)}
@@ -416,7 +442,11 @@ export default function LandingPage() {
                           : "bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       }`}
                     >
-                      {isScreenShareOn ? <Monitor className="w-4 h-4" /> : <MonitorOff className="w-4 h-4" />}
+                      {isScreenShareOn ? (
+                        <Monitor className="w-4 h-4" />
+                      ) : (
+                        <MonitorOff className="w-4 h-4" />
+                      )}
                     </button>
                     <button
                       onClick={() => setIsCallActive(!isCallActive)}
@@ -426,7 +456,11 @@ export default function LandingPage() {
                           : "bg-success text-success-foreground hover:bg-success/90"
                       }`}
                     >
-                      {isCallActive ? <PhoneOff className="w-4 h-4" /> : <Phone className="w-4 h-4" />}
+                      {isCallActive ? (
+                        <PhoneOff className="w-4 h-4" />
+                      ) : (
+                        <Phone className="w-4 h-4" />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -449,13 +483,18 @@ export default function LandingPage() {
                         initial={{ opacity: 0, width: 0 }}
                         whileInView={{ opacity: 1, width: "100%" }}
                         viewport={{ once: true }}
-                        transition={{ 
-                          delay: idx * 0.5, 
-                          duration: 0.5, 
-                          ease: "linear" 
+                        transition={{
+                          delay: idx * 0.5,
+                          duration: 0.5,
+                          ease: "linear",
                         }}
-                        className="overflow-hidden whitespace-nowrap border-r-2 border-transparent animate-blink-caret"
-                        style={{ maxWidth: "fit-content" }} 
+                        className={
+                          `overflow-hidden whitespace-nowrap ` +
+                          (idx === activeLine
+                            ? "border-r-2 border-transparent animate-blink-caret"
+                            : "")
+                        }
+                        style={{ maxWidth: "fit-content" }}
                       >
                         <pre className="m-0 whitespace-pre text-[13px] font-[JetBrains\ Mono],monospace">
                           {line}
@@ -483,47 +522,61 @@ export default function LandingPage() {
                         if (!isVisible) return null;
 
                         return (
-                          <motion.div 
+                          <motion.div
                             layout
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            key={i} 
-                            className={`flex w-full ${isAlex ? 'justify-start' : 'justify-end'}`}
+                            key={i}
+                            className={`flex w-full ${isAlex ? "justify-start" : "justify-end"}`}
                           >
-                            <div 
+                            <div
                               className={`
                                 flex flex-col max-w-[80%] rounded-2xl px-4 py-3 shadow-sm
-                                ${isAlex 
-                                  ? 'bg-secondary text-secondary-foreground rounded-tl-sm' 
-                                  : 'bg-primary text-primary-foreground rounded-tr-sm'
+                                ${
+                                  isAlex
+                                    ? "bg-secondary text-secondary-foreground rounded-tl-sm"
+                                    : "bg-primary text-primary-foreground rounded-tr-sm"
                                 }
                               `}
                             >
                               <span className="text-xs font-semibold mb-1 opacity-70">
                                 {msg.sender}
                               </span>
-                              
+
                               <div className="min-h-[20px] relative">
                                 <AnimatePresence mode="wait">
                                   {isTyping && (
-                                     <motion.div
-                                       key="typing"
-                                       initial={{ opacity: 0, y: 5 }}
-                                       animate={{ opacity: 1, y: 0 }}
-                                       exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.15 } }}
-                                       className="flex gap-1 h-5 items-center"
-                                     >
-                                       <div className={`w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:-0.3s] ${isAlex ? 'bg-foreground/50' : 'bg-white/50'}`} />
-                                       <div className={`w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:-0.15s] ${isAlex ? 'bg-foreground/50' : 'bg-white/50'}`} />
-                                       <div className={`w-1.5 h-1.5 rounded-full animate-bounce ${isAlex ? 'bg-foreground/50' : 'bg-white/50'}`} />
-                                     </motion.div>
+                                    <motion.div
+                                      key="typing"
+                                      initial={{ opacity: 0, y: 5 }}
+                                      animate={{ opacity: 1, y: 0 }}
+                                      exit={{
+                                        opacity: 0,
+                                        scale: 0.95,
+                                        transition: { duration: 0.15 },
+                                      }}
+                                      className="flex gap-1 h-5 items-center"
+                                    >
+                                      <div
+                                        className={`w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:-0.3s] ${isAlex ? "bg-foreground/50" : "bg-white/50"}`}
+                                      />
+                                      <div
+                                        className={`w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:-0.15s] ${isAlex ? "bg-foreground/50" : "bg-white/50"}`}
+                                      />
+                                      <div
+                                        className={`w-1.5 h-1.5 rounded-full animate-bounce ${isAlex ? "bg-foreground/50" : "bg-white/50"}`}
+                                      />
+                                    </motion.div>
                                   )}
                                   {isTextVisible && (
                                     <motion.p
                                       key="text"
                                       initial={{ opacity: 0, y: 5 }}
                                       animate={{ opacity: 1, y: 0 }}
-                                      transition={{ duration: 0.3, ease: "easeOut" }}
+                                      transition={{
+                                        duration: 0.3,
+                                        ease: "easeOut",
+                                      }}
                                       className="text-sm leading-relaxed"
                                     >
                                       {msg.text}
@@ -648,7 +701,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Testimonials slider – automatic looping with left‑edge fade */}
+      {/* Testimonials slider */}
       <section className="py-12 bg-card/50">
         <div
           className="container relative overflow-hidden"
@@ -717,7 +770,7 @@ export default function LandingPage() {
                 asChild
                 className="text-base px-8 h-12"
               >
-                <Link to="/register">
+                <Link to="/login">
                   Get Started Free <ArrowRight className="ml-2 w-4 h-4" />
                 </Link>
               </Button>
@@ -730,12 +783,13 @@ export default function LandingPage() {
       <footer className="border-t border-border py-10">
         <div className="container flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-primary">
-              <Terminal className="w-3.5 h-3.5 text-primary-foreground" />
-            </div>
-            <span className="font-display font-bold text-foreground">
-              InterviewOS
-            </span>
+            <a href="/">
+              <img
+                src={logo}
+                alt="InterviewOS Logo"
+                className="w-30 h-10 object-contain"
+              />
+            </a>
           </div>
           <p className="text-xs text-muted-foreground">
             © 2025 InterviewOS. Built by Bharat Dhuva.

@@ -354,6 +354,7 @@ export default function InterviewRoom() {
                 renderLineHighlight: 'line',
                 bracketPairColorization: { enabled: true },
                 automaticLayout: true,
+                cursorBlinking: 'solid',
               }}
             />
           </div>
