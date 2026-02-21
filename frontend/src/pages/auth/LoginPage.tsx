@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import heroBg from '@/assets/hero-bg.jpg';
 import logo from '@/assets/Logo.png';
+const logoLight = '/logo-light.png';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,6 +14,15 @@ import { useToast } from '@/hooks/use-toast';
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isDark, setIsDark] = useState(document.documentElement.classList.contains('dark'));
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
   const navigate = useNavigate();
   const login = useAuthStore((s) => s.login);
   const { toast } = useToast();
@@ -39,13 +49,19 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen relative overflow-hidden flex items-center justify-center">
-      {/* background image with blur + darken overlay */}
+      {/* background image with blur + overlay */}
       <img
         src={heroBg}
         alt=""
-        className="absolute inset-0 w-full h-full object-cover filter blur-sm brightness-75"
+        className={`absolute inset-0 w-full h-full object-cover filter blur-sm ${isDark ? 'brightness-75' : 'brightness-100'}`}
       />
-      <div className="absolute inset-0 bg-black/40" />
+      <div
+        className={`absolute inset-0 ${
+          isDark
+            ? 'bg-black/40'
+            : 'bg-gradient-to-b from-white/70 via-white/85 to-white/95'
+        }`}
+      />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -54,7 +70,7 @@ export default function LoginPage() {
       >
         <div className="flex justify-center mb-1">
           <a href="/">
-            <img src={logo} alt="InterviewOS Logo" className="h-28 object-contain" />
+            <img src={isDark ? logo : logoLight} alt="InterviewOS Logo" className="h-28 object-contain" />
           </a>
         </div>
         <h2 className="text-2xl font-display font-bold text-center">Welcome 👋 Let's get started!</h2>

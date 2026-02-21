@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence, LayoutGroup, useInView } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
   Code2,
@@ -22,11 +22,42 @@ import {
   MonitorOff,
   Phone,
   Rocket,
+  Sun,
+  Moon,
+  ChevronDown,
 } from "lucide-react";
-import { MotionWrapper, fadeInUp } from "@/components/MotionWrapper";
+import { MotionWrapper } from "@/components/MotionWrapper";
 import { Button } from "@/components/ui/button";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import heroBg from "@/assets/hero-bg.jpg";
 import logo from "@/assets/logo.png";
+import msuLogo from "@/assets/Partner-Logos/msu.png";
+import ldceLogo from "@/assets/Partner-Logos/ldce.png";
+import parulLogo from "@/assets/Partner-Logos/ParulU.png";
+import gtuLogo from "@/assets/Partner-Logos/GTU.png";
+import mastercardLogo from "@/assets/Partner-Logos/Mastercard.png";
+import infosysLogo from "@/assets/Partner-Logos/Infosys.png";
+import matrixLogo from "@/assets/Partner-Logos/Matrix.png";
+import resilientTechLogo from "@/assets/Partner-Logos/Resillient Tech.png";
+import oracleLogo from "@/assets/Partner-Logos/Oracle.png";
+import accentureLogo from "@/assets/Partner-Logos/Accenture.png";
+// CEO Photos
+import ceoApple from "@/assets/CEO-Photos/apple.png";
+import ceoBillGates from "@/assets/CEO-Photos/bill gates.png";
+import ceoSamAltman from "@/assets/CEO-Photos/chatgpt.png";
+import ceoSundar from "@/assets/CEO-Photos/google.jpg";
+import ceoJensen from "@/assets/CEO-Photos/jensen.png";
+import ceoMark from "@/assets/CEO-Photos/mark.png";
+import ceoSatya from "@/assets/CEO-Photos/microsoft.png";
+import ceoRahul from "@/assets/CEO-Photos/papu rahul gandhi.png";
+import ceoModi from "@/assets/CEO-Photos/pmofindia.png";
+import ceoPavel from "@/assets/CEO-Photos/telegramceo.png";
+const logoLight = "/logo-light.png";
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
@@ -41,6 +72,19 @@ const fadeInUp = {
   }),
 };
 
+// Partner logos array (move to top)
+const partnerLogos = [
+  { src: msuLogo, alt: "MSU Baroda" },
+  { src: ldceLogo, alt: "LDCE" },
+  { src: parulLogo, alt: "Parul University" },
+  { src: gtuLogo, alt: "GTU" },
+  { src: mastercardLogo, alt: "Mastercard" },
+  { src: infosysLogo, alt: "Infosys" },
+  { src: matrixLogo, alt: "Matrix" },
+  { src: resilientTechLogo, alt: "Resilient Tech" },
+  { src: oracleLogo, alt: "Oracle" },
+  { src: accentureLogo, alt: "Accenture" },
+];
 const features = [
   {
     icon: Code2,
@@ -87,19 +131,255 @@ const stats = [
   { value: "AI", label: "Powered" },
 ];
 
+// logos for companies/colleges using InterviewOS
+// ...existing code...
+
 const previewChatLines = [
   { sender: "Alex", text: "Can you walk me through your approach?" },
   { sender: "Jordan", text: "Sure! I'm using a hash map for O(n) lookup..." },
   { sender: "Alex", text: "Great! What about edge cases?" },
 ];
 
+const faqCategories = [
+  "Platform & Features",
+  "Interview Process",
+  "AI & Feedback",
+  "Account & Pricing",
+  "Technical Support",
+  "Privacy & Security",
+];
+
+const faqData: Record<string, { question: string; answer: string }[]> = {
+  "Platform & Features": [
+    {
+      question: "What is InterviewOS?",
+      answer:
+        "InterviewOS is an all-in-one interview platform that combines live video calls, real-time collaborative code editor, AI-powered feedback, and structured evaluation — all in one seamless experience.",
+    },
+    {
+      question: "What features does InterviewOS offer?",
+      answer:
+        "InterviewOS includes HD video calling, real-time code editor with syntax highlighting, AI-driven candidate scoring, live chat, screen sharing, interview recording, and detailed feedback reports.",
+    },
+    {
+      question:
+        "Can I use InterviewOS for both technical and non-technical interviews?",
+      answer:
+        "Yes! While our code editor is built for technical interviews, the video, chat, and feedback features work perfectly for any type of interview — behavioral, HR, or managerial rounds.",
+    },
+    {
+      question: "Does InterviewOS support multiple programming languages?",
+      answer:
+        "Absolutely. Our code editor supports 20+ languages including JavaScript, Python, Java, C++, Go, Rust, TypeScript, and more.",
+    },
+  ],
+  "Interview Process": [
+    {
+      question: "How do I start an interview on InterviewOS?",
+      answer:
+        "Simply create an interview room from your dashboard, share the unique room link with the candidate, and both of you can join with one click — no downloads needed.",
+    },
+    {
+      question: "Can I schedule interviews in advance?",
+      answer:
+        "Yes, you can schedule interviews with date, time, and candidate details. Automated email invitations are sent to participants with the room link.",
+    },
+    {
+      question: "Is there a time limit for interviews?",
+      answer:
+        "Free plan interviews are limited to 45 minutes. Pro and Enterprise plans offer unlimited interview duration.",
+    },
+    {
+      question: "Can multiple interviewers join the same session?",
+      answer:
+        "Yes! InterviewOS supports panel interviews with up to 5 interviewers in a single room, each with independent evaluation capabilities.",
+    },
+  ],
+  "AI & Feedback": [
+    {
+      question: "How does the AI feedback work?",
+      answer:
+        "Our AI analyzes the candidate's code quality, problem-solving approach, communication skills, and time management in real-time. After the interview, it generates a comprehensive scorecard with actionable insights.",
+    },
+    {
+      question: "Is the AI feedback accurate?",
+      answer:
+        "Our AI model has been trained on thousands of real interview evaluations and maintains 92%+ correlation with expert human reviewers. It's designed to assist, not replace, human judgment.",
+    },
+    {
+      question: "Can I customize the AI evaluation criteria?",
+      answer:
+        "Yes, Pro users can customize scoring rubrics, weight different skills, and add company-specific evaluation parameters.",
+    },
+    {
+      question: "Does the AI provide feedback to candidates too?",
+      answer:
+        "Interviewers can choose to share AI-generated feedback with candidates, including strengths, areas for improvement, and suggested learning resources.",
+    },
+  ],
+  "Account & Pricing": [
+    {
+      question: "Is InterviewOS free to use?",
+      answer:
+        "Yes! We offer a generous free plan with up to 5 interviews per month, basic AI feedback, and all core features. Pro and Enterprise plans unlock unlimited interviews and advanced features.",
+    },
+    {
+      question: "Can I upgrade or downgrade my plan anytime?",
+      answer:
+        "Absolutely. You can switch plans at any time from your account settings. Upgrades take effect immediately, and downgrades apply at the next billing cycle.",
+    },
+    {
+      question: "Do you offer team or enterprise pricing?",
+      answer:
+        "Yes, we offer custom enterprise plans with volume discounts, dedicated support, SSO integration, and custom branding. Contact our sales team for a quote.",
+    },
+    {
+      question: "Is there a student discount?",
+      answer:
+        "Yes! Students with a valid .edu email get 50% off all paid plans. We're committed to making great interview tools accessible to everyone.",
+    },
+  ],
+  "Technical Support": [
+    {
+      question: "What browsers are supported?",
+      answer:
+        "InterviewOS works best on Chrome, Firefox, Edge, and Safari (latest versions). We recommend Chrome for the best experience with video and code editor features.",
+    },
+    {
+      question: "Do I need to install anything?",
+      answer:
+        "No! InterviewOS runs entirely in your browser. No downloads, plugins, or installations required — just open the link and you're ready to go.",
+    },
+    {
+      question: "What if I face audio/video issues during an interview?",
+      answer:
+        "Our built-in diagnostics tool checks your camera, microphone, and network before the interview. If issues persist, our support team is available 24/7 via live chat.",
+    },
+    {
+      question: "Can I record interviews?",
+      answer:
+        "Yes, Pro users can record interviews with consent from all participants. Recordings are securely stored and accessible from your dashboard.",
+    },
+  ],
+  "Privacy & Security": [
+    {
+      question: "Is my interview data secure?",
+      answer:
+        "Absolutely. All data is encrypted end-to-end using AES-256 encryption. We're SOC 2 Type II compliant and follow industry-best security practices.",
+    },
+    {
+      question: "Who can access my interview recordings?",
+      answer:
+        "Only the interview creator and authorized team members can access recordings. Candidates cannot access recordings unless explicitly shared by the interviewer.",
+    },
+    {
+      question: "Does InterviewOS sell user data?",
+      answer:
+        "Never. We do not sell, share, or monetize your personal or interview data. Your privacy is our top priority. Read our full privacy policy for details.",
+    },
+    {
+      question: "Can I delete my account and data?",
+      answer:
+        "Yes, you can request complete account deletion from your settings. All your data, including recordings and feedback, will be permanently removed within 30 days.",
+    },
+  ],
+};
+
 export default function LandingPage() {
   const [isMicOn, setIsMicOn] = useState(true);
   const [isVideoOn, setIsVideoOn] = useState(true);
   const [isScreenShareOn, setIsScreenShareOn] = useState(true);
   const [isCallActive, setIsCallActive] = useState(true);
+  const [activeCategory, setActiveCategory] = useState(faqCategories[0]);
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window !== "undefined") {
+      return document.documentElement.classList.contains("dark");
+    }
+    return false;
+  });
+  const [testimonialsPaused, setTestimonialsPaused] = useState(false);
+  const [partnersPaused, setPartnersPaused] = useState(false);
+  const testimonialsRef = useRef<HTMLDivElement>(null);
+  const partnersRef = useRef<HTMLDivElement>(null);
+  const testimonialsInView = useInView(testimonialsRef, { once: true, amount: 0.2 });
+  const partnersInView = useInView(partnersRef, { once: true, amount: 0.2 });
+  const pauseTimeouts = useRef<{
+    testimonials?: ReturnType<typeof setTimeout>;
+    partners?: ReturnType<typeof setTimeout>;
+  }>({});
+
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [isDark]);
+
+  useEffect(() => {
+    return () => {
+      if (pauseTimeouts.current.testimonials) {
+        clearTimeout(pauseTimeouts.current.testimonials);
+      }
+      if (pauseTimeouts.current.partners) {
+        clearTimeout(pauseTimeouts.current.partners);
+      }
+    };
+  }, []);
+
+  const handleMarqueePause = (
+    key: "testimonials" | "partners",
+    setPaused: React.Dispatch<React.SetStateAction<boolean>>
+  ) => {
+    setPaused(true);
+    if (pauseTimeouts.current[key]) {
+      clearTimeout(pauseTimeouts.current[key]);
+    }
+    pauseTimeouts.current[key] = setTimeout(() => {
+      setPaused(false);
+    }, 1500);
+  };
 
   const [currentChatStep, setCurrentChatStep] = useState(0);
+
+  // Rotating hero words - typewriter effect
+  const heroWords = [
+    "engineers",
+    "developers",
+    "designers",
+    "innovators",
+    "creators",
+    "builders",
+  ];
+  const [heroWordIndex, setHeroWordIndex] = useState(0);
+  const [displayText, setDisplayText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    const currentWord = heroWords[heroWordIndex];
+    let timeout: NodeJS.Timeout;
+
+    if (!isDeleting && displayText === currentWord) {
+      // Pause at full word
+      timeout = setTimeout(() => setIsDeleting(true), 1800);
+    } else if (isDeleting && displayText === "") {
+      // Move to next word
+      setIsDeleting(false);
+      setHeroWordIndex((prev) => (prev + 1) % heroWords.length);
+    } else if (isDeleting) {
+      // Delete characters
+      timeout = setTimeout(() => {
+        setDisplayText(currentWord.substring(0, displayText.length - 1));
+      }, 50);
+    } else {
+      // Type characters
+      timeout = setTimeout(() => {
+        setDisplayText(currentWord.substring(0, displayText.length + 1));
+      }, 100);
+    }
+
+    return () => clearTimeout(timeout);
+  }, [displayText, isDeleting, heroWordIndex]);
 
   // track which preview line currently has the blinking caret
   const [activeLine, setActiveLine] = useState(0);
@@ -186,30 +466,108 @@ export default function LandingPage() {
     <>{"}"}</>,
   ];
 
-  const testimonials = [
+  const testimonials: {
+    name: string;
+    handle: string;
+    text: string;
+    platform: "linkedin" | "twitter" | "reddit";
+    avatar: string;
+    role?: string;
+    likes?: number;
+    time?: string;
+  }[] = [
     {
-      name: "Shubham Tandon",
-      text: "This platform transformed our hiring process. The real-time coding and AI feedback are amazing!",
+      name: "Sundar Pichai",
+      handle: "sundarpichai",
+      text: "At Google, we interview 3 million people a year. With InterviewOS, I could have done it from one Chrome tab. Real-time code sync, AI feedback, and zero buffering. Even Google Meet is jealous. 🫣🚀",
+      platform: "linkedin",
+      avatar: ceoSundar,
+      role: "CEO @ Google",
+      likes: 24500,
+      time: "2d",
     },
     {
-      name: "Rohit Sharma",
-      text: "We cut interview time in half and improved candidate experience with the live editor.",
+      name: "Tim Cook",
+      handle: "tim-cook",
+      text: "InterviewOS is what happens when innovation meets simplicity. Clean UI, seamless experience, and it just works™. We might have to sue them for being too good. Courage. 🍎✨",
+      platform: "linkedin",
+      avatar: ceoApple,
+      role: "CEO @ Apple",
+      likes: 18700,
+      time: "4d",
     },
     {
-      name: "Anusha Jha",
-      text: "The user interface is sleek and the animated previews are a delightful touch.",
+      name: "Bill Gates",
+      handle: "u/thisisbillgates",
+      text: "Back in my day, we did interviews on a landline phone. InterviewOS makes me wish I was born 30 years later. The AI scoring is remarkably accurate. I tried to buy it but they said it's not for sale. Yet. 📞→💻",
+      platform: "reddit",
+      avatar: ceoBillGates,
+      likes: 31200,
+      time: "6h",
     },
     {
-      name: "Priya Kapoor",
-      text: "InterviewOS saved us hours every week – the video and code sync are flawless.",
+      name: "Sam Altman",
+      handle: "@sama",
+      text: "InterviewOS's AI feedback is so good, I thought it was GPT-5. It's not. It's better. Acquisition talks starting Monday. Not a drill. 👀💰 #InterviewOStoOpenAI",
+      platform: "twitter",
+      avatar: ceoSamAltman,
+      likes: 120000,
+      time: "1h",
     },
     {
-      name: "Vikram Patel",
-      text: "Candidates love the smooth experience; hiring has never easier.",
+      name: "Jensen Huang",
+      handle: "u/jensen_huang",
+      text: "I make GPUs that power AI, but the real AI magic is in InterviewOS's feedback engine. It scores candidates better than most interviewers I know. Including some at NVIDIA. Don't @ me. Leather jacket approved. 🧥😎",
+      platform: "reddit",
+      avatar: ceoJensen,
+      likes: 21000,
+      time: "12h",
     },
     {
-      name: "Meena Kumari",
-      text: "The infinite scrolling testimonials on the landing page look so professional!",
+      name: "Mark Zuckerberg",
+      handle: "@zuck",
+      text: "Tried conducting an interview in the Metaverse. Candidate's avatar kept T-posing. Switched to InterviewOS. Best pivot since Instagram Reels. No VR headset needed lol 🤣 #efficiency",
+      platform: "twitter",
+      avatar: ceoMark,
+      likes: 45000,
+      time: "8h",
+    },
+    {
+      name: "Satya Nadella",
+      handle: "satyanadella",
+      text: "As someone who runs Microsoft, I appreciate great software — and InterviewOS is genuinely great software. Better video calling than Teams. Yes, I said it. Growth mindset means accepting the truth. 💀📈",
+      platform: "linkedin",
+      avatar: ceoSatya,
+      role: "CEO @ Microsoft",
+      likes: 15600,
+      time: "1d",
+    },
+    {
+      name: "Narendra Modi",
+      handle: "@naaborendramodi",
+      text: "Mitron! 🇮🇳 InterviewOS is a shining example of Digital India. Ab interview bhi digital, feedback bhi AI se. Make in India, Interview on InterviewOS! Jai Hind! 🙏 #AatmaNirbharBharat #InterviewOS",
+      platform: "twitter",
+      avatar: ceoModi,
+      likes: 250000,
+      time: "3h",
+    },
+    {
+      name: "Rahul Gandhi",
+      handle: "u/rahulgandhi_official",
+      text: "Maine InterviewOS use karke ek mock interview diya. AI ne bola — 'Great potential, needs more preparation.' Relatable content. But seriously, the platform is very user-friendly. Even I figured it out. 😅🫡",
+      platform: "reddit",
+      avatar: ceoRahul,
+      likes: 42000,
+      time: "9h",
+    },
+    {
+      name: "Pavel Durov",
+      handle: "@durov",
+      text: "InterviewOS respects your privacy more than most platforms. No tracking, no nonsense, just pure interview experience. If Telegram had a hiring feature, it would look exactly like this. 🔒🚀 #Freedom #InterviewOS",
+      platform: "twitter",
+      avatar: ceoPavel,
+      likes: 67000,
+      time: "5h",
     },
   ];
 
@@ -220,9 +578,9 @@ export default function LandingPage() {
         <div className="container relative flex items-center justify-between h-16">
           <a href="/" className="flex items-center gap-2">
             <img
-              src={logo}
+              src={isDark ? logo : logoLight}
               alt="InterviewOS Logo"
-              className="w-30 h-10 object-contain"
+              className="w-72 h-20 object-contain"
             />
           </a>
           <div className="absolute left-1/2 -translate-x-1/2 hidden md:flex items-center gap-12">
@@ -249,6 +607,17 @@ export default function LandingPage() {
             </a>
           </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsDark(!isDark)}
+              className="w-10 h-10 rounded-full flex items-center justify-center border border-border bg-card hover:bg-surface-hover transition-colors duration-200"
+              aria-label="Toggle dark mode"
+            >
+              {isDark ? (
+                <Sun className="w-5 h-5 text-yellow-400" />
+              ) : (
+                <Moon className="w-5 h-5 text-foreground" />
+              )}
+            </button>
             <Button
               asChild
               className="group rounded-full bg-gradient-primary hover:opacity-90 transition-all duration-300 text-base px-8 h-12 font-semibold relative overflow-hidden"
@@ -264,10 +633,10 @@ export default function LandingPage() {
 
       {/* Hero */}
       <section className="relative pt-20 pb-20 overflow-hidden">
-        <div className="absolute inset-0 opacity-30">
+        <div className="absolute inset-0 opacity-22 dark:opacity-30">
           <img src={heroBg} alt="" className="w-full h-full object-cover" />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-b from-background/50 via-background/80 to-background" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/75 via-background/90 to-background dark:from-background/50 dark:via-background/80 dark:to-background" />
 
         <div className="container relative z-10">
           <motion.div
@@ -278,7 +647,7 @@ export default function LandingPage() {
             <motion.div
               variants={fadeInUp}
               custom={0}
-              className="inline-flex items-center gap-2 px-4 py-1.5 mb-8 text-xs font-medium rounded-full border border-primary/50 bg-primary/20 text-purple-200 shadow-[0_0_15px_rgba(168,85,247,0.15)] backdrop-blur-sm"
+              className="inline-flex items-center gap-2 px-4 py-1.5 mb-8 text-xs font-medium rounded-full border border-primary/50 bg-primary/20 text-primary dark:text-purple-200 shadow-[0_0_15px_rgba(168,85,247,0.15)] backdrop-blur-sm"
             >
               <Star className="w-3 h-3 text-primary" /> Built for engineering
               interviews
@@ -287,10 +656,21 @@ export default function LandingPage() {
             <motion.h1
               variants={fadeInUp}
               custom={1}
-              className="text-5xl md:text-7xl font-display font-bold leading-[1.1] mb-6"
+              className="text-5xl md:text-7xl font-display font-bold leading-[1.1] mb-6 dark:text-white"
+              style={{ color: isDark ? undefined : "hsl(239, 40%, 25%)" }}
             >
-              Where great
-              <span className="text-gradient"> engineers </span>
+              Where great{" "}
+              <span className="text-gradient">
+                {displayText}
+                <span
+                  className="inline-block w-[3px] h-[0.85em] ml-1 align-middle rounded-sm"
+                  style={{
+                    background: "linear-gradient(to bottom, #a855f7, #6366f1)",
+                    animation: "blink 1s step-end infinite",
+                  }}
+                />
+              </span>
+              <br />
               get hired
             </motion.h1>
 
@@ -365,7 +745,7 @@ export default function LandingPage() {
       </section>
 
       {/* Room Preview */}
-      <section className="py-16">
+      <section className="py-12">
         <div className="container">
           <MotionWrapper
             variants={fadeInUp}
@@ -465,7 +845,7 @@ export default function LandingPage() {
                   </div>
                 </div>
                 {/* Editor mock */}
-                <div className="col-span-6 rounded-lg bg-[hsl(0,0%,8%)] border border-border overflow-hidden">
+                <div className="col-span-6 rounded-lg bg-card border border-border overflow-hidden">
                   <div className="flex items-center justify-between px-3 py-2 border-b border-border">
                     <span className="text-xs text-muted-foreground font-mono">
                       solution.ts
@@ -476,7 +856,7 @@ export default function LandingPage() {
                       </span>
                     </div>
                   </div>
-                  <div className="p-3 font-mono text-xs leading-relaxed">
+                  <div className="p-3 font-mono text-xs leading-relaxed text-foreground">
                     {previewCodeLines.map((line, idx) => (
                       <motion.div
                         key={idx}
@@ -608,7 +988,10 @@ export default function LandingPage() {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl md:text-5xl font-display font-bold mb-4">
+            <h2
+              className="text-3xl md:text-5xl font-display font-bold mb-4 dark:text-white"
+              style={{ color: isDark ? undefined : "hsl(239, 40%, 25%)" }}
+            >
               Everything you need to
               <span className="animate-text-shimmer"> run interviews</span>
             </h2>
@@ -626,7 +1009,7 @@ export default function LandingPage() {
                 custom={i}
                 whileInView="visible"
                 viewport={{ once: true }}
-                className="group p-6 rounded-xl bg-card border border-border hover:border-primary/30 transition-all duration-300 hover:shadow-glow"
+                className="group p-6 rounded-xl bg-card border border-border hover:border-primary/40 transition-all duration-300 hover:shadow-[0_12px_40px_rgba(99,102,241,0.2),0_4px_12px_rgba(0,0,0,0.08)] hover:-translate-y-2 cursor-pointer"
               >
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
                   <feature.icon className="w-5 h-5 text-primary" />
@@ -704,6 +1087,7 @@ export default function LandingPage() {
       {/* Testimonials slider */}
       <section className="py-12 bg-card/50">
         <div
+          ref={testimonialsRef}
           className="container relative overflow-hidden"
           style={{
             WebkitMaskImage:
@@ -717,52 +1101,256 @@ export default function LandingPage() {
             variants={fadeInUp}
             whileInView="visible"
             viewport={{ once: true }}
-            className="mb-8 text-center"
+            className="mb-10 text-center"
           >
-            <h3 className="text-xl font-semibold">What people are saying</h3>
+            <h3 className="text-xl md:text-2xl font-bold text-foreground">
+              What People Are Saying
+            </h3>
+            <p className="text-muted-foreground text-sm mt-1">
+              Hear from our users about their experience.
+            </p>
           </MotionWrapper>
 
-          <motion.div
-            className="flex gap-6 pb-4"
-            animate={{ x: ["0%", "-50%"] }}
-            transition={{
-              x: {
-                repeat: Infinity,
-                repeatType: "loop",
-                duration: 20,
-                ease: "linear",
-              },
-            }}
+          <div
+            onClick={() => handleMarqueePause("testimonials", setTestimonialsPaused)}
+            className={`flex gap-6 pb-4 w-max cursor-pointer ${
+              testimonialsInView ? "animate-[marquee-left_90s_linear_infinite]" : ""
+            }`}
+            style={{ animationPlayState: testimonialsPaused ? "paused" : "running" }}
           >
             {[...testimonials, ...testimonials].map((t, i) => (
               <div
                 key={i}
-                className="w-72 flex-shrink-0 p-6 bg-card rounded-lg border border-border shadow-lg"
+                className={`w-80 flex-shrink-0 p-5 rounded-xl border shadow-lg transition-all hover:scale-[1.02] ${
+                  t.platform === "linkedin"
+                    ? "bg-card border-blue-500/20"
+                    : t.platform === "twitter"
+                      ? "bg-card border-sky-400/20"
+                      : "bg-card border-orange-500/20"
+                }`}
               >
-                <div className="font-semibold mb-1">{t.name}</div>
-                <div className="text-sm text-muted-foreground">{t.text}</div>
+                {/* Header */}
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={t.avatar}
+                      alt={t.name}
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = "none";
+                        const fallback =
+                          target.nextElementSibling as HTMLElement;
+                        if (fallback) fallback.style.display = "flex";
+                      }}
+                      className={`w-10 h-10 rounded-full object-cover ring-2 ${
+                        t.platform === "linkedin"
+                          ? "ring-blue-500/50"
+                          : t.platform === "twitter"
+                            ? "ring-sky-400/50"
+                            : "ring-orange-500/50"
+                      }`}
+                    />
+                    <div
+                      style={{ display: "none" }}
+                      className={`w-10 h-10 rounded-full items-center justify-center text-white text-sm font-bold ring-2 ${
+                        t.platform === "linkedin"
+                          ? "bg-blue-600 ring-blue-500/50"
+                          : t.platform === "twitter"
+                            ? "bg-sky-500 ring-sky-400/50"
+                            : "bg-orange-500 ring-orange-500/50"
+                      }`}
+                    >
+                      {t.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")}
+                    </div>
+                    <div>
+                      <div className="font-semibold text-sm text-foreground">
+                        {t.name}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {t.role ? t.role : t.handle}
+                      </div>
+                    </div>
+                  </div>
+                  {/* Platform icon */}
+                  {t.platform === "linkedin" && (
+                    <svg
+                      className="w-5 h-5 text-blue-600 flex-shrink-0"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
+                      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+                    </svg>
+                  )}
+                  {t.platform === "twitter" && (
+                    <svg
+                      className="w-5 h-5 text-foreground flex-shrink-0"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                    </svg>
+                  )}
+                  {t.platform === "reddit" && (
+                    <svg
+                      className="w-5 h-5 text-orange-500 flex-shrink-0"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
+                      <path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z" />
+                    </svg>
+                  )}
+                </div>
+
+                {/* Content */}
+                <p className="text-sm text-foreground/90 leading-relaxed mb-3">
+                  {t.text}
+                </p>
+
+                {/* Footer */}
+                <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border/50">
+                  <div className="flex items-center gap-1">
+                    {t.platform === "reddit" ? (
+                      <>
+                        <svg
+                          className="w-3.5 h-3.5 text-orange-500"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                        >
+                          <path
+                            d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"
+                            transform="rotate(-90 12 12)"
+                          />
+                        </svg>
+                        <span>{t.likes}</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          className="w-3.5 h-3.5"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                        </svg>
+                        <span>{t.likes}</span>
+                      </>
+                    )}
+                  </div>
+                  <span>{t.time} ago</span>
+                </div>
               </div>
             ))}
-          </motion.div>
+          </div>
         </div>
       </section>
 
+      {/* Partner logos marquee */}
+      <motion.section
+        className="py-20 bg-gradient-to-b from-card/30 via-card/60 to-card/30"
+        initial={{ opacity: 0, x: -25 }}
+        whileInView={{ opacity: 1, x: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
+      >
+        <div className="container relative overflow-hidden">
+          <div className="text-center mb-10">
+            <h3 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+              Trusted by Top Companies & Colleges
+            </h3>
+            <p className="text-muted-foreground text-sm md:text-base max-w-lg mx-auto">
+              Leading organizations and institutions rely on{" "}
+              <span className="text-foreground">Interview</span>
+              <span className="text-primary font-semibold">OS</span> for
+              seamless technical hiring.
+            </p>
+          </div>
+          <div
+            ref={partnersRef}
+            className="relative overflow-hidden"
+            style={{
+              WebkitMaskImage:
+                "linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)",
+              maskImage:
+                "linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)",
+            }}
+          >
+            <div
+              onClick={() => handleMarqueePause("partners", setPartnersPaused)}
+              className={`flex items-center gap-6 w-max cursor-pointer ${
+                partnersInView ? "animate-[marquee-right_100s_linear_infinite]" : ""
+              }`}
+              style={{ animationPlayState: partnersPaused ? "paused" : "running" }}
+            >
+              {[
+                ...partnerLogos,
+                ...partnerLogos,
+                ...partnerLogos,
+                ...partnerLogos,
+              ].map((logo, idx) => (
+                <div
+                  key={idx}
+                  className="flex-shrink-0 flex items-center justify-center h-72 w-56 px-2"
+                >
+                  {logo.alt === "Parul University" || logo.alt === "GTU" ? (
+                    <img
+                      src={logo.src}
+                      alt={logo.alt}
+                      className="max-h-80 object-contain"
+                    />
+                  ) : logo.alt === "MSU Baroda" || logo.alt === "LDCE" ? (
+                    <img
+                      src={logo.src}
+                      alt={logo.alt}
+                      className="max-h-32 object-contain"
+                    />
+                  ) : logo.alt === "Accenture" ? (
+                    <img
+                      src={logo.src}
+                      alt={logo.alt}
+                      className="max-h-32 object-contain"
+                    />
+                  ) : logo.alt === "Oracle" ? (
+                    <img
+                      src={logo.src}
+                      alt={logo.alt}
+                      className="max-h-80 object-contain"
+                    />
+                  ) : (
+                    <img
+                      src={logo.src}
+                      alt={logo.alt}
+                      className="max-h-68 object-contain"
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </motion.section>
+
       {/* CTA */}
-      <section className="py-24">
+      <section className="py-16">
         <div className="container">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="max-w-3xl mx-auto text-center p-12 rounded-2xl bg-gradient-primary relative overflow-hidden"
+            className="max-w-3xl mx-auto text-center p-12 rounded-[28px] bg-gradient-to-br from-primary via-indigo-500/90 to-purple-600/95 shadow-[0_22px_60px_rgba(67,56,202,0.28)] ring-1 ring-white/15 relative overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_26px_70px_rgba(67,56,202,0.32)]"
           >
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.1),transparent)]" />
             <div className="relative z-10">
               <h2 className="text-3xl md:text-4xl font-display font-bold text-primary-foreground mb-4">
-                Ready to transform your interviews?
+                Revolutionize your hiring process in minutes
               </h2>
               <p className="text-primary-foreground/80 mb-8 text-lg">
-                Join engineering teams who hire smarter with InterviewOS.
+                Collaborate, evaluate and onboard faster with InterviewOS—build
+                stronger engineering teams with confidence.
               </p>
               <Button
                 size="lg"
@@ -779,21 +1367,134 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* FAQ Section */}
+      <section className="py-20 bg-background">
+        <div className="container">
+          <MotionWrapper
+            variants={fadeInUp}
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="mb-12"
+          >
+            <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground">
+              Frequently Asked Questions
+            </h2>
+          </MotionWrapper>
+
+          <div className="flex flex-col lg:flex-row gap-10">
+            {/* Category tabs - left side */}
+            <div className="flex flex-row lg:flex-col flex-wrap gap-2 lg:w-72 shrink-0">
+              {faqCategories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setActiveCategory(cat)}
+                  className={`px-5 py-3 rounded-full text-sm font-medium text-left transition-all border ${
+                    activeCategory === cat
+                      ? "bg-blue-500/10 text-blue-600 border-blue-500/30 shadow-sm dark:bg-blue-500/15 dark:text-blue-400 dark:border-blue-400/30"
+                      : "bg-card text-foreground border-border"
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
+            {/* FAQ accordion - right side */}
+            <div className="flex-1 min-w-0">
+              <div className="border border-border/60 rounded-xl bg-card overflow-hidden">
+                <Accordion type="single" collapsible className="w-full">
+                  {(faqData[activeCategory] || []).map((faq, idx) => (
+                    <AccordionItem
+                      key={idx}
+                      value={`faq-${idx}`}
+                      className="border-b border-border/40 last:border-b-0 px-5"
+                    >
+                      <AccordionTrigger className="text-left text-foreground hover:no-underline py-5 text-base font-medium">
+                        {faq.question}
+                      </AccordionTrigger>
+                      <AccordionContent className="text-muted-foreground text-sm leading-relaxed pb-5">
+                        {faq.answer}
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
-      <footer className="border-t border-border py-10">
-        <div className="container flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
+      <footer className="bg-card/50 border-t border-border mt-8">
+        <div className="container py-5">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            {/* Logo */}
             <a href="/">
               <img
-                src={logo}
+                src={isDark ? logo : logoLight}
                 alt="InterviewOS Logo"
-                className="w-30 h-10 object-contain"
+                className="w-60 h-16 object-contain"
               />
             </a>
+
+            {/* Copyright */}
+            <div className="flex-1 text-center text-xs text-muted-foreground italic mt-4">
+              © 2026 InterviewOS. All rights reserved.
+              <span className="block">Made with ❤️ by Bharat Dhuva.</span>
+            </div>
+
+            {/* Social icons */}
+            <div className="flex items-center gap-2">
+              <a
+                href="#"
+                className="w-7 h-7 rounded-full flex items-center justify-center bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 text-white hover:scale-110 transition-transform"
+              >
+                <svg
+                  className="w-3.5 h-3.5"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" />
+                </svg>
+              </a>
+              <a
+                href="#"
+                className="w-7 h-7 rounded-full flex items-center justify-center bg-foreground text-background hover:scale-110 transition-transform"
+              >
+                <svg
+                  className="w-3.5 h-3.5"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                </svg>
+              </a>
+              <a
+                href="#"
+                className="w-7 h-7 rounded-full flex items-center justify-center bg-blue-600 text-white hover:scale-110 transition-transform"
+              >
+                <svg
+                  className="w-3.5 h-3.5"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+                </svg>
+              </a>
+              <a
+                href="#"
+                className="w-7 h-7 rounded-full flex items-center justify-center bg-red-600 text-white hover:scale-110 transition-transform"
+              >
+                <svg
+                  className="w-3.5 h-3.5"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                </svg>
+              </a>
+            </div>
           </div>
-          <p className="text-xs text-muted-foreground">
-            © 2025 InterviewOS. Built by Bharat Dhuva.
-          </p>
         </div>
       </footer>
     </div>

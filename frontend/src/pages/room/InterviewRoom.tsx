@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Editor from '@monaco-editor/react';
+
 import { 
   Mic, MicOff, Video as VideoIcon, VideoOff, Monitor, PhoneOff, 
   Play, Save, Brain, Send, Clock, Terminal, ChevronDown, Users
@@ -77,6 +78,15 @@ export default function InterviewRoom() {
   const { roomId } = useParams();
   const user = useAuthStore((s) => s.user);
   const { toast } = useToast();
+
+  const [isDark, setIsDark] = useState(document.documentElement.classList.contains('dark'));
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
   
   const [language, setLanguage] = useState('typescript');
   const [code, setCode] = useState(defaultCode.typescript);
@@ -341,7 +351,7 @@ export default function InterviewRoom() {
             <Editor
               height="100%"
               language={language}
-              theme="vs-dark"
+              theme={isDark ? 'vs-dark' : 'light'}
               value={code}
               onChange={(v) => setCode(v || '')}
               options={{
