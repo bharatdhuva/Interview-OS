@@ -1,0 +1,2 @@
+﻿[dotenv@17.3.1] injecting env (27) from .env -- tip: ≡ƒöÉ encrypt with Dotenvx: https://dotenvx.com
+[31merror[39m: Error: querySrv ECONNREFUSED _mongodb._tcp.cluster0.d5lpr3y.mongodb.net {"service":"interviewos-api","timestamp":"2026-02-22T10:06:57.514Z"}

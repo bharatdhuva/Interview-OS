@@ -6,7 +6,7 @@ import {
   Video,
   MessageSquare,
   Brain,
-  Shield,
+  PenLine, // ← ADD
   Zap,
   ArrowRight,
   Users,
@@ -111,11 +111,12 @@ const features = [
       "Real-time messaging with typing indicators and message history.",
   },
   {
-    icon: Shield,
-    title: "Enterprise Security",
+    icon: PenLine,
+    title: "Collaborative Whiteboard",
     description:
-      "JWT dual-token auth, RBAC, rate limiting, and input sanitization.",
+      "Draw system designs, flowcharts and diagrams together in real-time — synced instantly via Socket.IO.",
   },
+  ,
   {
     icon: Zap,
     title: "Code Execution",
@@ -301,7 +302,10 @@ export default function LandingPage() {
   const [partnersPaused, setPartnersPaused] = useState(false);
   const testimonialsRef = useRef<HTMLDivElement>(null);
   const partnersRef = useRef<HTMLDivElement>(null);
-  const testimonialsInView = useInView(testimonialsRef, { once: true, amount: 0.2 });
+  const testimonialsInView = useInView(testimonialsRef, {
+    once: true,
+    amount: 0.2,
+  });
   const partnersInView = useInView(partnersRef, { once: true, amount: 0.2 });
   const pauseTimeouts = useRef<{
     testimonials?: ReturnType<typeof setTimeout>;
@@ -329,7 +333,7 @@ export default function LandingPage() {
 
   const handleMarqueePause = (
     key: "testimonials" | "partners",
-    setPaused: React.Dispatch<React.SetStateAction<boolean>>
+    setPaused: React.Dispatch<React.SetStateAction<boolean>>,
   ) => {
     setPaused(true);
     if (pauseTimeouts.current[key]) {
@@ -1112,11 +1116,17 @@ export default function LandingPage() {
           </MotionWrapper>
 
           <div
-            onClick={() => handleMarqueePause("testimonials", setTestimonialsPaused)}
+            onClick={() =>
+              handleMarqueePause("testimonials", setTestimonialsPaused)
+            }
             className={`flex gap-6 pb-4 w-max cursor-pointer ${
-              testimonialsInView ? "animate-[marquee-left_90s_linear_infinite]" : ""
+              testimonialsInView
+                ? "animate-[marquee-left_90s_linear_infinite]"
+                : ""
             }`}
-            style={{ animationPlayState: testimonialsPaused ? "paused" : "running" }}
+            style={{
+              animationPlayState: testimonialsPaused ? "paused" : "running",
+            }}
           >
             {[...testimonials, ...testimonials].map((t, i) => (
               <div
@@ -1282,9 +1292,13 @@ export default function LandingPage() {
             <div
               onClick={() => handleMarqueePause("partners", setPartnersPaused)}
               className={`flex items-center gap-6 w-max cursor-pointer ${
-                partnersInView ? "animate-[marquee-right_100s_linear_infinite]" : ""
+                partnersInView
+                  ? "animate-[marquee-right_100s_linear_infinite]"
+                  : ""
               }`}
-              style={{ animationPlayState: partnersPaused ? "paused" : "running" }}
+              style={{
+                animationPlayState: partnersPaused ? "paused" : "running",
+              }}
             >
               {[
                 ...partnerLogos,
