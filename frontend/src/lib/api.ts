@@ -9,6 +9,7 @@ const api = axios.create({
   },
 });
 
+// Request interceptor - token add karo
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('accessToken');
@@ -20,11 +21,15 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// Response interceptor
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      useAuthStore.getState().logout();
+      const isAuthRoute = error.config?.url?.includes('/auth/');
+      if (!isAuthRoute) {
+        useAuthStore.getState().logout();
+      }
     }
     return Promise.reject(error);
   }

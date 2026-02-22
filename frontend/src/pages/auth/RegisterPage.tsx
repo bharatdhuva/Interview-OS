@@ -49,7 +49,24 @@ export default function RegisterPage() {
         password,
         role,
       });
-      const { user, accessToken } = response.data.data;
+
+      console.log("✅ Full Response:", response.data);
+
+      const data = response.data.data;
+      const user = {
+        id: data.id,
+        name: data.name,
+        email: data.email,
+        role: data.role,
+        avatar: data.avatar || "",
+        isEmailVerified: true,
+        createdAt: new Date().toISOString(),
+      };
+      const accessToken = data.accessToken;
+
+      console.log("✅ User:", user);
+      console.log("✅ Token:", accessToken);
+
       login(user, accessToken);
       toast({
         title: "Account created!",
@@ -61,6 +78,8 @@ export default function RegisterPage() {
           : "/dashboard/candidate",
       );
     } catch (error: any) {
+      console.log("❌ Error:", error);
+      console.log("❌ Error Response:", error.response?.data);
       toast({
         title: "Registration Failed",
         description: error.response?.data?.message || "Something went wrong",
@@ -77,7 +96,7 @@ export default function RegisterPage() {
         setIsLoading(true);
         const response = await api.post("/auth/google", {
           token: tokenResponse.access_token,
-          role, // Pass the selected role for new signups
+          role,
         });
         const { user, accessToken } = response.data.data;
         login(user, accessToken);
@@ -104,7 +123,6 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen relative overflow-hidden flex items-center justify-center">
-      {/* Background */}
       <img
         src={heroBg}
         alt=""
@@ -119,11 +137,9 @@ export default function RegisterPage() {
         animate={{ opacity: 1, y: 0 }}
         className="relative w-full max-w-md mx-4 bg-secondary/90 backdrop-blur-md rounded-2xl shadow-xl overflow-hidden"
       >
-        {/* Top colored bar */}
         <div className="h-1 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
 
         <div className="p-5 space-y-1">
-          {/* Logo — small and clean */}
           <div className="flex justify-center">
             <a href="/">
               <img
@@ -134,7 +150,6 @@ export default function RegisterPage() {
             </a>
           </div>
 
-          {/* Heading */}
           <div className="text-center">
             <h2 className="text-2xl font-bold">Create your account 🚀</h2>
             <p className="text-sm text-muted-foreground mt-1">
@@ -142,13 +157,12 @@ export default function RegisterPage() {
             </p>
           </div>
 
-          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <Label htmlFor="name">Full Name</Label>
               <Input
                 id="name"
-                placeholder="Enter your Name "
+                placeholder="Enter your Name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
@@ -225,14 +239,12 @@ export default function RegisterPage() {
             </Button>
           </form>
 
-          {/* Divider */}
           <div className="flex items-center gap-2">
             <div className="h-px bg-border flex-1" />
             <span className="text-xs text-muted-foreground">or</span>
             <div className="h-px bg-border flex-1" />
           </div>
 
-          {/* Google */}
           <Button
             variant="outline"
             className="w-full flex items-center justify-center gap-2 bg-transparent border-border hover:bg-primary/10 hover:backdrop-blur-md hover:border-primary/50 transition-all duration-300"
@@ -259,7 +271,6 @@ export default function RegisterPage() {
             Continue with Google
           </Button>
 
-          {/* Sign in link */}
           <p className="text-center text-sm text-muted-foreground">
             Already have an account?{" "}
             <Link

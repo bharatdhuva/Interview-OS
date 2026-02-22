@@ -195,7 +195,7 @@ export const googleSignIn = async (req: Request, res: Response) => {
       res.status(400).json({ success: false, message: 'Validation Error', errors: error.errors });
       return;
     }
-    logger.error('Google Sign-In error', error);
-    res.status(500).json({ success: false, message: 'Server error during Google authentication' });
+    logger.error('Google Sign-In error full trace', { message: error.message, stack: error.stack, response: error.response?.data });
+    res.status(500).json({ success: false, message: 'Server error during Google authentication', error: error.message });
   }
 };

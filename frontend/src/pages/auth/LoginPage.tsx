@@ -42,7 +42,17 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       const response = await api.post("/auth/login", { email, password });
-      const { user, accessToken } = response.data.data;
+      const data = response.data.data;
+      const user = {
+        id: data.id,
+        name: data.name,
+        email: data.email,
+        role: data.role,
+        avatar: data.avatar || "",
+        isEmailVerified: true,
+        createdAt: new Date().toISOString(),
+      };
+      const accessToken = data.accessToken;
       login(user, accessToken);
       toast({ title: `Welcome back, ${user.name}!` });
       navigate(
@@ -69,7 +79,17 @@ export default function LoginPage() {
           token: tokenResponse.access_token,
           role: "candidate",
         });
-        const { user, accessToken } = response.data.data;
+        const data = response.data.data;
+        const user = {
+          id: data.id,
+          name: data.name,
+          email: data.email,
+          role: data.role,
+          avatar: data.avatar || "",
+          isEmailVerified: true,
+          createdAt: new Date().toISOString(),
+        };
+        const accessToken = data.accessToken;
         login(user, accessToken);
         toast({ title: `Welcome back, ${user.name}!` });
         navigate(
