@@ -1,0 +1,11 @@
+Error connecting to MongoDB:
+MongoServerError: bad auth : authentication failed
+Stack: MongoServerError: bad auth : authentication failed
+    at Connection.sendCommand (C:\Users\bhara\Desktop\Bharat Dhuva\Projects\Interview-OS\server\node_modules\mongodb\lib\cmap\connection.js:320:27)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Connection.command (C:\Users\bhara\Desktop\Bharat Dhuva\Projects\Interview-OS\server\node_modules\mongodb\lib\cmap\connection.js:344:26)
+    at async continueScramConversation (C:\Users\bhara\Desktop\Bharat Dhuva\Projects\Interview-OS\server\node_modules\mongodb\lib\cmap\auth\scram.js:131:15)
+    at async executeScram (C:\Users\bhara\Desktop\Bharat Dhuva\Projects\Interview-OS\server\node_modules\mongodb\lib\cmap\auth\scram.js:80:5)
+    at async ScramSHA1.auth (C:\Users\bhara\Desktop\Bharat Dhuva\Projects\Interview-OS\server\node_modules\mongodb\lib\cmap\auth\scram.js:39:16)
+    at async performInitialHandshake (C:\Users\bhara\Desktop\Bharat Dhuva\Projects\Interview-OS\server\node_modules\mongodb\lib\cmap\connect.js:110:13)
+    at async connect (C:\Users\bhara\Desktop\Bharat Dhuva\Projects\Interview-OS\server\node_modules\mongodb\lib\cmap\connect.js:28:9)

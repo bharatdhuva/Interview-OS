@@ -1,0 +1,24 @@
+Google DNS Success:
+[
+  {
+    "name": "ac-ur9dwjf-shard-00-01.um6lhdw.mongodb.net",
+    "port": 27017,
+    "priority": 0,
+    "weight": 0,
+    "type": "SRV"
+  },
+  {
+    "name": "ac-ur9dwjf-shard-00-02.um6lhdw.mongodb.net",
+    "port": 27017,
+    "priority": 0,
+    "weight": 0,
+    "type": "SRV"
+  },
+  {
+    "name": "ac-ur9dwjf-shard-00-00.um6lhdw.mongodb.net",
+    "port": 27017,
+    "priority": 0,
+    "weight": 0,
+    "type": "SRV"
+  }
+]

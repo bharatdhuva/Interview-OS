@@ -1,0 +1,10 @@
+Error connecting to MongoDB:
+MongoServerSelectionError: Server selection timed out after 30000 ms
+Stack: MongoServerSelectionError: Server selection timed out after 30000 ms
+    at Topology.selectServer (C:\Users\bhara\Desktop\Bharat Dhuva\Projects\Interview-OS\server\node_modules\mongodb\lib\sdam\topology.js:347:38)
+    at async Topology._connect (C:\Users\bhara\Desktop\Bharat Dhuva\Projects\Interview-OS\server\node_modules\mongodb\lib\sdam\topology.js:220:28)
+    at async Topology.connect (C:\Users\bhara\Desktop\Bharat Dhuva\Projects\Interview-OS\server\node_modules\mongodb\lib\sdam\topology.js:171:13)
+    at async topologyConnect (C:\Users\bhara\Desktop\Bharat Dhuva\Projects\Interview-OS\server\node_modules\mongodb\lib\mongo_client.js:258:17)
+    at async MongoClient._connect (C:\Users\bhara\Desktop\Bharat Dhuva\Projects\Interview-OS\server\node_modules\mongodb\lib\mongo_client.js:271:13)
+    at async MongoClient.connect (C:\Users\bhara\Desktop\Bharat Dhuva\Projects\Interview-OS\server\node_modules\mongodb\lib\mongo_client.js:196:13)
+    at async MongoClient.connect (C:\Users\bhara\Desktop\Bharat Dhuva\Projects\Interview-OS\server\node_modules\mongodb\lib\mongo_client.js:438:16)
