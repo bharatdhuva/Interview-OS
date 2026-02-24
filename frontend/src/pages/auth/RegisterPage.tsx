@@ -20,6 +20,10 @@ export default function RegisterPage() {
   const [role, setRole] = useState<"candidate" | "interviewer">("candidate");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<{
+    field?: string;
+    message: string;
+  } | null>(null);
   const [isDark, setIsDark] = useState(
     document.documentElement.classList.contains("dark"),
   );
@@ -41,6 +45,7 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     setIsLoading(true);
     try {
       const response = await api.post("/auth/register", {
@@ -77,14 +82,22 @@ export default function RegisterPage() {
           ? "/dashboard/interviewer"
           : "/dashboard/candidate",
       );
-    } catch (error: any) {
-      console.log("❌ Error:", error);
-      console.log("❌ Error Response:", error.response?.data);
-      toast({
-        title: "Registration Failed",
-        description: error.response?.data?.message || "Something went wrong",
-        variant: "destructive",
-      });
+    } catch (err: any) {
+      console.log("❌ Error:", err);
+      console.log("❌ Error Response:", err.response?.data);
+      const msg = err.response?.data?.message || "Something went wrong";
+      if (
+        msg.toLowerCase().includes("email") ||
+        msg.toLowerCase().includes("exists")
+      ) {
+        setError({ field: "email", message: msg });
+      } else if (msg.toLowerCase().includes("password")) {
+        setError({ field: "password", message: msg });
+      } else if (msg.toLowerCase().includes("name")) {
+        setError({ field: "name", message: msg });
+      } else {
+        setError({ field: "password", message: msg });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -93,6 +106,7 @@ export default function RegisterPage() {
   const handleGoogle = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       try {
+        setError(null);
         setIsLoading(true);
         const response = await api.post("/auth/google", {
           token: tokenResponse.access_token,
@@ -106,18 +120,16 @@ export default function RegisterPage() {
             ? "/dashboard/interviewer"
             : "/dashboard/candidate",
         );
-      } catch (error: any) {
-        toast({
-          title: "Google Signup Failed",
-          description: error.response?.data?.message || "Authentication failed",
-          variant: "destructive",
+      } catch (err: any) {
+        setError({
+          message: err.response?.data?.message || "Authentication failed",
         });
       } finally {
         setIsLoading(false);
       }
     },
     onError: () => {
-      toast({ title: "Google Signup Failed", variant: "destructive" });
+      setError({ message: "Google Signup Failed" });
     },
   });
 
@@ -157,6 +169,12 @@ export default function RegisterPage() {
             </p>
           </div>
 
+          {!error?.field && error?.message && (
+            <p className="text-sm text-destructive text-center font-medium animate-in fade-in slide-in-from-top-1">
+              {error.message}
+            </p>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <Label htmlFor="name">Full Name</Label>
@@ -166,8 +184,13 @@ export default function RegisterPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="mt-1.5 bg-secondary border-border"
+                className={`mt-1.5 bg-secondary ${error?.field === "name" ? "border-destructive focus-visible:ring-destructive" : "border-border"}`}
               />
+              {error?.field === "name" && (
+                <p className="text-xs text-destructive mt-1.5 animate-in fade-in slide-in-from-top-1">
+                  {error.message}
+                </p>
+              )}
             </div>
 
             <div>
@@ -178,9 +201,13 @@ export default function RegisterPage() {
                 placeholder="Enter your Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                required
-                className="mt-1.5 bg-secondary border-border"
+                className={`mt-1.5 bg-secondary ${error?.field === "email" ? "border-destructive focus-visible:ring-destructive" : "border-border"}`}
               />
+              {error?.field === "email" && (
+                <p className="text-xs text-destructive mt-1.5 animate-in fade-in slide-in-from-top-1">
+                  {error.message}
+                </p>
+              )}
             </div>
 
             <div>
@@ -194,7 +221,7 @@ export default function RegisterPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   minLength={8}
-                  className="bg-secondary border-border pr-10"
+                  className={`bg-secondary pr-10 ${error?.field === "password" ? "border-destructive focus-visible:ring-destructive" : "border-border"}`}
                 />
                 <button
                   type="button"
@@ -208,6 +235,11 @@ export default function RegisterPage() {
                   )}
                 </button>
               </div>
+              {error?.field === "password" && (
+                <p className="text-xs text-destructive mt-1.5 animate-in fade-in slide-in-from-top-1">
+                  {error.message}
+                </p>
+              )}
             </div>
 
             <div>

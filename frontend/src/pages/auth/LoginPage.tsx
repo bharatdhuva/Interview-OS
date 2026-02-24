@@ -18,6 +18,10 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<{
+    field?: string;
+    message: string;
+  } | null>(null);
   const [isDark, setIsDark] = useState(
     document.documentElement.classList.contains("dark"),
   );
@@ -39,6 +43,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     setIsLoading(true);
     try {
       const response = await api.post("/auth/login", { email, password });
@@ -60,12 +65,19 @@ export default function LoginPage() {
           ? "/dashboard/interviewer"
           : "/dashboard/candidate",
       );
-    } catch (error: any) {
-      toast({
-        title: "Login Failed",
-        description: error.response?.data?.message || "Invalid credentials",
-        variant: "destructive",
-      });
+    } catch (err: any) {
+      const msg = err.response?.data?.message || "Invalid credentials";
+      // Basic heuristic to attach error to a field
+      if (
+        msg.toLowerCase().includes("email") ||
+        msg.toLowerCase().includes("user")
+      ) {
+        setError({ field: "email", message: msg });
+      } else if (msg.toLowerCase().includes("password")) {
+        setError({ field: "password", message: msg });
+      } else {
+        setError({ field: "password", message: msg });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -74,6 +86,7 @@ export default function LoginPage() {
   const handleGoogle = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       try {
+        setError(null);
         setIsLoading(true);
         const response = await api.post("/auth/google", {
           token: tokenResponse.access_token,
@@ -97,18 +110,16 @@ export default function LoginPage() {
             ? "/dashboard/interviewer"
             : "/dashboard/candidate",
         );
-      } catch (error: any) {
-        toast({
-          title: "Google Login Failed",
-          description: error.response?.data?.message || "Authentication failed",
-          variant: "destructive",
+      } catch (err: any) {
+        setError({
+          message: err.response?.data?.message || "Authentication failed",
         });
       } finally {
         setIsLoading(false);
       }
     },
     onError: () => {
-      toast({ title: "Google Login Failed", variant: "destructive" });
+      setError({ message: "Google Login Failed" });
     },
   });
 
@@ -151,6 +162,13 @@ export default function LoginPage() {
               Join InterviewOS today
             </p>
           </div>
+
+          {!error?.field && error?.message && (
+            <p className="text-sm text-destructive text-center font-medium animate-in fade-in slide-in-from-top-1">
+              {error.message}
+            </p>
+          )}
+
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-1">
             <div>
@@ -162,8 +180,13 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="mt-1.5 bg-secondary border-border"
+                className={`mt-1.5 bg-secondary ${error?.field === "email" ? "border-destructive focus-visible:ring-destructive" : "border-border"}`}
               />
+              {error?.field === "email" && (
+                <p className="text-xs text-destructive mt-1.5 animate-in fade-in slide-in-from-top-1">
+                  {error.message}
+                </p>
+              )}
             </div>
 
             <div>
@@ -184,7 +207,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="bg-secondary border-border pr-10"
+                  className={`bg-secondary pr-10 ${error?.field === "password" ? "border-destructive focus-visible:ring-destructive" : "border-border"}`}
                 />
                 <button
                   type="button"
@@ -198,6 +221,11 @@ export default function LoginPage() {
                   )}
                 </button>
               </div>
+              {error?.field === "password" && (
+                <p className="text-xs text-destructive mt-1.5 animate-in fade-in slide-in-from-top-1">
+                  {error.message}
+                </p>
+              )}
             </div>
 
             <Button
