@@ -27,6 +27,10 @@ export default function RegisterPage() {
   const [isDark, setIsDark] = useState(
     document.documentElement.classList.contains("dark"),
   );
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState("");
+  const [emailValid, setEmailValid] = useState(true);
+  const [passwordValid, setPasswordValid] = useState(true);
 
   useEffect(() => {
     const observer = new MutationObserver(() => {
@@ -46,6 +50,21 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    // Email format validation
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const isEmailOk = emailPattern.test(email);
+    setEmailValid(isEmailOk);
+    // Password validation (min 8 chars, at least 1 number, 1 letter)
+    const isPasswordOk = password.length >= 8 && /[A-Za-z]/.test(password) && /[0-9]/.test(password);
+    setPasswordValid(isPasswordOk);
+    if (!isEmailOk || !isPasswordOk) {
+      setError({ message: !isEmailOk ? "Please enter a valid email address." : "Password must be at least 8 characters and contain a letter and a number." });
+      return;
+    }
+    if (!acceptedTerms) {
+      setError({ message: "You must accept the Terms & Privacy Policy to continue." });
+      return;
+    }
     setIsLoading(true);
     try {
       const response = await api.post("/auth/register", {
@@ -54,9 +73,6 @@ export default function RegisterPage() {
         password,
         role,
       });
-
-      console.log("✅ Full Response:", response.data);
-
       const data = response.data.data;
       const user = {
         id: data.id,
@@ -68,10 +84,6 @@ export default function RegisterPage() {
         createdAt: new Date().toISOString(),
       };
       const accessToken = data.accessToken;
-
-      console.log("✅ User:", user);
-      console.log("✅ Token:", accessToken);
-
       login(user, accessToken);
       toast({
         title: "Account created!",
@@ -83,8 +95,6 @@ export default function RegisterPage() {
           : "/dashboard/candidate",
       );
     } catch (err: any) {
-      console.log("❌ Error:", err);
-      console.log("❌ Error Response:", err.response?.data);
       const msg = err.response?.data?.message || "Something went wrong";
       if (
         msg.toLowerCase().includes("email") ||
@@ -151,8 +161,8 @@ export default function RegisterPage() {
       >
         <div className="h-1 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
 
-        <div className="p-5 space-y-1">
-          <div className="flex justify-center">
+        <div className="p-8 space-y-3">
+          <div className="flex justify-center mb-0">
             <a href="/">
               <img
                 src={isDark ? logo : logoLight}
@@ -162,8 +172,8 @@ export default function RegisterPage() {
             </a>
           </div>
 
-          <div className="text-center">
-            <h2 className="text-2xl font-bold">Create your account 🚀</h2>
+          <div className="text-center mt-3">
+            <h2 className="text-2xl font-bold">Create your account</h2>
             <p className="text-sm text-muted-foreground mt-1">
               Join InterviewOS today
             </p>
@@ -182,7 +192,10 @@ export default function RegisterPage() {
                 id="name"
                 placeholder="Enter your Name"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  if (error) setError(null);
+                }}
                 required
                 className={`mt-1.5 bg-secondary ${error?.field === "name" ? "border-destructive focus-visible:ring-destructive" : "border-border"}`}
               />
@@ -200,9 +213,20 @@ export default function RegisterPage() {
                 type="email"
                 placeholder="Enter your Email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={`mt-1.5 bg-secondary ${error?.field === "email" ? "border-destructive focus-visible:ring-destructive" : "border-border"}`}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (error) setError(null);
+                  // Email format validation
+                  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                  setEmailValid(emailPattern.test(e.target.value));
+                }}
+                className={`mt-1.5 bg-secondary ${!emailValid || error?.field === "email" ? "border-destructive focus-visible:ring-destructive" : "border-border"}`}
               />
+              {!emailValid && (
+                <p className="text-xs text-destructive mt-1.5 animate-in fade-in slide-in-from-top-1">
+                  Please enter a valid email address.
+                </p>
+              )}
               {error?.field === "email" && (
                 <p className="text-xs text-destructive mt-1.5 animate-in fade-in slide-in-from-top-1">
                   {error.message}
@@ -216,12 +240,26 @@ export default function RegisterPage() {
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Min 8 characters"
+                  placeholder="Min 8 characters, 1 letter, 1 number"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (error) setError(null);
+                    // Password strength
+                    const val = e.target.value;
+                    let strength = "";
+                    if (val.length < 8) strength = "Too short";
+                    else if (/^(?=.*[a-zA-Z])(?=.*\d).{8,}$/.test(val)) {
+                      if (/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{10,}$/.test(val)) strength = "Strong";
+                      else if (/^(?=.*[a-zA-Z])(?=.*\d).{10,}$/.test(val)) strength = "Good";
+                      else strength = "Fair";
+                    } else strength = "Weak";
+                    setPasswordStrength(strength);
+                    setPasswordValid(val.length >= 8 && /[A-Za-z]/.test(val) && /[0-9]/.test(val));
+                  }}
                   required
                   minLength={8}
-                  className={`bg-secondary pr-10 ${error?.field === "password" ? "border-destructive focus-visible:ring-destructive" : "border-border"}`}
+                  className={`bg-secondary pr-10 ${!passwordValid || error?.field === "password" ? "border-destructive focus-visible:ring-destructive" : "border-border"}`}
                 />
                 <button
                   type="button"
@@ -235,6 +273,28 @@ export default function RegisterPage() {
                   )}
                 </button>
               </div>
+              {password && (
+                <div className="mt-1 text-xs">
+                  <span className={`font-medium ${
+                    passwordStrength === "Strong"
+                      ? "text-green-600"
+                      : passwordStrength === "Good"
+                      ? "text-blue-600"
+                      : passwordStrength === "Fair"
+                      ? "text-yellow-600"
+                      : passwordStrength === "Weak" || passwordStrength === "Too short"
+                      ? "text-destructive"
+                      : ""
+                  }`}>
+                    Password strength: {passwordStrength}
+                  </span>
+                </div>
+              )}
+              {!passwordValid && (
+                <p className="text-xs text-destructive mt-1.5 animate-in fade-in slide-in-from-top-1">
+                  Password must be at least 8 characters and contain a letter and a number.
+                </p>
+              )}
               {error?.field === "password" && (
                 <p className="text-xs text-destructive mt-1.5 animate-in fade-in slide-in-from-top-1">
                   {error.message}
@@ -262,9 +322,29 @@ export default function RegisterPage() {
               </div>
             </div>
 
+            <div className="flex items-center gap-2 mt-2">
+              <input
+                type="checkbox"
+                id="terms"
+                checked={acceptedTerms}
+                onChange={e => {
+                  setAcceptedTerms(e.target.checked);
+                  if (error) setError(null);
+                }}
+                className="accent-primary"
+                required
+              />
+              <label htmlFor="terms" className="text-xs select-none">
+                I agree to the
+                <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-primary underline mx-1">Terms</a>
+                &
+                <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline mx-1">Privacy Policy</a>
+              </label>
+            </div>
+
             <Button
               type="submit"
-              className="w-full bg-gradient-primary hover:opacity-90 h-11"
+              className="w-full bg-gradient-primary hover:opacity-90 h-11 mt-2"
               disabled={isLoading}
             >
               {isLoading ? "Creating account..." : "Create Account"}
@@ -303,15 +383,17 @@ export default function RegisterPage() {
             Continue with Google
           </Button>
 
-          <p className="text-center text-sm text-muted-foreground">
-            Already have an account?{" "}
-            <Link
-              to="/login"
-              className="text-primary hover:underline font-medium"
-            >
-              Sign in
-            </Link>
-          </p>
+          <div className="mt-4">
+            <p className="text-center text-sm text-muted-foreground">
+              Already have an account?{' '}
+              <Link
+                to="/login"
+                className="text-primary font-semibold hover:underline"
+              >
+                Sign in
+              </Link>
+            </p>
+          </div>
         </div>
       </motion.div>
     </div>

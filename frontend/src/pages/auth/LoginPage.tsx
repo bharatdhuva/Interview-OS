@@ -155,11 +155,12 @@ export default function LoginPage() {
             </a>
           </div>
 
+
           {/* Heading */}
           <div className="text-center mt-3">
-            <h2 className="text-2xl font-bold">Create your account 🚀</h2>
+            <h2 className="text-2xl font-bold">Sign in to your account</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Join InterviewOS today
+              Welcome back! Please enter your details.
             </p>
           </div>
 
@@ -168,6 +169,7 @@ export default function LoginPage() {
               {error.message}
             </p>
           )}
+
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-1">
@@ -178,7 +180,10 @@ export default function LoginPage() {
                 type="email"
                 placeholder="example@gmail.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (error) setError(null);
+                }}
                 required
                 className={`mt-1.5 bg-secondary ${error?.field === "email" ? "border-destructive focus-visible:ring-destructive" : "border-border"}`}
               />
@@ -194,7 +199,7 @@ export default function LoginPage() {
                 <Label htmlFor="password">Password</Label>
                 <Link
                   to="/forgot-password"
-                  className="text-xs text-primary hover:underline"
+                  className="text-xs text-primary font-semibold hover:underline"
                 >
                   Forgot password?
                 </Link>
@@ -205,7 +210,10 @@ export default function LoginPage() {
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (error) setError(null);
+                  }}
                   required
                   className={`bg-secondary pr-10 ${error?.field === "password" ? "border-destructive focus-visible:ring-destructive" : "border-border"}`}
                 />
@@ -228,12 +236,19 @@ export default function LoginPage() {
               )}
             </div>
 
+            <div className="flex items-center justify-between mt-2 mb-2">
+              <label className="flex items-center gap-2 text-xs cursor-pointer select-none">
+                <input type="checkbox" className="accent-primary" />
+                Remember me
+              </label>
+            </div>
+
             <Button
               type="submit"
-              className="w-full bg-gradient-primary hover:opacity-90 h-11"
+              className="w-full bg-gradient-primary hover:opacity-90 h-11 mt-2"
               disabled={isLoading}
             >
-              {isLoading ? "Signing in..." : "Continue"}
+              {isLoading ? "Signing in..." : "Sign in"}
             </Button>
           </form>
 
@@ -272,15 +287,17 @@ export default function LoginPage() {
           </Button>
 
           {/* Sign up link */}
-          <p className="text-center text-sm text-muted-foreground">
-            Don't have an account?{" "}
-            <Link
-              to="/register"
-              className="text-primary hover:underline font-medium"
-            >
-              Sign up
-            </Link>
-          </p>
+          <div className="mt-4">
+            <p className="text-center text-sm text-muted-foreground">
+              Don't have an account?{' '}
+              <Link
+                to="/register"
+                className="text-primary font-semibold hover:underline"
+              >
+                Sign up
+              </Link>
+            </p>
+          </div>
         </div>
       </motion.div>
     </div>
