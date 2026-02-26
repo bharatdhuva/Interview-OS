@@ -64,61 +64,61 @@
   }
 
   .dark {
-    --background: 0 0% 6%;
-    --foreground: 0 0% 95%;
+    --background: 222 54% 8%;
+    --foreground: 210 40% 98%;
 
-    --card: 0 0% 10%;
-    --card-foreground: 0 0% 95%;
+    --card: 221 39% 11%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 0 0% 10%;
-    --popover-foreground: 0 0% 95%;
+    --popover: 221 39% 11%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 239 84% 67%;
+    --primary: 263 84% 58%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 15%;
-    --secondary-foreground: 0 0% 90%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 55%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 16% 65%;
 
-    --accent: 239 84% 67%;
+    --accent: 263 84% 58%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 18%;
-    --input: 0 0% 18%;
-    --ring: 239 84% 67%;
+    --border: 217 33% 17%;
+    --input: 217 33% 20%;
+    --ring: 263 84% 58%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 0 0% 8%;
-    --sidebar-foreground: 0 0% 85%;
-    --sidebar-primary: 239 84% 67%;
+    --sidebar-background: 222 54% 6%;
+    --sidebar-foreground: 215 16% 65%;
+    --sidebar-primary: 263 84% 58%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 14%;
-    --sidebar-accent-foreground: 0 0% 90%;
-    --sidebar-border: 0 0% 16%;
-    --sidebar-ring: 239 84% 67%;
+    --sidebar-accent: 217 33% 14%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217 33% 17%;
+    --sidebar-ring: 263 84% 58%;
 
     /* Custom tokens */
-    --surface: 0 0% 10%;
-    --surface-hover: 0 0% 14%;
+    --surface: 221 39% 11%;
+    --surface-hover: 217 33% 17%;
     --success: 142 76% 46%;
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 10%;
-    --info: 199 89% 48%;
+    --info: 189 95% 43%;
     --info-foreground: 0 0% 100%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(239, 84%, 67%), hsl(280, 87%, 65%));
-    --gradient-surface: linear-gradient(180deg, hsl(0, 0%, 10%), hsl(0, 0%, 7%));
-    --gradient-glow: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), hsl(239, 84%, 67%, 0.06), transparent 40%);
+    --gradient-primary: linear-gradient(135deg, hsl(263, 84%, 58%), hsl(189, 95%, 43%));
+    --gradient-surface: linear-gradient(180deg, hsl(221, 39%, 11%), hsl(222, 54%, 8%));
+    --gradient-glow: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), hsl(263, 84%, 58%, 0.08), transparent 40%);
 
-    --shadow-glow: 0 0 60px -12px hsl(239, 84%, 67%, 0.25);
-    --shadow-card: 0 4px 24px -4px hsl(0, 0%, 0%, 0.4);
+    --shadow-glow: 0 0 60px -12px hsl(263, 84%, 58%, 0.3);
+    --shadow-card: 0 4px 24px -4px hsl(0, 0%, 0%, 0.5);
   }
 }
 
@@ -198,11 +198,11 @@
 
   0%,
   100% {
-    box-shadow: 0 0 20px -8px hsl(239, 84%, 67%, 0.3);
+    box-shadow: 0 0 20px -8px hsl(263, 84%, 58%, 0.3);
   }
 
   50% {
-    box-shadow: 0 0 40px -8px hsl(239, 84%, 67%, 0.5);
+    box-shadow: 0 0 40px -8px hsl(263, 84%, 58%, 0.5);
   }
 }
 
@@ -264,16 +264,22 @@
 
 .animate-text-shimmer {
   background: linear-gradient(90deg,
-      hsl(239, 84%, 67%) 0%,
-      hsl(280, 87%, 65%) 25%,
+      hsl(263, 84%, 58%) 0%,
+      hsl(189, 95%, 43%) 25%,
       hsl(0, 0%, 100%) 50%,
-      hsl(280, 87%, 65%) 75%,
-      hsl(239, 84%, 67%) 100%);
+      hsl(189, 95%, 43%) 75%,
+      hsl(263, 84%, 58%) 100%);
   background-size: 200% auto;
   color: transparent;
   -webkit-background-clip: text;
   background-clip: text;
   animation: shine 4s linear infinite;
+}
+
+/* Dot grid pattern for depth */
+.bg-dot-pattern {
+  background-image: radial-gradient(circle, hsl(263, 84%, 58%, 0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
 }
 
 @keyframes blink-caret {
@@ -293,8 +299,15 @@
 }
 
 @keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
 }
 
 @keyframes marquee-left {

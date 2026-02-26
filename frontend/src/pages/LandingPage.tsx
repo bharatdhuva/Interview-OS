@@ -35,6 +35,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import heroBg from "@/assets/hero-bg.jpg";
+import heroInterview from "@/assets/hero-interview.png";
 import logo from "@/assets/logo.png";
 import msuLogo from "@/assets/Partner-Logos/msu.png";
 import ldceLogo from "@/assets/Partner-Logos/ldce.png";
@@ -636,115 +637,287 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero */}
-      <section className="relative pt-20 pb-20 overflow-hidden">
+      <section className="relative pt-28 pb-20 overflow-hidden">
         <div className="absolute inset-0 opacity-22 dark:opacity-30">
           <img src={heroBg} alt="" className="w-full h-full object-cover" />
         </div>
         <div className="absolute inset-0 bg-gradient-to-b from-background/75 via-background/90 to-background dark:from-background/50 dark:via-background/80 dark:to-background" />
 
         <div className="container relative z-10">
-          <motion.div
-            className="max-w-4xl mx-auto text-center"
-            initial="hidden"
-            animate="visible"
-          >
-            <motion.div
-              variants={fadeInUp}
-              custom={0}
-              className="inline-flex items-center gap-2 px-4 py-1.5 mb-8 text-xs font-medium rounded-full border border-primary/50 bg-primary/20 text-primary dark:text-purple-200 shadow-[0_0_15px_rgba(168,85,247,0.15)] backdrop-blur-sm"
-            >
-              <Star className="w-3 h-3 text-primary" /> Built for engineering
-              interviews
-            </motion.div>
-
-            <motion.h1
-              variants={fadeInUp}
-              custom={1}
-              className="text-5xl md:text-7xl font-display font-bold leading-[1.1] mb-6 dark:text-white"
-              style={{ color: isDark ? undefined : "hsl(239, 40%, 25%)" }}
-            >
-              Where great{" "}
-              <span className="text-gradient">
-                {displayText}
-                <span
-                  className="inline-block w-[3px] h-[0.85em] ml-1 align-middle rounded-sm"
-                  style={{
-                    background: "linear-gradient(to bottom, #a855f7, #6366f1)",
-                    animation: "blink 1s step-end infinite",
-                  }}
-                />
-              </span>
-              <br />
-              get hired
-            </motion.h1>
-
-            <motion.p
-              variants={fadeInUp}
-              custom={2}
-              className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10"
-            >
-              The all-in-one interview platform with live coding, WebRTC video,
-              AI-powered assistance, and structured feedback — built for teams
-              that take hiring seriously.
-            </motion.p>
-
-            <motion.div
-              variants={fadeInUp}
-              custom={3}
-              className="flex flex-col sm:flex-row items-center justify-center gap-4"
-            >
-              <Button
-                size="lg"
-                asChild
-                className="group rounded-full bg-gradient-primary hover:opacity-90 transition-all duration-300 text-base px-8 h-12 font-semibold relative overflow-hidden"
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left: Text Content */}
+            <motion.div initial="hidden" animate="visible">
+              <motion.div
+                variants={fadeInUp}
+                custom={0}
+                className="inline-flex items-center gap-2 px-4 py-1.5 mb-8 text-xs font-medium rounded-full border border-primary/50 bg-primary/20 text-primary dark:text-purple-200 shadow-[0_0_15px_rgba(168,85,247,0.15)] backdrop-blur-sm"
               >
-                <Link to="/login" className="flex items-center gap-3">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="transition-transform duration-300 group-hover:animate-[ring_0.5s_ease-in-out_infinite]"
+                <Zap className="w-3 h-3 text-primary" /> Real-time Collaboration
+              </motion.div>
+
+              <motion.h1
+                variants={fadeInUp}
+                custom={1}
+                className="text-4xl md:text-5xl lg:text-6xl font-display font-bold leading-[1.1] mb-6 dark:text-white"
+                style={{ color: isDark ? undefined : "hsl(239, 40%, 25%)" }}
+              >
+                Code Together,
+                <br />
+                <span className="text-gradient">Learn Together</span>
+              </motion.h1>
+
+              <motion.p
+                variants={fadeInUp}
+                custom={2}
+                className="text-lg text-muted-foreground max-w-xl mb-8"
+              >
+                The ultimate platform for collaborative coding interviews and
+                pair programming. Connect face-to-face, code in real-time, and
+                ace your technical interviews.
+              </motion.p>
+
+              {/* Feature Badges */}
+              <motion.div
+                variants={fadeInUp}
+                custom={2.5}
+                className="flex flex-wrap items-center gap-3 mb-8"
+              >
+                {[
+                  { icon: Video, label: "Live Video Chat" },
+                  { icon: Code2, label: "Code Editor" },
+                  { icon: PenLine, label: "Whiteboard" },
+                ].map((badge) => (
+                  <div
+                    key={badge.label}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/30 bg-primary/10 text-sm text-foreground backdrop-blur-sm"
                   >
-                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                  </svg>
-                  <span className="pb-[1px]">Start Interview</span>
-                  <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
-                </Link>
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                asChild
-                className="rounded-full text-base px-10 h-12 border border-foreground/20 hover:bg-secondary/50 transition-all duration-200 font-semibold"
+                    <badge.icon className="w-3.5 h-3.5 text-primary" />
+                    {badge.label}
+                  </div>
+                ))}
+              </motion.div>
+
+              {/* CTA Buttons */}
+              <motion.div
+                variants={fadeInUp}
+                custom={3}
+                className="flex flex-col sm:flex-row items-start gap-4"
               >
-                <Link to="/login">View Demo</Link>
-              </Button>
+                <Button
+                  size="lg"
+                  asChild
+                  className="group rounded-full bg-gradient-primary hover:opacity-90 transition-all duration-300 text-base px-8 h-12 font-semibold relative overflow-hidden"
+                >
+                  <Link to="/login" className="flex items-center gap-3">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="transition-transform duration-300 group-hover:animate-[ring_0.5s_ease-in-out_infinite]"
+                    >
+                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                    </svg>
+                    <span className="pb-[1px]">Start Interview</span>
+                    <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+                  </Link>
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  asChild
+                  className="rounded-full text-base px-10 h-12 border border-foreground/20 hover:bg-secondary/50 transition-all duration-200 font-semibold"
+                >
+                  <Link to="/login">View Demo</Link>
+                </Button>
+              </motion.div>
+
+              {/* Stats Bar */}
+              <motion.div
+                variants={fadeInUp}
+                custom={4}
+                className="flex items-center gap-8 mt-12 pt-8 border-t border-border/50"
+              >
+                {[
+                  { value: "10K+", label: "Active Users" },
+                  { value: "50K+", label: "Sessions" },
+                  { value: "99.9%", label: "Uptime" },
+                ].map((stat, idx) => (
+                  <div key={stat.label} className="flex items-center gap-8">
+                    <div>
+                      <div className="text-2xl md:text-3xl font-display font-bold text-gradient">
+                        {stat.value}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {stat.label}
+                      </div>
+                    </div>
+                    {idx < 2 && (
+                      <div className="w-px h-10 bg-border/50 hidden sm:block" />
+                    )}
+                  </div>
+                ))}
+              </motion.div>
             </motion.div>
 
-            {/* Stats */}
+            {/* Right: Hero Illustration */}
             <motion.div
-              variants={fadeInUp}
-              custom={4}
-              className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16 max-w-2xl mx-auto"
+              initial={{ opacity: 0, x: 40, scale: 0.95 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
+              className="relative hidden lg:flex items-center justify-center"
             >
-              {stats.map((stat) => (
-                <div key={stat.label} className="text-center">
-                  <div className="text-2xl font-display font-bold text-gradient">
-                    {stat.value}
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {stat.label}
-                  </div>
+              <div className="relative w-full max-w-lg">
+                <div className="relative z-10">
+                  {/* Glow behind image */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-purple-500/10 to-transparent rounded-3xl blur-3xl" />
+
+                  {/* Interview Image (static, no animation) */}
+                  <img
+                    src={heroInterview}
+                    alt="Interview illustration"
+                    className="w-full h-auto drop-shadow-2xl relative z-10"
+                  />
+
+                  {/* === Animated Q&A Speech Bubbles === */}
+
+                  {/* Q1 — Above interviewer (top-left) */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: [0, 1, 1, 1, 0], y: [10, 0, 0, 0, -4] }}
+                    transition={{
+                      repeat: Infinity,
+                      repeatDelay: 14,
+                      duration: 7,
+                      ease: "easeOut",
+                      times: [0, 0.1, 0.4, 0.85, 1],
+                    }}
+                    className="absolute top-[-8%] left-[2%] z-20 max-w-[160px]"
+                  >
+                    <div className="bg-indigo-600 text-white text-[11px] leading-snug px-3.5 py-2.5 rounded-xl shadow-lg shadow-indigo-500/30">
+                      What is a closure in JavaScript?
+                    </div>
+                    <div className="w-0 h-0 ml-4 border-l-[6px] border-r-[6px] border-t-[8px] border-l-transparent border-r-transparent border-t-indigo-600" />
+                  </motion.div>
+
+                  {/* A1 — Above candidate (top-right) */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{
+                      opacity: [0, 0, 1, 1, 1, 0],
+                      y: [10, 10, 0, 0, 0, -4],
+                    }}
+                    transition={{
+                      repeat: Infinity,
+                      repeatDelay: 14,
+                      duration: 7,
+                      ease: "easeOut",
+                      times: [0, 0.18, 0.28, 0.5, 0.85, 1],
+                    }}
+                    className="absolute top-[-5%] right-[2%] z-20 max-w-[170px]"
+                  >
+                    <div className="bg-emerald-600 text-white text-[11px] leading-snug px-3.5 py-2.5 rounded-xl shadow-lg shadow-emerald-500/30">
+                      It's a function that remembers variables from its outer
+                      scope even after that function returns.
+                    </div>
+                    <div className="w-0 h-0 ml-auto mr-4 border-l-[6px] border-r-[6px] border-t-[8px] border-l-transparent border-r-transparent border-t-emerald-600" />
+                  </motion.div>
+
+                  {/* Q2 — Above interviewer */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: [0, 1, 1, 1, 0], y: [10, 0, 0, 0, -4] }}
+                    transition={{
+                      repeat: Infinity,
+                      repeatDelay: 14,
+                      duration: 7,
+                      delay: 7,
+                      ease: "easeOut",
+                      times: [0, 0.1, 0.4, 0.85, 1],
+                    }}
+                    className="absolute top-[-8%] left-[2%] z-20 max-w-[160px]"
+                  >
+                    <div className="bg-purple-600 text-white text-[11px] leading-snug px-3.5 py-2.5 rounded-xl shadow-lg shadow-purple-500/30">
+                      Difference between == and === ?
+                    </div>
+                    <div className="w-0 h-0 ml-4 border-l-[6px] border-r-[6px] border-t-[8px] border-l-transparent border-r-transparent border-t-purple-600" />
+                  </motion.div>
+
+                  {/* A2 — Above candidate */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{
+                      opacity: [0, 0, 1, 1, 1, 0],
+                      y: [10, 10, 0, 0, 0, -4],
+                    }}
+                    transition={{
+                      repeat: Infinity,
+                      repeatDelay: 14,
+                      duration: 7,
+                      delay: 7,
+                      ease: "easeOut",
+                      times: [0, 0.18, 0.28, 0.5, 0.85, 1],
+                    }}
+                    className="absolute top-[-5%] right-[2%] z-20 max-w-[170px]"
+                  >
+                    <div className="bg-teal-600 text-white text-[11px] leading-snug px-3.5 py-2.5 rounded-xl shadow-lg shadow-teal-500/30">
+                      == does type coercion, === checks both value and type
+                      strictly.
+                    </div>
+                    <div className="w-0 h-0 ml-auto mr-4 border-l-[6px] border-r-[6px] border-t-[8px] border-l-transparent border-r-transparent border-t-teal-600" />
+                  </motion.div>
+
+                  {/* Q3 — Above interviewer */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: [0, 1, 1, 1, 0], y: [10, 0, 0, 0, -4] }}
+                    transition={{
+                      repeat: Infinity,
+                      repeatDelay: 14,
+                      duration: 7,
+                      delay: 14,
+                      ease: "easeOut",
+                      times: [0, 0.1, 0.4, 0.85, 1],
+                    }}
+                    className="absolute top-[-8%] left-[2%] z-20 max-w-[160px]"
+                  >
+                    <div className="bg-indigo-600 text-white text-[11px] leading-snug px-3.5 py-2.5 rounded-xl shadow-lg shadow-indigo-500/30">
+                      Time complexity of binary search?
+                    </div>
+                    <div className="w-0 h-0 ml-4 border-l-[6px] border-r-[6px] border-t-[8px] border-l-transparent border-r-transparent border-t-indigo-600" />
+                  </motion.div>
+
+                  {/* A3 — Above candidate */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{
+                      opacity: [0, 0, 1, 1, 1, 0],
+                      y: [10, 10, 0, 0, 0, -4],
+                    }}
+                    transition={{
+                      repeat: Infinity,
+                      repeatDelay: 14,
+                      duration: 7,
+                      delay: 14,
+                      ease: "easeOut",
+                      times: [0, 0.18, 0.28, 0.5, 0.85, 1],
+                    }}
+                    className="absolute top-[-5%] right-[2%] z-20 max-w-[170px]"
+                  >
+                    <div className="bg-emerald-600 text-white text-[11px] leading-snug px-3.5 py-2.5 rounded-xl shadow-lg shadow-emerald-500/30">
+                      O(log n) — it halves the search space with each step.
+                    </div>
+                    <div className="w-0 h-0 ml-auto mr-4 border-l-[6px] border-r-[6px] border-t-[8px] border-l-transparent border-r-transparent border-t-emerald-600" />
+                  </motion.div>
                 </div>
-              ))}
+              </div>
             </motion.div>
-          </motion.div>
+          </div>
         </div>
       </section>
 
