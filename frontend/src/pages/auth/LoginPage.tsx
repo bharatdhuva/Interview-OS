@@ -1,305 +1,331 @@
-import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
-import heroBg from "@/assets/hero-bg.jpg";
-import logo from "@/assets/Logo.png";
-const logoLight = "/logo-light.png";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Eye, EyeOff } from "lucide-react";
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  ArrowRight,
+  Check,
+  Loader2,
+} from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import AuthLayout from "@/components/AuthLayout";
+import GoogleIcon from "@/components/GoogleIcon";
 import { useAuthStore } from "@/store/authStore";
 import { useToast } from "@/hooks/use-toast";
 import { useGoogleLogin } from "@react-oauth/google";
 import api from "@/lib/api";
 
-export default function LoginPage() {
+const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<{
-    field?: string;
-    message: string;
-  } | null>(null);
-  const [isDark, setIsDark] = useState(
-    document.documentElement.classList.contains("dark"),
-  );
-
-  useEffect(() => {
-    const observer = new MutationObserver(() => {
-      setIsDark(document.documentElement.classList.contains("dark"));
-    });
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-    return () => observer.disconnect();
-  }, []);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const navigate = useNavigate();
   const login = useAuthStore((s) => s.login);
   const { toast } = useToast();
 
+  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setIsLoading(true);
+    if (!email.trim() || !isEmailValid) {
+      setError("Please enter a valid email address");
+      return;
+    }
+    if (!password) {
+      setError("Please enter your password");
+      return;
+    }
+
+    setError("");
+    setLoading(true);
     try {
-      const response = await api.post("/auth/login", { email, password });
-      const data = response.data.data;
+      const res = await api.post("/auth/login", {
+        email: email.trim(),
+        password,
+      });
+      const d = res.data.data;
       const user = {
-        id: data.id,
-        name: data.name,
-        email: data.email,
-        role: data.role,
-        avatar: data.avatar || "",
+        id: d.id,
+        name: d.name,
+        email: d.email,
+        role: d.role,
+        avatar: d.avatar || "",
         isEmailVerified: true,
         createdAt: new Date().toISOString(),
       };
-      const accessToken = data.accessToken;
-      login(user, accessToken);
-      toast({ title: `Welcome back, ${user.name}!` });
+      login(user, d.accessToken);
+      toast({
+        title: "Welcome back!",
+        description: "You have successfully signed in.",
+      });
       navigate(
         user.role === "interviewer"
           ? "/dashboard/interviewer"
           : "/dashboard/candidate",
       );
-    } catch (err: any) {
-      const msg = err.response?.data?.message || "Invalid credentials";
-      // Basic heuristic to attach error to a field
-      if (
-        msg.toLowerCase().includes("email") ||
-        msg.toLowerCase().includes("user")
-      ) {
-        setError({ field: "email", message: msg });
-      } else if (msg.toLowerCase().includes("password")) {
-        setError({ field: "password", message: msg });
-      } else {
-        setError({ field: "password", message: msg });
-      }
+    } catch (err: unknown) {
+      const msg =
+        (err as any)?.response?.data?.message || "Invalid email or password";
+      setError(msg);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   const handleGoogle = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       try {
-        setError(null);
-        setIsLoading(true);
-        const response = await api.post("/auth/google", {
+        setError("");
+        setLoading(true);
+        // By default, assuming role is handled backend or we pass a generic one for login
+        // If login needs role, backend usually infers it for existing google users
+        const res = await api.post("/auth/google", {
           token: tokenResponse.access_token,
-          role: "candidate",
         });
-        const data = response.data.data;
-        const user = {
-          id: data.id,
-          name: data.name,
-          email: data.email,
-          role: data.role,
-          avatar: data.avatar || "",
-          isEmailVerified: true,
-          createdAt: new Date().toISOString(),
-        };
-        const accessToken = data.accessToken;
+        const { user, accessToken } = res.data.data;
         login(user, accessToken);
-        toast({ title: `Welcome back, ${user.name}!` });
+        toast({ title: `Welcome, ${user.name}!` });
         navigate(
           user.role === "interviewer"
             ? "/dashboard/interviewer"
             : "/dashboard/candidate",
         );
-      } catch (err: any) {
-        setError({
-          message: err.response?.data?.message || "Authentication failed",
-        });
+      } catch (err: unknown) {
+        setError(
+          (err as any)?.response?.data?.message ||
+            "Google authentication failed",
+        );
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     },
-    onError: () => {
-      setError({ message: "Google Login Failed" });
-    },
+    onError: () => setError("Google sign-in failed. Please try again."),
   });
 
+  const stagger = (i: number) => ({ delay: 0.15 + i * 0.06 });
+
   return (
-    <div className="min-h-screen relative overflow-hidden flex items-center justify-center">
-      {/* Background */}
-      <img
-        src={heroBg}
-        alt=""
-        className={`absolute inset-0 w-full h-full object-cover filter blur-sm ${isDark ? "brightness-75" : "brightness-100"}`}
-      />
-      <div
-        className={`absolute inset-0 ${isDark ? "bg-black/40" : "bg-gradient-to-b from-white/70 via-white/85 to-white/95"}`}
-      />
+    <AuthLayout variant="login">
+      <form onSubmit={handleSubmit} className="flex flex-col">
+        {/* Header */}
+        <motion.div
+          initial={{ y: 12, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={stagger(0)}
+          className="text-center mb-7"
+        >
+          <h1
+            className="text-[22px] font-bold"
+            style={{ color: "#ededf0", letterSpacing: "-0.03em" }}
+          >
+            Welcome back 👋
+          </h1>
+          <p className="text-[13px] mt-1.5" style={{ color: "#888899" }}>
+            Sign in to your InterviewOS account
+          </p>
+        </motion.div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative w-full max-w-md mx-4 bg-secondary/90 backdrop-blur-md rounded-2xl shadow-xl overflow-hidden"
-      >
-        {/* Top colored bar */}
-        <div className="h-1 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
-
-        <div className="p-8 space-y-3">
-          {/* Logo */}
-          <div className="flex justify-center mb-0">
-            <a href="/">
-              <img
-                src={isDark ? logo : logoLight}
-                alt="InterviewOS"
-                className="h-16 w-auto object-contain"
+        <div className="flex flex-col gap-4">
+          {/* Email */}
+          <motion.div
+            initial={{ y: 12, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={stagger(1)}
+          >
+            <label htmlFor="login-email" className="ios-label">
+              Email Address
+            </label>
+            <div className="relative">
+              <Mail
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2"
+                style={{ color: "#444455" }}
               />
-            </a>
-          </div>
-
-
-          {/* Heading */}
-          <div className="text-center mt-3">
-            <h2 className="text-2xl font-bold">Sign in to your account</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Welcome back! Please enter your details.
-            </p>
-          </div>
-
-          {!error?.field && error?.message && (
-            <p className="text-sm text-destructive text-center font-medium animate-in fade-in slide-in-from-top-1">
-              {error.message}
-            </p>
-          )}
-
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-1">
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
+              <input
+                id="login-email"
                 type="email"
-                placeholder="example@gmail.com"
+                className="ios-input"
+                placeholder="you@example.com"
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
-                  if (error) setError(null);
+                  if (error) setError("");
                 }}
                 required
-                className={`mt-1.5 bg-secondary ${error?.field === "email" ? "border-destructive focus-visible:ring-destructive" : "border-border"}`}
+                autoComplete="email"
               />
-              {error?.field === "email" && (
-                <p className="text-xs text-destructive mt-1.5 animate-in fade-in slide-in-from-top-1">
-                  {error.message}
-                </p>
+              {isEmailValid && (
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                >
+                  <Check size={16} style={{ color: "#22c55e" }} />
+                </motion.div>
               )}
             </div>
+          </motion.div>
 
-            <div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                <Link
-                  to="/forgot-password"
-                  className="text-xs text-primary font-semibold hover:underline"
-                >
-                  Forgot password?
-                </Link>
-              </div>
-              <div className="relative mt-1.5">
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Enter password"
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    if (error) setError(null);
-                  }}
-                  required
-                  className={`bg-secondary pr-10 ${error?.field === "password" ? "border-destructive focus-visible:ring-destructive" : "border-border"}`}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-4 h-4" />
-                  ) : (
-                    <Eye className="w-4 h-4" />
-                  )}
-                </button>
-              </div>
-              {error?.field === "password" && (
-                <p className="text-xs text-destructive mt-1.5 animate-in fade-in slide-in-from-top-1">
-                  {error.message}
-                </p>
-              )}
-            </div>
-
-            <div className="flex items-center justify-between mt-2 mb-2">
-              <label className="flex items-center gap-2 text-xs cursor-pointer select-none">
-                <input type="checkbox" className="accent-primary" />
-                Remember me
-              </label>
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full bg-gradient-primary hover:opacity-90 h-11 mt-2"
-              disabled={isLoading}
-            >
-              {isLoading ? "Signing in..." : "Sign in"}
-            </Button>
-          </form>
-
-          {/* Divider */}
-          <div className="flex items-center gap-2">
-            <div className="h-px bg-border flex-1" />
-            <span className="text-xs text-muted-foreground">or</span>
-            <div className="h-px bg-border flex-1" />
-          </div>
-
-          {/* Google */}
-          <Button
-            variant="outline"
-            className="w-full flex items-center justify-center gap-2 bg-transparent border-border hover:bg-primary/10 hover:backdrop-blur-md hover:border-primary/50 transition-all duration-300"
-            onClick={() => handleGoogle()}
+          {/* Password */}
+          <motion.div
+            initial={{ y: 12, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={stagger(2)}
           >
-            <svg className="w-5 h-5" viewBox="0 0 533.5 544.3">
-              <path
-                fill="#4285F4"
-                d="M533.5 278.4c0-17.4-1.5-34.1-4.3-50.3H272v95.1h146.9c-6.3 34-25 62.8-53.3 82v68h86.1c50.2-46.3 80-114.3 80-194.8z"
-              />
-              <path
-                fill="#34A853"
-                d="M272 544.3c72.6 0 133.7-24 178.3-65.4l-86.1-68c-24 16.1-54.8 25.5-92.2 25.5-70.9 0-131-47.9-152.5-112.1h-89.8v70.5c44.8 88.5 137.2 149.5 242.3 149.5z"
-              />
-              <path
-                fill="#FBBC05"
-                d="M119.5 322.8c-10.4-31-10.4-64.5 0-95.5v-70.5h-89.8c-39.5 78.9-39.5 170.6 0 249.5l89.8-70.5z"
-              />
-              <path
-                fill="#EA4335"
-                d="M272 107.7c39.5 0 75 13.6 103 40.1l77.4-77.4C397.9 24.2 339 0 272 0 166.9 0 74.5 61 29.7 149.5l89.8 70.5C141 155.6 201.1 107.7 272 107.7z"
-              />
-            </svg>
-            Continue with Google
-          </Button>
-
-          {/* Sign up link */}
-          <div className="mt-4">
-            <p className="text-center text-sm text-muted-foreground">
-              Don't have an account?{' '}
+            <div className="flex justify-between items-center mb-1.5">
+              <label htmlFor="login-password" className="ios-label !mb-0">
+                Password
+              </label>
               <Link
-                to="/register"
-                className="text-primary font-semibold hover:underline"
+                to="/forgot-password"
+                className="text-xs font-medium transition-colors hover:brightness-125"
+                style={{ color: "#6366f1" }}
               >
-                Sign up
+                Forgot password?
               </Link>
-            </p>
-          </div>
+            </div>
+            <div className="relative">
+              <Lock
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2"
+                style={{ color: "#444455" }}
+              />
+              <input
+                id="login-password"
+                type={showPassword ? "text" : "password"}
+                className="ios-input !pr-10"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (error) setError("");
+                }}
+                required
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer"
+                style={{ color: "#444455" }}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+          </motion.div>
+
+          {/* Error */}
+          {error && (
+            <motion.p
+              initial={{ y: -4, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              className="text-[11px]"
+              style={{ color: "#f87171" }}
+              role="alert"
+            >
+              {error}
+            </motion.p>
+          )}
+
+          {/* Remember me */}
+          <motion.div
+            initial={{ y: 12, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={stagger(3)}
+            className="flex items-center gap-2"
+          >
+            <input
+              type="checkbox"
+              id="remember"
+              className="ios-checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+            />
+            <label
+              htmlFor="remember"
+              className="text-[13px] cursor-pointer"
+              style={{ color: "#888899" }}
+            >
+              Remember me
+            </label>
+          </motion.div>
         </div>
-      </motion.div>
-    </div>
+
+        {/* Sign in button */}
+        <motion.button
+          initial={{ y: 12, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={stagger(4)}
+          type="submit"
+          className="ios-btn-primary mt-6"
+          disabled={loading}
+        >
+          {loading ? (
+            <>
+              <Loader2 size={16} className="animate-spin" />
+              Signing in...
+            </>
+          ) : (
+            <>
+              Sign In
+              <ArrowRight size={16} />
+            </>
+          )}
+        </motion.button>
+
+        {/* Divider */}
+        <motion.div
+          initial={{ y: 12, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={stagger(5)}
+          className="ios-divider my-5"
+        >
+          <span className="text-xs" style={{ color: "#444455" }}>
+            or
+          </span>
+        </motion.div>
+
+        {/* Google */}
+        <motion.button
+          initial={{ y: 12, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={stagger(6)}
+          type="button"
+          className="ios-btn-social"
+          onClick={() => handleGoogle()}
+          disabled={loading}
+        >
+          <GoogleIcon size={20} />
+          Continue with Google
+        </motion.button>
+
+        {/* Footer */}
+        <motion.p
+          initial={{ y: 12, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={stagger(7)}
+          className="text-center text-[13px] mt-5"
+          style={{ color: "#666677" }}
+        >
+          Don't have an account?{" "}
+          <Link
+            to="/register"
+            className="font-semibold transition-colors hover:brightness-125"
+            style={{ color: "#6366f1" }}
+          >
+            Sign up
+          </Link>
+        </motion.p>
+      </form>
+    </AuthLayout>
   );
-}
+};
+
+export default LoginPage;

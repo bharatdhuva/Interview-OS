@@ -76,6 +76,13 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        ios: {
+          accent: "#6366f1",
+          "accent-hover": "#4f46e5",
+          purple: "#8b5cf6",
+          cyan: "#06b6d4",
+          success: "#22c55e",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
