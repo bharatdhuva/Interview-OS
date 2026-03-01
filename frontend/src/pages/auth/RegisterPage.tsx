@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+  // ...existing code...
 import { motion } from "framer-motion";
 import {
   Mail,
@@ -147,8 +148,8 @@ const RegisterPage: React.FC = () => {
   const stagger = (i: number) => ({ delay: 0.15 + i * 0.06 });
 
   return (
-    <AuthLayout variant="register">
-      <form onSubmit={handleSubmit} className="flex flex-col">
+    <AuthLayout variant="register" style={{ height: '100vh', overflowX: 'hidden', overflowY: 'hidden' }}>
+      <form onSubmit={handleSubmit} className="flex flex-col" style={{ overflow: 'hidden', maxHeight: '100vh' }}>
         {/* Header */}
         <motion.div
           initial={{ y: 12, opacity: 0 }}
@@ -258,7 +259,7 @@ const RegisterPage: React.FC = () => {
                 id="reg-password"
                 type={showPassword ? "text" : "password"}
                 className="ios-input !pr-10"
-                placeholder="Min 8 chars, 1 letter, 1 number"
+                placeholder="Password"
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
@@ -277,30 +278,36 @@ const RegisterPage: React.FC = () => {
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
-            {/* Strength bar */}
             {password.length > 0 && (
               <motion.div
                 initial={{ opacity: 0, y: -4 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-2 mt-2"
+                className="flex flex-col mt-2"
               >
-                <div className="flex gap-[3px] flex-1">
-                  {[1, 2, 3, 4].map((seg) => (
-                    <div
-                      key={seg}
-                      className="h-[3px] flex-1 rounded-full transition-all duration-300"
-                      style={{
-                        background:
-                          seg <= strength.level
-                            ? strength.color
-                            : "rgba(255,255,255,0.08)",
-                      }}
-                    />
-                  ))}
+                <div className="w-full h-[8px] rounded-xl bg-[#23233a] overflow-hidden shadow-sm">
+                  <div
+                    className="h-full rounded-xl transition-all duration-300"
+                    style={{
+                      width: `${(strength.level / 4) * 100}%`,
+                      background: strength.level === 4
+                        ? '#7c3aed' // Strong: purple
+                        : strength.level === 3
+                        ? '#6366f1' // Good: blue
+                        : strength.level === 2
+                        ? '#f59e42' // Fair: orange
+                        : '#ef4444', // Weak: red
+                    }}
+                  />
                 </div>
                 <span
-                  className="text-[11px] font-medium"
-                  style={{ color: strength.color }}
+                  className="text-[12px] font-semibold mt-1 tracking-wide"
+                  style={{ color: strength.level === 4
+                    ? '#a5b4fc'
+                    : strength.level === 3
+                    ? '#818cf8'
+                    : strength.level === 2
+                    ? '#fbbf24'
+                    : '#f87171' }}
                 >
                   {strength.label}
                 </span>

@@ -243,6 +243,11 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, variant }) => {
         style={{
           background:
             "linear-gradient(145deg, #0a0a12 0%, #0d0d1a 50%, #080810 100%)",
+          minHeight: '100vh',
+          overflowX: 'hidden',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
       >
         {/* Subtle indigo glow */}
@@ -268,7 +273,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, variant }) => {
           }}
         />
 
-        <div className="w-full max-w-[440px] px-6 py-10 md:py-0 relative z-10">
+        <div className="w-full max-w-[440px] px-6 py-10 md:py-0 relative z-10" style={{margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'}}>
           {/* Mobile logo */}
           <div className="flex md:hidden items-center justify-center gap-2 mb-8">
             <div
