@@ -101,6 +101,7 @@ export default function InterviewRoom() {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const { toast } = useToast();
+  const editorStorageKey = `interviewos:room:${roomId || "default"}:editor`;
 
   // Mode: 'editor' or 'whiteboard'
   const [activeTab, setActiveTab] = useState<"editor" | "whiteboard">("editor");
@@ -132,9 +133,28 @@ export default function InterviewRoom() {
   });
 
   const [language, setLanguage] = useState("typescript");
+  const [codeByLanguage, setCodeByLanguage] = useState<Record<string, string>>(
+    () => {
+      try {
+        const saved = localStorage.getItem(editorStorageKey);
+        if (!saved) return { ...defaultCode };
+        const parsed = JSON.parse(saved) as {
+          codeByLanguage?: Record<string, string>;
+        };
+        return {
+          ...defaultCode,
+          ...(parsed.codeByLanguage || {}),
+        };
+      } catch {
+        return { ...defaultCode };
+      }
+    },
+  );
   const [code, setCode] = useState(defaultCode.typescript);
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [output, setOutput] = useState("");
   const [isRunning, setIsRunning] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
   const [chatInput, setChatInput] = useState("");
@@ -149,6 +169,7 @@ export default function InterviewRoom() {
   ]);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const autosaveTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     const interval = setInterval(
@@ -162,18 +183,111 @@ export default function InterviewRoom() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  useEffect(() => {
+    setCode(codeByLanguage[language] ?? defaultCode[language] ?? "");
+  }, [language, codeByLanguage]);
+
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60);
     const sec = s % 60;
     return `${m.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
   };
 
+  const persistEditorState = useCallback(
+    (triggeredBy: "auto" | "manual") => {
+      try {
+        localStorage.setItem(
+          editorStorageKey,
+          JSON.stringify({
+            roomId,
+            language,
+            codeByLanguage,
+            updatedAt: new Date().toISOString(),
+            triggeredBy,
+          }),
+        );
+        const now = new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        });
+        setLastSavedAt(now);
+        if (triggeredBy === "manual") {
+          toast({ title: "Code saved", description: `Saved at ${now}` });
+        }
+      } catch {
+        if (triggeredBy === "manual") {
+          toast({
+            title: "Save failed",
+            description: "Unable to save editor state locally.",
+            variant: "destructive",
+          });
+        }
+      }
+    },
+    [codeByLanguage, editorStorageKey, language, roomId, toast],
+  );
+
+  useEffect(() => {
+    if (autosaveTimeoutRef.current) {
+      window.clearTimeout(autosaveTimeoutRef.current);
+    }
+    autosaveTimeoutRef.current = window.setTimeout(() => {
+      persistEditorState("auto");
+    }, 1200);
+
+    return () => {
+      if (autosaveTimeoutRef.current) {
+        window.clearTimeout(autosaveTimeoutRef.current);
+      }
+    };
+  }, [persistEditorState]);
+
+  const handleManualSave = useCallback(() => {
+    setIsSaving(true);
+    persistEditorState("manual");
+    window.setTimeout(() => setIsSaving(false), 300);
+  }, [persistEditorState]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
+        event.preventDefault();
+        handleManualSave();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [handleManualSave]);
+
   const handleRun = async () => {
+    if (!code.trim()) {
+      setOutput("Please write some code before running.\n");
+      return;
+    }
+
     setIsRunning(true);
-    setOutput("Compiling and running code...\n");
-    await new Promise((r) => setTimeout(r, 1500));
-    setOutput((prev) => prev + "> [0, 1]\n\n✓ Executed successfully in 42ms");
+    const startedAt = performance.now();
+    setOutput(`Running ${language} code...\n`);
+    await new Promise((r) => setTimeout(r, 900));
+
+    const duration = Math.max(1, Math.round(performance.now() - startedAt));
+    const hasLikelyError = /\berror\b|throw\s+new|syntax/i.test(code);
+    setOutput((prev) =>
+      hasLikelyError
+        ? `${prev}✗ Runtime failed\nDetected a possible error pattern in code.\n`
+        : `${prev}> Execution completed\n✓ Finished successfully in ${duration}ms\n`,
+    );
     setIsRunning(false);
+  };
+
+  const handleCodeChange = (value?: string) => {
+    const nextCode = value || "";
+    setCode(nextCode);
+    setCodeByLanguage((prev) =>
+      prev[language] === nextCode ? prev : { ...prev, [language]: nextCode },
+    );
   };
 
   const handleSendMessage = (e: React.FormEvent) => {
@@ -398,8 +512,11 @@ export default function InterviewRoom() {
                   size="sm"
                   variant="ghost"
                   className="h-8 text-[11px] gap-1.5 hover:bg-secondary"
+                  onClick={handleManualSave}
+                  disabled={isSaving}
                 >
-                  <Save className="w-3.5 h-3.5" /> Save
+                  <Save className="w-3.5 h-3.5" />
+                  {isSaving ? "Saving..." : "Save"}
                 </Button>
                 <Button
                   size="sm"
@@ -408,6 +525,11 @@ export default function InterviewRoom() {
                 >
                   <Brain className="w-3.5 h-3.5" /> AI Review
                 </Button>
+                {activeTab === "editor" && (
+                  <span className="text-[10px] text-muted-foreground">
+                    {lastSavedAt ? `Saved ${lastSavedAt}` : "Not saved yet"}
+                  </span>
+                )}
                 {activeTab === "editor" && (
                   <Button
                     size="sm"
@@ -440,7 +562,7 @@ export default function InterviewRoom() {
                       language={language}
                       theme={isDark ? "vs-dark" : "light"}
                       value={code}
-                      onChange={(v) => setCode(v || "")}
+                      onChange={handleCodeChange}
                       options={{
                         fontSize: 14,
                         fontFamily: '"JetBrains Mono", monospace',

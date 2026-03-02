@@ -88,8 +88,17 @@ const LoginPage: React.FC = () => {
         const res = await api.post("/auth/google", {
           token: tokenResponse.access_token,
         });
-        const { user, accessToken } = res.data.data;
-        login(user, accessToken);
+        const d = res.data.data;
+        const user = {
+          id: d.id,
+          name: d.name,
+          email: d.email,
+          role: d.role,
+          avatar: d.avatar || "",
+          isEmailVerified: true,
+          createdAt: new Date().toISOString(),
+        };
+        login(user, d.accessToken);
         toast({ title: `Welcome, ${user.name}!` });
         navigate(
           user.role === "interviewer"

@@ -30,7 +30,9 @@ const WhiteboardPanel: React.FC<WhiteboardPanelProps> = ({
           canvasActions: {
             saveToActiveFile: false,
             loadScene: false,
-            export: true,
+            export: {
+              saveFileToDisk: true,
+            },
             themeSelection: false,
           },
         }}

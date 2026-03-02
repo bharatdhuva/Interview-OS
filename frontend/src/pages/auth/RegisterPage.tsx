@@ -125,8 +125,17 @@ const RegisterPage: React.FC = () => {
           token: tokenResponse.access_token,
           role,
         });
-        const { user, accessToken } = res.data.data;
-        login(user, accessToken);
+        const d = res.data.data;
+        const user = {
+          id: d.id,
+          name: d.name,
+          email: d.email,
+          role: d.role,
+          avatar: d.avatar || "",
+          isEmailVerified: true,
+          createdAt: new Date().toISOString(),
+        };
+        login(user, d.accessToken);
         toast({ title: `Welcome, ${user.name}!` });
         navigate(
           user.role === "interviewer"
@@ -148,7 +157,7 @@ const RegisterPage: React.FC = () => {
   const stagger = (i: number) => ({ delay: 0.15 + i * 0.06 });
 
   return (
-    <AuthLayout variant="register" style={{ height: '100vh', overflowX: 'hidden', overflowY: 'hidden' }}>
+    <AuthLayout variant="register">
       <form onSubmit={handleSubmit} className="flex flex-col" style={{ overflow: 'hidden', maxHeight: '100vh' }}>
         {/* Header */}
         <motion.div
