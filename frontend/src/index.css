@@ -264,16 +264,16 @@
 
 .animate-text-shimmer {
   background: linear-gradient(90deg,
-      hsl(263, 84%, 58%) 0%,
-      hsl(189, 95%, 43%) 25%,
-      hsl(0, 0%, 100%) 50%,
-      hsl(189, 95%, 43%) 75%,
-      hsl(263, 84%, 58%) 100%);
+      hsl(var(--primary)) 0%,
+      hsl(var(--info)) 30%,
+      hsl(var(--primary-foreground)) 50%,
+      hsl(var(--info)) 70%,
+      hsl(var(--primary)) 100%);
   background-size: 200% auto;
   color: transparent;
   -webkit-background-clip: text;
   background-clip: text;
-  animation: shine 4s linear infinite;
+  animation: shine 3.8s linear infinite;
 }
 
 /* Dot grid pattern for depth */

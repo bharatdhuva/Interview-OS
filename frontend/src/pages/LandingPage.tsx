@@ -27,6 +27,8 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { MotionWrapper } from "@/components/MotionWrapper";
+import ThemeToggle from "@/components/ThemeToggle";
+import AnimatedCTAButton from "@/components/AnimatedCTAButton";
 import { Button } from "@/components/ui/button";
 import {
   Accordion,
@@ -141,6 +143,42 @@ const previewChatLines = [
   { sender: "Jordan", text: "Sure! I'm using a hash map for O(n) lookup..." },
   { sender: "Alex", text: "Great! What about edge cases?" },
 ];
+
+const CountUpValue: React.FC<{
+  end: number;
+  duration?: number;
+  decimals?: number;
+  suffix?: string;
+}> = ({ end, duration = 2600, decimals = 0, suffix = "" }) => {
+  const [value, setValue] = useState(0);
+
+  useEffect(() => {
+    let frameId = 0;
+    const start = performance.now();
+    const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
+
+    const tick = (now: number) => {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = easeOutCubic(progress);
+      setValue(end * eased);
+
+      if (progress < 1) {
+        frameId = window.requestAnimationFrame(tick);
+      }
+    };
+
+    frameId = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(frameId);
+  }, [end, duration]);
+
+  const formatted = new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(value);
+
+  return <>{formatted}{suffix}</>;
+};
 
 const faqCategories = [
   "Platform & Features",
@@ -349,12 +387,14 @@ export default function LandingPage() {
 
   // Rotating hero words - typewriter effect
   const heroWords = [
-    "engineers",
-    "developers",
-    "designers",
-    "innovators",
-    "creators",
-    "builders",
+    "Engineers",
+    "Developers",
+    "Problem Solvers",
+    "Coders",
+    "Innovators",
+    "Builders",
+    "Tech Leaders",
+    "Thinkers",
   ];
   const [heroWordIndex, setHeroWordIndex] = useState(0);
   const [displayText, setDisplayText] = useState("");
@@ -580,12 +620,12 @@ export default function LandingPage() {
     <div className="min-h-screen bg-background">
       {/* Nav */}
       <nav className="fixed top-0 left-0 right-0 z-50 glass">
-        <div className="container relative flex items-center justify-between h-16">
+        <div className="container relative flex items-center justify-between h-16 gap-2">
           <a href="/" className="flex items-center gap-2">
             <img
               src={isDark ? logo : logoLight}
               alt="InterviewOS Logo"
-              className="w-72 h-20 object-contain"
+              className="w-40 sm:w-52 md:w-72 h-12 sm:h-16 md:h-20 object-contain"
             />
           </a>
           <div className="absolute left-1/2 -translate-x-1/2 hidden md:flex items-center gap-12">
@@ -611,27 +651,17 @@ export default function LandingPage() {
               How It Works
             </a>
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setIsDark(!isDark)}
-              className="w-10 h-10 rounded-full flex items-center justify-center border border-border bg-card hover:bg-surface-hover transition-colors duration-200"
-              aria-label="Toggle dark mode"
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <ThemeToggle isDark={isDark} onToggle={() => setIsDark(!isDark)} size="sm" />
+            <AnimatedCTAButton
+              to="/login"
+              variant="primary"
+              size="sm"
+              className="px-3 sm:px-4 gap-1.5"
+              trailingIcon={<Rocket className="w-4 h-4" />}
             >
-              {isDark ? (
-                <Sun className="w-5 h-5 text-yellow-400" />
-              ) : (
-                <Moon className="w-5 h-5 text-foreground" />
-              )}
-            </button>
-            <Button
-              asChild
-              className="group rounded-full bg-gradient-primary hover:opacity-90 transition-all duration-300 text-base px-8 h-12 font-semibold relative overflow-hidden"
-            >
-              <Link to="/login" className="flex items-center gap-2">
-                Get Started
-                <Rocket className="w-5 h-5 origin-[100%_0]" />
-              </Link>
-            </Button>
+              Get Started
+            </AnimatedCTAButton>
           </div>
         </div>
       </nav>
@@ -661,9 +691,20 @@ export default function LandingPage() {
                 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold leading-[1.1] mb-6 dark:text-white"
                 style={{ color: isDark ? undefined : "hsl(239, 40%, 25%)" }}
               >
-                Code Together,
+                Where Great
                 <br />
-                <span className="text-gradient">Learn Together</span>
+                <span className="inline-flex items-end min-w-[8ch] md:min-w-[10ch]">
+                  <span className="text-gradient capitalize">{displayText}</span>
+                  <motion.span
+                    aria-hidden
+                    className="ml-1 inline-block w-[2px] md:w-[3px] h-[0.85em] md:h-[0.9em] rounded-full bg-primary"
+                    animate={{ opacity: [1, 0, 1] }}
+                    transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut" }}
+                  />
+                </span>
+                <br />
+                Get{" "}
+                <span className="animate-text-shimmer inline-block">hired</span>
               </motion.h1>
 
               <motion.p
@@ -671,9 +712,9 @@ export default function LandingPage() {
                 custom={2}
                 className="text-lg text-muted-foreground max-w-xl mb-8"
               >
-                The ultimate platform for collaborative coding interviews and
-                pair programming. Connect face-to-face, code in real-time, and
-                ace your technical interviews.
+                A collaborative space for technical interviews — real-time code
+                editor, shared whiteboard, HD video, and AI-powered hints. All
+                in one.
               </motion.p>
 
               {/* Feature Badges */}
@@ -703,12 +744,11 @@ export default function LandingPage() {
                 custom={3}
                 className="flex flex-col sm:flex-row items-start gap-4"
               >
-                <Button
+                <AnimatedCTAButton
+                  to="/login"
+                  variant="primary"
                   size="lg"
-                  asChild
-                  className="group rounded-full bg-gradient-primary hover:opacity-90 transition-all duration-300 text-base px-8 h-12 font-semibold relative overflow-hidden"
-                >
-                  <Link to="/login" className="flex items-center gap-3">
+                  icon={
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="20"
@@ -719,39 +759,47 @@ export default function LandingPage() {
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      className="transition-transform duration-300 group-hover:animate-[ring_0.5s_ease-in-out_infinite]"
                     >
                       <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
                     </svg>
-                    <span className="pb-[1px]">Start Interview</span>
-                    <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
-                  </Link>
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  asChild
-                  className="rounded-full text-base px-10 h-12 border border-foreground/20 hover:bg-secondary/50 transition-all duration-200 font-semibold"
+                  }
+                  trailingIcon={<ArrowRight className="w-4 h-4" />}
                 >
-                  <Link to="/login">View Demo</Link>
-                </Button>
+                  Start Interview
+                </AnimatedCTAButton>
+                <AnimatedCTAButton
+                  to="/login"
+                  variant="outline"
+                  size="lg"
+                >
+                  View Demo
+                </AnimatedCTAButton>
               </motion.div>
 
               {/* Stats Bar */}
               <motion.div
                 variants={fadeInUp}
                 custom={4}
-                className="flex items-center gap-8 mt-12 pt-8 border-t border-border/50"
+                className="flex items-center gap-8 mt-8 lg:mt-10 pt-5 lg:pt-6 border-t border-border/50"
               >
                 {[
-                  { value: "10K+", label: "Active Users" },
-                  { value: "50K+", label: "Sessions" },
-                  { value: "99.9%", label: "Uptime" },
+                  {
+                    label: "Active Users",
+                    render: <CountUpValue end={10} suffix="K+" />,
+                  },
+                  {
+                    label: "Sessions",
+                    render: <CountUpValue end={50} suffix="K+" />,
+                  },
+                  {
+                    label: "Uptime",
+                    render: <CountUpValue end={99.9} decimals={1} suffix="%" />,
+                  },
                 ].map((stat, idx) => (
                   <div key={stat.label} className="flex items-center gap-8">
                     <div>
                       <div className="text-2xl md:text-3xl font-display font-bold text-gradient">
-                        {stat.value}
+                        {stat.render}
                       </div>
                       <div className="text-xs text-muted-foreground mt-1">
                         {stat.label}
@@ -1539,16 +1587,14 @@ export default function LandingPage() {
                 Collaborate, evaluate and onboard faster with InterviewOS—build
                 stronger engineering teams with confidence.
               </p>
-              <Button
-                size="lg"
+              <AnimatedCTAButton
+                to="/login"
                 variant="secondary"
-                asChild
-                className="text-base px-8 h-12"
+                size="lg"
+                trailingIcon={<ArrowRight className="w-4 h-4" />}
               >
-                <Link to="/login">
-                  Get Started Free <ArrowRight className="ml-2 w-4 h-4" />
-                </Link>
-              </Button>
+                Get Started Free
+              </AnimatedCTAButton>
             </div>
           </motion.div>
         </div>

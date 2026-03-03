@@ -24,6 +24,8 @@ import {
   Maximize2,
   ShieldCheck,
   ShieldAlert,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +40,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useToast } from "@/hooks/use-toast";
 import { useProctor } from "@/hooks/useProctor";
 import WhiteboardPanel from "@/components/room/WhiteboardPanel";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const languages = [
   { value: "javascript", label: "JavaScript" },
@@ -119,6 +122,10 @@ export default function InterviewRoom() {
     });
     return () => observer.disconnect();
   }, []);
+
+  const toggleTheme = () => {
+    document.documentElement.classList.toggle("dark");
+  };
 
   const { violationCount, enterFullscreen } = useProctor({
     roomId,
@@ -309,21 +316,21 @@ export default function InterviewRoom() {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-background overflow-hidden selection:bg-primary/30">
+    <div className="h-[100dvh] flex flex-col bg-background overflow-hidden selection:bg-primary/30">
       {/* Header */}
-      <header className="h-14 border-b border-border bg-card/50 backdrop-blur-md flex items-center justify-between px-6 shrink-0 z-20">
-        <div className="flex items-center gap-4">
+      <header className="border-b border-border bg-card/50 backdrop-blur-md flex flex-col lg:flex-row lg:items-center lg:justify-between px-3 sm:px-4 lg:px-6 py-2 lg:h-14 shrink-0 z-20 gap-2">
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0 w-full lg:w-auto">
           <Link to="/" className="group flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
               <Terminal className="w-4 h-4 text-primary-foreground" />
             </div>
-            <span className="font-display font-bold tracking-tight text-lg">
+            <span className="font-display font-bold tracking-tight text-base sm:text-lg">
               InterviewOS
             </span>
           </Link>
-          <div className="h-6 w-[1px] bg-border mx-2" />
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold">
+          <div className="h-6 w-[1px] bg-border mx-1 sm:mx-2 hidden sm:block" />
+          <div className="hidden sm:flex flex-col min-w-0">
+            <span className="text-xs sm:text-sm font-semibold truncate">
               Backend Engineering Assessment
             </span>
             <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
@@ -332,10 +339,10 @@ export default function InterviewRoom() {
           </div>
         </div>
 
-        <div className="flex items-center gap-6">
+        <div className="w-full lg:w-auto flex flex-wrap items-center gap-2 sm:gap-3 lg:gap-4">
           {/* Proctoring Status */}
           <div
-            className={`flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-medium transition-colors ${
+            className={`flex items-center gap-2 px-2.5 sm:px-3 py-1 rounded-full border text-[11px] sm:text-xs font-medium transition-colors ${
               violationCount > 0
                 ? "bg-destructive/10 border-destructive/20 text-destructive"
                 : "bg-success/10 border-success/20 text-success"
@@ -346,11 +353,11 @@ export default function InterviewRoom() {
             ) : (
               <ShieldCheck className="w-3.5 h-3.5" />
             )}
-            Proctoring:{" "}
+            <span className="hidden sm:inline">Proctoring:</span>{" "}
             {violationCount > 0 ? `${violationCount} Violations` : "Secure"}
           </div>
 
-          <div className="flex items-center gap-2 text-sm font-mono bg-secondary/50 px-3 py-1 rounded-md border border-border">
+          <div className="flex items-center gap-2 text-xs sm:text-sm font-mono bg-secondary/50 px-2.5 sm:px-3 py-1 rounded-md border border-border">
             <Clock className="w-4 h-4 text-primary" />
             <span
               className={
@@ -361,6 +368,8 @@ export default function InterviewRoom() {
             </span>
           </div>
 
+          <ThemeToggle isDark={isDark} onToggle={toggleTheme} size="sm" />
+
           <Button
             variant="ghost"
             size="sm"
@@ -368,7 +377,7 @@ export default function InterviewRoom() {
             onClick={enterFullscreen}
           >
             <Maximize2 className="w-3.5 h-3.5" />
-            Fullscreen
+            <span className="hidden sm:inline">Fullscreen</span>
           </Button>
 
           <Button
@@ -376,16 +385,17 @@ export default function InterviewRoom() {
             variant="destructive"
             className="h-8 text-xs font-semibold px-4 shadow-lg shadow-destructive/20"
           >
-            End Session
+            <span className="hidden sm:inline">End Session</span>
+            <span className="sm:hidden">End</span>
           </Button>
         </div>
       </header>
 
       {/* Main Layout */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row overflow-auto lg:overflow-hidden">
         {/* Left: Video & Controls (15%) */}
-        <aside className="w-64 border-r border-border bg-card/30 flex flex-col p-4 gap-4 shrink-0">
-          <div className="flex-1 flex flex-col gap-4">
+        <aside className="w-full lg:w-64 border-b lg:border-b-0 lg:border-r border-border bg-card/30 flex flex-col p-3 sm:p-4 gap-3 sm:gap-4 shrink-0">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3 sm:gap-4">
             {/* Interviewer Video */}
             <div className="aspect-video rounded-xl bg-secondary/80 border border-border relative overflow-hidden shadow-inner flex flex-col items-center justify-center group">
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
@@ -459,9 +469,9 @@ export default function InterviewRoom() {
         </aside>
 
         {/* Center: Editor/Whiteboard (60%) */}
-        <main className="flex-1 flex flex-col min-w-0 bg-card/20 relative">
+        <main className="flex-1 flex flex-col min-w-0 bg-card/20 relative min-h-[360px] lg:min-h-0">
           {/* Toolbar */}
-          <div className="h-12 border-b border-border flex items-center justify-between px-4 shrink-0 bg-background/40 backdrop-blur-sm">
+          <div className="border-b border-border flex flex-col sm:flex-row sm:items-center sm:justify-between px-2 sm:px-4 py-2 sm:py-2 gap-2 shrink-0 bg-background/40 backdrop-blur-sm lg:h-12 lg:py-0">
             <div className="flex items-center gap-1 bg-secondary/50 p-1 rounded-lg border border-border">
               <button
                 onClick={() => setActiveTab("editor")}
@@ -487,10 +497,10 @@ export default function InterviewRoom() {
               </button>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center flex-wrap gap-2 sm:gap-3">
               {activeTab === "editor" && (
                 <Select value={language} onValueChange={setLanguage}>
-                  <SelectTrigger className="h-8 w-32 bg-secondary/50 border-border text-[11px] font-medium">
+                  <SelectTrigger className="h-8 w-28 sm:w-32 bg-secondary/50 border-border text-[11px] font-medium">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -507,7 +517,7 @@ export default function InterviewRoom() {
                 </Select>
               )}
 
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center flex-wrap gap-1.5">
                 <Button
                   size="sm"
                   variant="ghost"
@@ -526,7 +536,7 @@ export default function InterviewRoom() {
                   <Brain className="w-3.5 h-3.5" /> AI Review
                 </Button>
                 {activeTab === "editor" && (
-                  <span className="text-[10px] text-muted-foreground">
+                  <span className="hidden md:inline text-[10px] text-muted-foreground">
                     {lastSavedAt ? `Saved ${lastSavedAt}` : "Not saved yet"}
                   </span>
                 )}
@@ -623,7 +633,7 @@ export default function InterviewRoom() {
         </main>
 
         {/* Right: Chat (25%) */}
-        <section className="w-80 border-l border-border bg-card/30 flex flex-col shrink-0">
+        <section className="w-full lg:w-80 border-t lg:border-t-0 lg:border-l border-border bg-card/30 flex flex-col shrink-0 max-h-[45vh] lg:max-h-none">
           <div className="h-14 flex items-center justify-between px-4 border-b border-border shrink-0">
             <span className="text-sm font-bold tracking-tight">Messaging</span>
             <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
