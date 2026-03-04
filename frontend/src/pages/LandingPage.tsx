@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, LayoutGroup, useInView } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
@@ -6,7 +6,7 @@ import {
   Video,
   MessageSquare,
   Brain,
-  PenLine, // ← ADD
+  PenLine,
   Zap,
   ArrowRight,
   Users,
@@ -25,6 +25,15 @@ import {
   Sun,
   Moon,
   ChevronDown,
+  Menu,
+  X,
+  Terminal,
+  Shield,
+  Play,
+  CheckCircle2,
+  Layout,
+  Wifi,
+  Send,
 } from "lucide-react";
 import { MotionWrapper } from "@/components/MotionWrapper";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -91,40 +100,63 @@ const partnerLogos = [
 const features = [
   {
     icon: Code2,
+    badge: "CORE EDITOR",
     title: "Live Code Editor",
+    headline: "Code together in real-time",
     description:
-      "Monaco-powered collaborative editor with real-time cursor presence and 7+ languages.",
+      "Our Monaco-powered collaborative editor brings the power of VS Code right into the browser. Both interviewer and candidate see real-time cursor positions, selections, and edits — with zero lag. Support for 7+ languages including Python, JavaScript, TypeScript, Java, C++, Go, and Rust.",
+    highlights: ["Real-time cursor tracking", "7+ language support", "Syntax highlighting & IntelliSense", "Collaborative editing"],
+    previewType: "editor" as const,
   },
   {
     icon: Video,
+    badge: "COMMUNICATION",
     title: "WebRTC Video",
+    headline: "Face-to-face, crystal clear",
     description:
-      "Peer-to-peer HD video calling with screen share and connection quality monitoring.",
+      "Peer-to-peer HD video calling means your interviews feel natural and personal. Built-in screen sharing lets candidates walk through their code visually, while connection quality monitoring ensures you never miss a moment. No plugins, no downloads — it just works.",
+    highlights: ["HD peer-to-peer video", "Screen sharing", "Connection quality monitoring", "No plugins required"],
+    previewType: "video" as const,
   },
   {
     icon: Brain,
+    badge: "AI POWERED",
     title: "AI Assistant",
+    headline: "Smart hints when you need them",
     description:
-      "GPT-4o powered hints, code review, and post-interview analysis.",
+      "Powered by GPT-4o, our AI assistant provides contextual hints during interviews, performs automated code reviews, and generates comprehensive post-interview analysis. It understands the problem context and provides progressive hints — from gentle nudges to detailed explanations.",
+    highlights: ["Contextual hints", "Automated code review", "Post-interview analysis", "Progressive difficulty"],
+    previewType: "ai" as const,
   },
   {
     icon: MessageSquare,
+    badge: "COLLABORATION",
     title: "In-Room Chat",
+    headline: "Communicate without interrupting",
     description:
-      "Real-time messaging with typing indicators and message history.",
+      "Sometimes you need to share a link, paste an error message, or communicate without interrupting the flow. Our real-time chat with typing indicators and persistent message history keeps the conversation going alongside the code — perfect for sharing resources or quick clarifications.",
+    highlights: ["Typing indicators", "Message history", "Link sharing", "File attachments"],
+    previewType: "chat" as const,
   },
   {
     icon: PenLine,
+    badge: "DESIGN",
     title: "Collaborative Whiteboard",
+    headline: "Design systems visually",
     description:
-      "Draw system designs, flowcharts and diagrams together in real-time — synced instantly via Socket.IO.",
+      "System design interviews deserve a proper canvas. Draw architecture diagrams, flowcharts, and data models together in real-time. Every stroke syncs instantly via Socket.IO, so both participants see the same picture. Export your designs for post-interview review.",
+    highlights: ["Real-time drawing sync", "Shape & text tools", "System design templates", "Export to image"],
+    previewType: "whiteboard" as const,
   },
-  ,
   {
     icon: Zap,
+    badge: "EXECUTION",
     title: "Code Execution",
+    headline: "Run code instantly, see results live",
     description:
-      "Sandboxed execution via Judge0 with stdout, stderr, and performance metrics.",
+      "Candidates can execute their solutions right in the browser using our sandboxed Judge0 integration. See stdout, stderr, execution time, and memory usage in real-time. Support for custom test cases means you can validate edge cases on the spot — no switching tabs required.",
+    highlights: ["Sandboxed execution", "Custom test cases", "Performance metrics", "Multi-language support"],
+    previewType: "execution" as const,
   },
 ];
 
@@ -325,6 +357,818 @@ const faqData: Record<string, { question: string; answer: string }[]> = {
   ],
 };
 
+// Animated code editor with typing effect
+const codeLines = [
+  { indent: 0, tokens: [{ text: "def ", color: "#cba6f7" }, { text: "two_sum", color: "#89b4fa" }, { text: "(nums, target):", color: "#cdd6f4" }] },
+  { indent: 1, tokens: [{ text: "seen = {}", color: "#cdd6f4" }] },
+  { indent: 1, tokens: [{ text: "for ", color: "#cba6f7" }, { text: "i, num ", color: "#cdd6f4" }, { text: "in ", color: "#cba6f7" }, { text: "enumerate", color: "#89b4fa" }, { text: "(nums):", color: "#cdd6f4" }] },
+  { indent: 2, tokens: [{ text: "diff = target - num", color: "#cdd6f4" }] },
+  { indent: 2, tokens: [{ text: "if ", color: "#cba6f7" }, { text: "diff ", color: "#cdd6f4" }, { text: "in ", color: "#cba6f7" }, { text: "seen:", color: "#cdd6f4" }] },
+  { indent: 3, tokens: [{ text: "return ", color: "#cba6f7" }, { text: "[seen[diff], i]", color: "#cdd6f4" }] },
+  { indent: 2, tokens: [{ text: "seen[num] = i", color: "#cdd6f4" }] },
+];
+
+const totalCodeChars = codeLines.reduce((acc, line) => acc + line.tokens.reduce((a, t) => a + t.text.length, 0), 0);
+
+function AnimatedCodeEditor() {
+  const [displayedChars, setDisplayedChars] = useState(0);
+  const editorRef = useRef<HTMLDivElement>(null);
+  const editorInView = useInView(editorRef, { once: false, margin: "-100px" });
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelledRef = useRef(false);
+
+  useEffect(() => {
+    // Clear all pending timers
+    cancelledRef.current = true;
+    if (timerRef.current) clearTimeout(timerRef.current);
+
+    if (!editorInView) {
+      setDisplayedChars(0);
+      return;
+    }
+
+    cancelledRef.current = false;
+    let idx = 0;
+    setDisplayedChars(0);
+
+    const getDelay = (charIdx: number) => {
+      let count = 0;
+      for (const line of codeLines) {
+        const lineText = line.tokens.map(t => t.text).join("");
+        const lineEnd = count + lineText.length;
+        if (charIdx <= lineEnd) {
+          const posInLine = charIdx - count;
+          // End of line → longer pause
+          if (posInLine === lineText.length) return 250 + Math.random() * 150;
+          const char = lineText[posInLine - 1];
+          if (char === ":" || char === "=") return 80 + Math.random() * 60;
+          break;
+        }
+        count = lineEnd;
+      }
+      return 40 + Math.random() * 25;
+    };
+
+    const step = () => {
+      if (cancelledRef.current) return;
+      if (idx <= totalCodeChars) {
+        setDisplayedChars(idx);
+        const delay = getDelay(idx);
+        idx++;
+        timerRef.current = setTimeout(step, delay);
+      } else {
+        // Finished — wait then restart
+        timerRef.current = setTimeout(() => {
+          if (cancelledRef.current) return;
+          idx = 0;
+          setDisplayedChars(0);
+          timerRef.current = setTimeout(step, 600);
+        }, 3000);
+      }
+    };
+
+    timerRef.current = setTimeout(step, 500);
+
+    return () => {
+      cancelledRef.current = true;
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [editorInView]);
+
+  const isTyping = displayedChars > 0 && displayedChars < totalCodeChars;
+
+  // Render code with typing effect
+  const renderTypedCode = () => {
+    let globalCharIndex = 0;
+    const result: React.ReactNode[] = [];
+
+    for (let lineIdx = 0; lineIdx < codeLines.length; lineIdx++) {
+      const line = codeLines[lineIdx];
+      const lineText = line.tokens.map(t => t.text).join("");
+      const lineStart = globalCharIndex;
+      const lineEnd = globalCharIndex + lineText.length;
+
+      if (lineStart >= displayedChars) break;
+
+      const indentPx = line.indent * 16;
+      const spans: React.ReactNode[] = [];
+      let tokenStart = lineStart;
+      let cursorPlaced = false;
+
+      for (const token of line.tokens) {
+        const tokenEnd = tokenStart + token.text.length;
+        if (tokenStart >= displayedChars) break;
+
+        const visible = Math.min(displayedChars - tokenStart, token.text.length);
+        const text = token.text.slice(0, visible);
+
+        if (text) {
+          spans.push(<span key={tokenStart} style={{ color: token.color }}>{text}</span>);
+        }
+
+        // Place cursor right after the last visible character
+        if (!cursorPlaced && displayedChars > tokenStart && displayedChars < tokenEnd) {
+          spans.push(
+            <span key="cursor" className="inline-block w-[2px] h-[14px] bg-[#cdd6f4] align-middle ml-[1px]" style={{ animation: "pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite" }} />
+          );
+          cursorPlaced = true;
+        }
+
+        tokenStart = tokenEnd;
+      }
+
+      // Cursor at end of line (between lines)
+      if (!cursorPlaced && displayedChars >= lineEnd && displayedChars < totalCodeChars) {
+        if (lineIdx === codeLines.length - 1 || displayedChars === lineEnd) {
+          // Only show on the current line end, not all previous lines
+          const nextLineStart = lineEnd;
+          if (displayedChars === nextLineStart) {
+            spans.push(
+              <span key="cursor-eol" className="inline-block w-[2px] h-[14px] bg-[#cdd6f4] align-middle ml-[1px]" style={{ animation: "pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite" }} />
+            );
+          }
+        }
+      }
+
+      const isHighlightedLine = lineIdx === 4 && displayedChars > lineEnd;
+
+      result.push(
+        <div key={lineIdx} className={`flex items-baseline ${isHighlightedLine ? "bg-[#313244]/50 -mx-4 px-4 rounded" : ""}`}>
+          <span className="w-8 text-[#6c7086] select-none shrink-0">{lineIdx + 1}</span>
+          <span style={{ paddingLeft: `${indentPx}px` }}>{spans}</span>
+        </div>
+      );
+
+      globalCharIndex = lineEnd;
+    }
+
+    // Show blinking cursor before any code is typed
+    if (displayedChars === 0) {
+      return (
+        <div className="flex items-baseline">
+          <span className="w-8 text-[#6c7086] select-none shrink-0">1</span>
+          <span className="inline-block w-[2px] h-[14px] bg-[#cdd6f4] align-middle" style={{ animation: "pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite" }} />
+        </div>
+      );
+    }
+
+    return result;
+  };
+
+  return (
+    <div ref={editorRef} className="rounded-xl overflow-hidden border border-border bg-[#1e1e2e] shadow-2xl">
+      {/* Editor top bar */}
+      <div className="flex items-center gap-2 px-4 py-2.5 bg-[#181825] border-b border-[#313244]">
+        <div className="flex gap-1.5">
+          <div className="w-3 h-3 rounded-full bg-red-500/80" />
+          <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
+          <div className="w-3 h-3 rounded-full bg-green-500/80" />
+        </div>
+        <span className="ml-3 text-xs text-[#cdd6f4]/60 font-mono">solution.py</span>
+        <div className="ml-auto flex items-center gap-2 text-xs text-[#cdd6f4]/40">
+          {isTyping && (
+            <span className="flex items-center gap-1.5 text-[#a6e3a1] text-[10px]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#a6e3a1] animate-pulse" />
+              typing...
+            </span>
+          )}
+          <span className="px-2 py-0.5 rounded bg-[#313244] text-[#89b4fa]">Python</span>
+        </div>
+      </div>
+      {/* Code lines with typing animation */}
+      <div className="p-4 font-mono text-xs sm:text-sm leading-6 min-h-[220px]">
+        {renderTypedCode()}
+      </div>
+    </div>
+  );
+}
+
+// Animated Video Call preview
+function AnimatedVideoCall() {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: false, margin: "-100px" });
+  const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    if (!inView) { setStep(0); return; }
+    const timers = [
+      setTimeout(() => setStep(1), 400),
+      setTimeout(() => setStep(2), 1000),
+      setTimeout(() => setStep(3), 1800),
+      setTimeout(() => setStep(4), 2600),
+      setTimeout(() => setStep(5), 3200),
+    ];
+    return () => timers.forEach(clearTimeout);
+  }, [inView]);
+
+  return (
+    <div ref={ref} className="rounded-xl overflow-hidden border border-border bg-[#1e1e2e] shadow-2xl">
+      <div className="grid grid-cols-2 gap-0.5 bg-[#313244]">
+        {/* Interviewer video */}
+        <div className="aspect-video bg-gradient-to-br from-[#1e1e2e] to-[#313244] flex items-center justify-center relative overflow-hidden">
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={step >= 1 ? { scale: 1, opacity: 1 } : {}}
+            transition={{ type: "spring", stiffness: 200, damping: 20 }}
+            className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center"
+          >
+            <Users className="w-8 h-8 text-primary" />
+          </motion.div>
+          <motion.span
+            initial={{ opacity: 0, y: 10 }}
+            animate={step >= 2 ? { opacity: 1, y: 0 } : {}}
+            className="absolute bottom-2 left-3 text-xs text-white/70 bg-black/40 px-2 py-0.5 rounded"
+          >Alex (Interviewer)</motion.span>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={step >= 2 ? { opacity: 1 } : {}}
+            className="absolute top-2 right-2 flex items-center gap-1.5"
+          >
+            <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+            <span className="text-[10px] text-green-400">HD</span>
+          </motion.div>
+          {step >= 3 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0, 0.3, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="absolute inset-0 bg-gradient-to-t from-primary/5 to-transparent"
+            />
+          )}
+        </div>
+        {/* Candidate video */}
+        <div className="aspect-video bg-gradient-to-br from-[#313244] to-[#1e1e2e] flex items-center justify-center relative overflow-hidden">
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={step >= 2 ? { scale: 1, opacity: 1 } : {}}
+            transition={{ type: "spring", stiffness: 200, damping: 20 }}
+            className="w-16 h-16 rounded-full bg-[#89b4fa]/20 flex items-center justify-center"
+          >
+            <Users className="w-8 h-8 text-[#89b4fa]" />
+          </motion.div>
+          <motion.span
+            initial={{ opacity: 0, y: 10 }}
+            animate={step >= 3 ? { opacity: 1, y: 0 } : {}}
+            className="absolute bottom-2 left-3 text-xs text-white/70 bg-black/40 px-2 py-0.5 rounded"
+          >Jordan (Candidate)</motion.span>
+          {step >= 4 && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-[#89b4fa]/20 text-[9px] text-[#89b4fa]"
+            >Screen Sharing</motion.div>
+          )}
+        </div>
+      </div>
+      {/* Controls */}
+      <div className="flex items-center justify-center gap-3 p-3 bg-[#181825]">
+        {[
+          { icon: Mic, delay: 0 },
+          { icon: Video, delay: 0.1 },
+          { icon: Monitor, delay: 0.2 },
+        ].map((ctrl, idx) => (
+          <motion.button
+            key={idx}
+            initial={{ scale: 0, opacity: 0 }}
+            animate={step >= 4 ? { scale: 1, opacity: 1 } : {}}
+            transition={{ delay: ctrl.delay, type: "spring", stiffness: 300 }}
+            className="p-2 rounded-full bg-[#313244] text-[#cdd6f4]"
+          >
+            <ctrl.icon className="w-4 h-4" />
+          </motion.button>
+        ))}
+        <motion.button
+          initial={{ scale: 0, opacity: 0 }}
+          animate={step >= 5 ? { scale: 1, opacity: 1 } : {}}
+          transition={{ type: "spring", stiffness: 300 }}
+          className="p-2.5 rounded-full bg-red-500 text-white"
+        >
+          <PhoneOff className="w-4 h-4" />
+        </motion.button>
+      </div>
+      {/* Connection quality bar */}
+      {step >= 3 && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex items-center justify-between px-4 py-1.5 bg-[#181825] border-t border-[#313244] text-[10px]"
+        >
+          <span className="text-[#6c7086]">Connection Quality</span>
+          <div className="flex items-center gap-1.5">
+            {/* Animated WiFi bars */}
+            <div className="flex items-end gap-[2px]">
+              {[1, 2, 3, 4, 5].map((bar) => (
+                <motion.div
+                  key={bar}
+                  initial={{ scaleY: 0 }}
+                  animate={{ scaleY: [0.4, 1, 0.4] }}
+                  transition={{
+                    delay: bar * 0.15,
+                    duration: 1.5,
+                    repeat: Infinity,
+                    repeatType: "mirror",
+                    ease: "easeInOut",
+                  }}
+                  className="w-1 rounded-full bg-[#a6e3a1] origin-bottom"
+                  style={{ height: `${bar * 3 + 2}px` }}
+                />
+              ))}
+            </div>
+            <span className="text-[#a6e3a1] ml-1">Good</span>
+          </div>
+        </motion.div>
+      )}
+    </div>
+  );
+}
+
+// Animated AI Assistant preview
+function AnimatedAIChat() {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: false, margin: "-100px" });
+  const [visibleMessages, setVisibleMessages] = useState(0);
+  const [typingAI, setTypingAI] = useState(false);
+  const [aiText, setAiText] = useState("");
+
+  const aiFullText = "💡 Hint Level 1: Think about what data structure allows O(1) lookups. Consider using a hash map to store values you've already seen.";
+
+  useEffect(() => {
+    if (!inView) { setVisibleMessages(0); setTypingAI(false); setAiText(""); return; }
+
+    const t1 = setTimeout(() => setVisibleMessages(1), 500);
+    const t2 = setTimeout(() => setTypingAI(true), 1500);
+    const t3 = setTimeout(() => {
+      setTypingAI(false);
+      // Start typing AI response
+      let idx = 0;
+      const typeInterval = setInterval(() => {
+        idx++;
+        if (idx <= aiFullText.length) {
+          setAiText(aiFullText.slice(0, idx));
+        } else {
+          clearInterval(typeInterval);
+          setVisibleMessages(2);
+          setTimeout(() => setVisibleMessages(3), 1200);
+        }
+      }, 20);
+    }, 2800);
+
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, [inView]);
+
+  return (
+    <div ref={ref} className="rounded-xl overflow-hidden border border-border bg-[#1e1e2e] shadow-2xl">
+      <div className="flex items-center gap-2 px-4 py-2.5 bg-[#181825] border-b border-[#313244]">
+        <Brain className="w-4 h-4 text-[#cba6f7]" />
+        <span className="text-xs text-[#cdd6f4] font-medium">AI Assistant</span>
+        <span className="ml-auto px-2 py-0.5 rounded-full bg-[#a6e3a1]/10 text-[#a6e3a1] text-[10px]">GPT-4o</span>
+      </div>
+      <div className="p-4 space-y-3 min-h-[200px]">
+        {/* User message 1 */}
+        {visibleMessages >= 1 && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex gap-2">
+            <div className="w-6 h-6 rounded-full bg-[#89b4fa]/20 flex items-center justify-center shrink-0 mt-0.5">
+              <Users className="w-3 h-3 text-[#89b4fa]" />
+            </div>
+            <div className="bg-[#313244] rounded-lg rounded-tl-none px-3 py-2 text-xs text-[#cdd6f4]">
+              I'm stuck on optimizing this solution. It's O(n²) right now.
+            </div>
+          </motion.div>
+        )}
+
+        {/* AI typing indicator */}
+        {typingAI && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-2">
+            <div className="w-6 h-6 rounded-full bg-[#cba6f7]/20 flex items-center justify-center shrink-0 mt-0.5">
+              <Brain className="w-3 h-3 text-[#cba6f7]" />
+            </div>
+            <div className="bg-[#cba6f7]/10 rounded-lg rounded-tl-none px-3 py-2 flex items-center gap-1">
+              <div className="w-1.5 h-1.5 rounded-full bg-[#cba6f7] animate-bounce" style={{ animationDelay: "0ms" }} />
+              <div className="w-1.5 h-1.5 rounded-full bg-[#cba6f7] animate-bounce" style={{ animationDelay: "150ms" }} />
+              <div className="w-1.5 h-1.5 rounded-full bg-[#cba6f7] animate-bounce" style={{ animationDelay: "300ms" }} />
+            </div>
+          </motion.div>
+        )}
+
+        {/* AI response with typing */}
+        {aiText && !typingAI && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-2">
+            <div className="w-6 h-6 rounded-full bg-[#cba6f7]/20 flex items-center justify-center shrink-0 mt-0.5">
+              <Brain className="w-3 h-3 text-[#cba6f7]" />
+            </div>
+            <div className="bg-[#cba6f7]/10 rounded-lg rounded-tl-none px-3 py-2 text-xs text-[#cdd6f4] space-y-1.5">
+              <p>{aiText}<span className={`inline-block w-[2px] h-[12px] bg-[#cba6f7] align-middle ml-[1px] ${aiText.length < aiFullText.length ? "animate-pulse" : "hidden"}`} /></p>
+            </div>
+          </motion.div>
+        )}
+
+        {/* User response */}
+        {visibleMessages >= 3 && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex gap-2">
+            <div className="w-6 h-6 rounded-full bg-[#89b4fa]/20 flex items-center justify-center shrink-0 mt-0.5">
+              <Users className="w-3 h-3 text-[#89b4fa]" />
+            </div>
+            <div className="bg-[#313244] rounded-lg rounded-tl-none px-3 py-2 text-xs text-[#cdd6f4]">
+              Got it! Using a dictionary to check complements. Thanks!
+            </div>
+          </motion.div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Animated Room Chat preview
+function AnimatedRoomChat() {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: false, margin: "-100px" });
+  const [visibleMessages, setVisibleMessages] = useState(0);
+  const [isTypingInput, setIsTypingInput] = useState(false);
+  const [inputText, setInputText] = useState("");
+
+  const chatMessages = [
+    { sender: "right", text: "Here's the API docs link: docs.api.com/v2" },
+    { sender: "left", text: "Thanks! Let me check the rate limits." },
+    { sender: "right", text: "No worries, take your time 👍" },
+  ];
+
+  const typingText = "I found the issue, it's a CORS error";
+
+  useEffect(() => {
+    if (!inView) { setVisibleMessages(0); setIsTypingInput(false); setInputText(""); return; }
+
+    const timers = [
+      setTimeout(() => setVisibleMessages(1), 400),
+      setTimeout(() => setVisibleMessages(2), 1200),
+      setTimeout(() => setVisibleMessages(3), 2200),
+      setTimeout(() => {
+        setIsTypingInput(true);
+        let idx = 0;
+        const typeInterval = setInterval(() => {
+          idx++;
+          if (idx <= typingText.length) {
+            setInputText(typingText.slice(0, idx));
+          } else {
+            clearInterval(typeInterval);
+            setTimeout(() => {
+              setIsTypingInput(false);
+              setInputText("");
+              setVisibleMessages(4);
+            }, 500);
+          }
+        }, 50);
+      }, 3200),
+    ];
+    return () => timers.forEach(clearTimeout);
+  }, [inView]);
+
+  return (
+    <div ref={ref} className="rounded-xl overflow-hidden border border-border bg-[#1e1e2e] shadow-2xl">
+      <div className="flex items-center gap-2 px-4 py-2.5 bg-[#181825] border-b border-[#313244]">
+        <MessageSquare className="w-4 h-4 text-[#89b4fa]" />
+        <span className="text-xs text-[#cdd6f4] font-medium">Room Chat</span>
+        <span className="ml-auto text-[10px] text-[#6c7086]">2 participants</span>
+      </div>
+      <div className="p-4 space-y-3 min-h-[220px]">
+        {chatMessages.slice(0, visibleMessages).map((msg, idx) => (
+          <motion.div
+            key={idx}
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            className={msg.sender === "right" ? "flex justify-end" : "flex gap-2"}
+          >
+            {msg.sender === "left" && (
+              <div className="w-6 h-6 rounded-full bg-[#a6e3a1]/20 flex items-center justify-center shrink-0">
+                <span className="text-[10px] text-[#a6e3a1] font-bold">J</span>
+              </div>
+            )}
+            <div className={`rounded-lg px-3 py-2 text-xs text-[#cdd6f4] max-w-[80%] ${
+              msg.sender === "right"
+                ? "bg-primary/20 rounded-tr-none"
+                : "bg-[#313244] rounded-tl-none"
+            }`}>
+              {msg.text.includes("docs.api.com") ? (
+                <>Here's the API docs link: <span className="text-[#89b4fa] underline">docs.api.com/v2</span></>
+              ) : msg.text}
+            </div>
+          </motion.div>
+        ))}
+
+        {/* Typing indicator for Jordan */}
+        {visibleMessages >= 3 && visibleMessages < 4 && !isTypingInput && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-2 items-center">
+            <div className="w-6 h-6 rounded-full bg-[#a6e3a1]/20 flex items-center justify-center shrink-0">
+              <span className="text-[10px] text-[#a6e3a1] font-bold">J</span>
+            </div>
+            <div className="flex gap-1 px-3 py-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-[#6c7086] animate-bounce" style={{ animationDelay: "0ms" }} />
+              <div className="w-1.5 h-1.5 rounded-full bg-[#6c7086] animate-bounce" style={{ animationDelay: "150ms" }} />
+              <div className="w-1.5 h-1.5 rounded-full bg-[#6c7086] animate-bounce" style={{ animationDelay: "300ms" }} />
+            </div>
+          </motion.div>
+        )}
+
+        {/* Jordan's new message after typing */}
+        {visibleMessages >= 4 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex gap-2"
+          >
+            <div className="w-6 h-6 rounded-full bg-[#a6e3a1]/20 flex items-center justify-center shrink-0">
+              <span className="text-[10px] text-[#a6e3a1] font-bold">J</span>
+            </div>
+            <div className="bg-[#313244] rounded-lg rounded-tl-none px-3 py-2 text-xs text-[#cdd6f4]">
+              {typingText}
+            </div>
+          </motion.div>
+        )}
+      </div>
+      {/* Input bar with typing animation */}
+      <div className="flex items-center gap-2 px-3 py-2 border-t border-[#313244]">
+        <div className="flex-1 bg-[#313244] rounded-lg px-3 py-1.5 text-xs text-[#cdd6f4] min-h-[28px] flex items-center">
+          {isTypingInput ? (
+            <span>{inputText}<span className="inline-block w-[2px] h-[12px] bg-[#cdd6f4] align-middle animate-pulse ml-[1px]" /></span>
+          ) : (
+            <span className="text-[#6c7086]">Type a message...</span>
+          )}
+        </div>
+        <motion.div animate={isTypingInput ? { scale: [1, 1.2, 1] } : {}} transition={{ duration: 0.3 }}>
+          <Send className={`w-4 h-4 ${isTypingInput ? "text-primary" : "text-[#6c7086]"} transition-colors`} />
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+
+// Animated Whiteboard preview
+function AnimatedWhiteboard() {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: false, margin: "-100px" });
+  const [step, setStep] = useState(0);
+
+  const nodes = [
+    { label: "Client", color: "#89b4fa", row: 0, col: 0, step: 1 },
+    { label: "Load Balancer", color: "#a6e3a1", row: 0, col: 1, step: 2 },
+    { label: "API Server", color: "#cba6f7", row: 0, col: 2, step: 3 },
+    { label: "PostgreSQL", color: "#f9e2af", row: 1, col: 0, step: 5 },
+    { label: "Redis Cache", color: "#f38ba8", row: 1, col: 1, step: 6 },
+    { label: "S3 Storage", color: "#89b4fa", row: 1, col: 2, step: 7 },
+  ];
+  const arrows = [
+    { step: 2, type: "h" as const },
+    { step: 3, type: "h" as const },
+    { step: 4, type: "v" as const },
+  ];
+
+  useEffect(() => {
+    if (!inView) { setStep(0); return; }
+    let current = 0;
+    const interval = setInterval(() => {
+      current++;
+      setStep(current);
+      if (current >= 8) clearInterval(interval);
+    }, 400);
+    return () => clearInterval(interval);
+  }, [inView]);
+
+  return (
+    <div ref={ref} className="rounded-xl overflow-hidden border border-border bg-[#1e1e2e] shadow-2xl">
+      <div className="flex items-center gap-2 px-4 py-2.5 bg-[#181825] border-b border-[#313244]">
+        <Layout className="w-4 h-4 text-[#f9e2af]" />
+        <span className="text-xs text-[#cdd6f4] font-medium">System Design Canvas</span>
+        <span className="ml-auto flex items-center gap-1.5 text-[10px] text-[#a6e3a1]">
+          <Wifi className="w-3 h-3" /> Live Sync
+        </span>
+      </div>
+      <div className="p-6 relative min-h-[220px]">
+        {/* Top row: Client → Load Balancer → API Server */}
+        <div className="flex items-center justify-center gap-4">
+          {nodes.filter(n => n.row === 0).map((node, idx) => (
+            <React.Fragment key={node.label}>
+              {idx > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, scaleX: 0 }}
+                  animate={step >= arrows[idx - 1].step ? { opacity: 1, scaleX: 1 } : {}}
+                  transition={{ duration: 0.3 }}
+                  className="text-[#6c7086] origin-left"
+                >→</motion.div>
+              )}
+              <motion.div
+                initial={{ opacity: 0, scale: 0 }}
+                animate={step >= node.step ? { opacity: 1, scale: 1 } : {}}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                className="px-3 py-2 rounded-lg border-2"
+                style={{ borderColor: node.color, backgroundColor: `${node.color}15`, color: node.color }}
+              >
+                <span className="text-[10px] font-medium">{node.label}</span>
+              </motion.div>
+            </React.Fragment>
+          ))}
+        </div>
+
+        {/* Vertical arrow */}
+        <div className="flex justify-center mt-3">
+          <motion.div
+            initial={{ opacity: 0, scaleY: 0 }}
+            animate={step >= 4 ? { opacity: 1, scaleY: 1 } : {}}
+            transition={{ duration: 0.3 }}
+            className="text-[#6c7086] text-xs origin-top"
+          >↓</motion.div>
+        </div>
+
+        {/* Bottom row: DB nodes */}
+        <div className="flex items-center justify-center gap-6 mt-2">
+          {nodes.filter(n => n.row === 1).map((node) => (
+            <motion.div
+              key={node.label}
+              initial={{ opacity: 0, y: 20 }}
+              animate={step >= node.step ? { opacity: 1, y: 0 } : {}}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              className="px-3 py-2 rounded-lg border-2"
+              style={{ borderColor: node.color, backgroundColor: `${node.color}15`, color: node.color }}
+            >
+              <span className="text-[10px] font-medium">{node.label}</span>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Animated cursor */}
+        {step >= 1 && step < 8 && (
+          <motion.div
+            animate={{
+              x: [0, 50, 100, 150, 100, 50, 0],
+              y: [0, -5, 0, 5, 10, 5, 0],
+            }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute top-4 right-8"
+          >
+            <PenLine className="w-4 h-4 text-primary" />
+          </motion.div>
+        )}
+
+        {/* Toolbar */}
+        <div className="flex items-center gap-2 mt-4 pt-3 border-t border-[#313244]">
+          {[
+            { icon: PenLine, active: false },
+            { icon: Layout, active: true },
+            { icon: MessageSquare, active: false },
+            { icon: ArrowRight, active: false },
+          ].map((tool, idx) => (
+            <motion.div
+              key={idx}
+              initial={{ opacity: 0, y: 10 }}
+              animate={step >= 8 ? { opacity: 1, y: 0 } : {}}
+              transition={{ delay: idx * 0.1 }}
+              className={`p-1.5 rounded ${tool.active ? "bg-primary/20" : "bg-[#313244]"}`}
+            >
+              <tool.icon className={`w-3 h-3 ${tool.active ? "text-primary" : "text-[#cdd6f4]"}`} />
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Animated Code Execution preview
+function AnimatedExecution() {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: false, margin: "-100px" });
+  const [step, setStep] = useState(0);
+
+  const tests = [
+    { name: "Test 1", time: "2ms", step: 2 },
+    { name: "Test 2", time: "1ms", step: 3 },
+    { name: "Test 3", time: "3ms", step: 4 },
+  ];
+
+  useEffect(() => {
+    if (!inView) { setStep(0); return; }
+    const timers = [
+      setTimeout(() => setStep(1), 400),   // "Running..."
+      setTimeout(() => setStep(2), 1200),   // Test 1
+      setTimeout(() => setStep(3), 2000),   // Test 2
+      setTimeout(() => setStep(4), 2800),   // Test 3
+      setTimeout(() => setStep(5), 3600),   // Stats
+    ];
+    return () => timers.forEach(clearTimeout);
+  }, [inView]);
+
+  return (
+    <div ref={ref} className="rounded-xl overflow-hidden border border-border bg-[#1e1e2e] shadow-2xl">
+      <div className="flex items-center gap-2 px-4 py-2.5 bg-[#181825] border-b border-[#313244]">
+        <Terminal className="w-4 h-4 text-[#a6e3a1]" />
+        <span className="text-xs text-[#cdd6f4] font-medium">Execution Output</span>
+        {step >= 5 && (
+          <motion.span
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="ml-auto flex items-center gap-1.5"
+          >
+            <CheckCircle2 className="w-3.5 h-3.5 text-[#a6e3a1]" />
+            <span className="text-[10px] text-[#a6e3a1]">All tests passed</span>
+          </motion.span>
+        )}
+        {step >= 1 && step < 5 && (
+          <span className="ml-auto flex items-center gap-1.5 text-[10px] text-[#f9e2af]">
+            <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="w-3 h-3 border border-[#f9e2af] border-t-transparent rounded-full" />
+            Running...
+          </span>
+        )}
+      </div>
+      <div className="p-4 font-mono text-xs space-y-2 min-h-[200px]">
+        {/* Compiling step */}
+        {step >= 1 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex items-center gap-2 text-[#6c7086]"
+          >
+            <Play className="w-3 h-3" />
+            <span>Compiling solution.py...</span>
+          </motion.div>
+        )}
+
+        {step >= 1 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: step >= 2 ? 1 : 0.5 }}
+            className="flex items-center gap-2 text-[#6c7086]"
+          >
+            <Play className="w-3 h-3" />
+            <span>Running test cases...</span>
+          </motion.div>
+        )}
+
+        {/* Test results */}
+        <div className="space-y-1.5 pt-1">
+          {tests.map((test) => (
+            step >= test.step && (
+              <motion.div
+                key={test.name}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                className="flex items-center gap-2"
+              >
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 500, delay: 0.1 }}
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#a6e3a1]" />
+                </motion.div>
+                <span className="text-[#cdd6f4]">{test.name}: <span className="text-[#a6e3a1]">PASSED</span></span>
+                <span className="ml-auto text-[#6c7086]">{test.time}</span>
+              </motion.div>
+            )
+          ))}
+        </div>
+
+        {/* Stats */}
+        {step >= 5 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="pt-2 mt-2 border-t border-[#313244] grid grid-cols-3 gap-2"
+          >
+            {[
+              { value: "6ms", label: "Runtime", color: "#89b4fa" },
+              { value: "2.1MB", label: "Memory", color: "#cba6f7" },
+              { value: "3/3", label: "Passed", color: "#a6e3a1" },
+            ].map((stat, idx) => (
+              <motion.div
+                key={stat.label}
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: idx * 0.15, type: "spring", stiffness: 300 }}
+                className="text-center"
+              >
+                <div className="font-semibold" style={{ color: stat.color }}>{stat.value}</div>
+                <div className="text-[#6c7086] text-[10px]">{stat.label}</div>
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+
+        {/* Progress bar during running */}
+        {step >= 1 && step < 5 && (
+          <motion.div className="mt-2 h-1 bg-[#313244] rounded-full overflow-hidden">
+            <motion.div
+              className="h-full bg-[#a6e3a1] rounded-full"
+              initial={{ width: "0%" }}
+              animate={{ width: step >= 4 ? "100%" : step >= 3 ? "66%" : step >= 2 ? "33%" : "10%" }}
+              transition={{ duration: 0.5 }}
+            />
+          </motion.div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function LandingPage() {
   const [isMicOn, setIsMicOn] = useState(true);
   const [isVideoOn, setIsVideoOn] = useState(true);
@@ -338,17 +1182,13 @@ export default function LandingPage() {
     return false;
   });
   const [testimonialsPaused, setTestimonialsPaused] = useState(false);
-  const [partnersPaused, setPartnersPaused] = useState(false);
   const testimonialsRef = useRef<HTMLDivElement>(null);
-  const partnersRef = useRef<HTMLDivElement>(null);
   const testimonialsInView = useInView(testimonialsRef, {
     once: true,
     amount: 0.2,
   });
-  const partnersInView = useInView(partnersRef, { once: true, amount: 0.2 });
   const pauseTimeouts = useRef<{
     testimonials?: ReturnType<typeof setTimeout>;
-    partners?: ReturnType<typeof setTimeout>;
   }>({});
 
   useEffect(() => {
@@ -364,14 +1204,11 @@ export default function LandingPage() {
       if (pauseTimeouts.current.testimonials) {
         clearTimeout(pauseTimeouts.current.testimonials);
       }
-      if (pauseTimeouts.current.partners) {
-        clearTimeout(pauseTimeouts.current.partners);
-      }
     };
   }, []);
 
   const handleMarqueePause = (
-    key: "testimonials" | "partners",
+    key: "testimonials",
     setPaused: React.Dispatch<React.SetStateAction<boolean>>,
   ) => {
     setPaused(true);
@@ -383,6 +1220,7 @@ export default function LandingPage() {
     }, 1500);
   };
 
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentChatStep, setCurrentChatStep] = useState(0);
 
   // Rotating hero words - typewriter effect
@@ -616,71 +1454,134 @@ export default function LandingPage() {
     },
   ];
 
+  // Feature preview mockup renderer
+  const renderFeaturePreview = (type: string) => {
+    switch (type) {
+      case "editor":
+        return <AnimatedCodeEditor />;
+
+      case "video":
+        return <AnimatedVideoCall />;
+
+      case "ai":
+        return <AnimatedAIChat />;
+
+      case "chat":
+        return <AnimatedRoomChat />;
+
+      case "whiteboard":
+        return <AnimatedWhiteboard />;
+
+      case "execution":
+        return <AnimatedExecution />;
+
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Nav */}
       <nav className="fixed top-0 left-0 right-0 z-50 glass">
-        <div className="container relative flex items-center justify-between h-16 gap-2">
-          <a href="/" className="flex items-center gap-2">
+        <div className="container flex items-center justify-between h-14 sm:h-16">
+          {/* Logo */}
+          <a href="/" className="flex items-center gap-2 shrink-0">
             <img
               src={isDark ? logo : logoLight}
               alt="InterviewOS Logo"
-              className="w-40 sm:w-52 md:w-72 h-12 sm:h-16 md:h-20 object-contain"
+              className="h-8 sm:h-10 lg:h-12 w-auto object-contain"
             />
           </a>
-          <div className="absolute left-1/2 -translate-x-1/2 hidden md:flex items-center gap-12">
-            <a
-              href="/"
-              className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors duration-200"
-            >
-              <Home className="w-4 h-4" />
-              Home
+
+          {/* Desktop nav links */}
+          <div className="hidden lg:flex items-center gap-8 xl:gap-12">
+            <a href="/" className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors duration-200">
+              <Home className="w-4 h-4" /> Home
             </a>
-            <a
-              href="#features"
-              className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors duration-200"
-            >
-              <Sparkles className="w-4 h-4" />
-              Features
+            <a href="#features" className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors duration-200">
+              <Sparkles className="w-4 h-4" /> Features
             </a>
-            <a
-              href="#how-it-works"
-              className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors duration-200"
-            >
-              <HelpCircle className="w-4 h-4" />
-              How It Works
+            <a href="#how-it-works" className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors duration-200">
+              <HelpCircle className="w-4 h-4" /> How It Works
             </a>
           </div>
+
+          {/* Right side: theme + CTA + hamburger */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <ThemeToggle isDark={isDark} onToggle={() => setIsDark(!isDark)} size="sm" />
             <AnimatedCTAButton
               to="/login"
               variant="primary"
               size="sm"
-              className="px-3 sm:px-4 gap-1.5"
+              className="hidden sm:inline-flex px-3 sm:px-4 gap-1.5"
               trailingIcon={<Rocket className="w-4 h-4" />}
             >
               Get Started
             </AnimatedCTAButton>
+            {/* Mobile hamburger */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:hidden w-9 h-9 flex items-center justify-center rounded-lg hover:bg-secondary transition-colors"
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile dropdown menu */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2, ease: "easeInOut" }}
+              className="lg:hidden overflow-hidden border-t border-border/50"
+            >
+              <div className="container flex flex-col gap-1 py-3">
+                <a href="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-foreground hover:bg-secondary transition-colors">
+                  <Home className="w-4 h-4 text-primary" /> Home
+                </a>
+                <a href="#features" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-foreground hover:bg-secondary transition-colors">
+                  <Sparkles className="w-4 h-4 text-primary" /> Features
+                </a>
+                <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-foreground hover:bg-secondary transition-colors">
+                  <HelpCircle className="w-4 h-4 text-primary" /> How It Works
+                </a>
+                <div className="sm:hidden pt-2">
+                  <AnimatedCTAButton
+                    to="/login"
+                    variant="primary"
+                    size="sm"
+                    className="w-full justify-center"
+                    trailingIcon={<Rocket className="w-4 h-4" />}
+                  >
+                    Get Started
+                  </AnimatedCTAButton>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </nav>
 
       {/* Hero */}
-      <section className="relative pt-28 pb-20 overflow-hidden">
+      <section className="relative pt-20 sm:pt-24 md:pt-28 pb-10 sm:pb-16 md:pb-20 overflow-hidden">
         <div className="absolute inset-0 opacity-22 dark:opacity-30">
           <img src={heroBg} alt="" className="w-full h-full object-cover" />
         </div>
         <div className="absolute inset-0 bg-gradient-to-b from-background/75 via-background/90 to-background dark:from-background/50 dark:via-background/80 dark:to-background" />
 
         <div className="container relative z-10">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             {/* Left: Text Content */}
             <motion.div initial="hidden" animate="visible">
               <motion.div
                 variants={fadeInUp}
                 custom={0}
-                className="inline-flex items-center gap-2 px-4 py-1.5 mb-8 text-xs font-medium rounded-full border border-primary/50 bg-primary/20 text-primary dark:text-purple-200 shadow-[0_0_15px_rgba(168,85,247,0.15)] backdrop-blur-sm"
+                className="inline-flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 mb-5 sm:mb-8 text-[11px] sm:text-xs font-medium rounded-full border border-primary/50 bg-primary/20 text-primary dark:text-purple-200 shadow-[0_0_15px_rgba(168,85,247,0.15)] backdrop-blur-sm"
               >
                 <Zap className="w-3 h-3 text-primary" /> Real-time Collaboration
               </motion.div>
@@ -688,16 +1589,16 @@ export default function LandingPage() {
               <motion.h1
                 variants={fadeInUp}
                 custom={1}
-                className="text-4xl md:text-5xl lg:text-6xl font-display font-bold leading-[1.1] mb-6 dark:text-white"
+                className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-display font-bold leading-[1.12] mb-4 sm:mb-6 dark:text-white"
                 style={{ color: isDark ? undefined : "hsl(239, 40%, 25%)" }}
               >
                 Where Great
                 <br />
-                <span className="inline-flex items-end min-w-[8ch] md:min-w-[10ch]">
+                <span className="inline-flex items-end min-w-[6ch] sm:min-w-[8ch] md:min-w-[10ch]">
                   <span className="text-gradient capitalize">{displayText}</span>
                   <motion.span
                     aria-hidden
-                    className="ml-1 inline-block w-[2px] md:w-[3px] h-[0.85em] md:h-[0.9em] rounded-full bg-primary"
+                    className="ml-0.5 sm:ml-1 inline-block w-[2px] md:w-[3px] h-[0.8em] sm:h-[0.85em] md:h-[0.9em] rounded-full bg-primary"
                     animate={{ opacity: [1, 0, 1] }}
                     transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut" }}
                   />
@@ -710,7 +1611,7 @@ export default function LandingPage() {
               <motion.p
                 variants={fadeInUp}
                 custom={2}
-                className="text-lg text-muted-foreground max-w-xl mb-8"
+                className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-xl mb-5 sm:mb-6 md:mb-8"
               >
                 A collaborative space for technical interviews — real-time code
                 editor, shared whiteboard, HD video, and AI-powered hints. All
@@ -721,7 +1622,7 @@ export default function LandingPage() {
               <motion.div
                 variants={fadeInUp}
                 custom={2.5}
-                className="flex flex-wrap items-center gap-3 mb-8"
+                className="flex flex-wrap items-center gap-2 sm:gap-3 mb-5 sm:mb-8"
               >
                 {[
                   { icon: Video, label: "Live Video Chat" },
@@ -730,7 +1631,7 @@ export default function LandingPage() {
                 ].map((badge) => (
                   <div
                     key={badge.label}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/30 bg-primary/10 text-sm text-foreground backdrop-blur-sm"
+                    className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border border-primary/30 bg-primary/10 text-xs sm:text-sm text-foreground backdrop-blur-sm"
                   >
                     <badge.icon className="w-3.5 h-3.5 text-primary" />
                     {badge.label}
@@ -742,7 +1643,7 @@ export default function LandingPage() {
               <motion.div
                 variants={fadeInUp}
                 custom={3}
-                className="flex flex-col sm:flex-row items-start gap-4"
+                className="flex flex-col sm:flex-row items-stretch sm:items-start gap-3 sm:gap-4"
               >
                 <AnimatedCTAButton
                   to="/login"
@@ -780,7 +1681,7 @@ export default function LandingPage() {
               <motion.div
                 variants={fadeInUp}
                 custom={4}
-                className="flex items-center gap-8 mt-8 lg:mt-10 pt-5 lg:pt-6 border-t border-border/50"
+                className="flex flex-wrap items-center gap-4 sm:gap-8 mt-8 lg:mt-10 pt-5 lg:pt-6 border-t border-border/50"
               >
                 {[
                   {
@@ -796,9 +1697,9 @@ export default function LandingPage() {
                     render: <CountUpValue end={99.9} decimals={1} suffix="%" />,
                   },
                 ].map((stat, idx) => (
-                  <div key={stat.label} className="flex items-center gap-8">
+                  <div key={stat.label} className="flex items-center gap-4 sm:gap-8">
                     <div>
-                      <div className="text-2xl md:text-3xl font-display font-bold text-gradient">
+                      <div className="text-xl sm:text-2xl md:text-3xl font-display font-bold text-gradient">
                         {stat.render}
                       </div>
                       <div className="text-xs text-muted-foreground mt-1">
@@ -970,7 +1871,7 @@ export default function LandingPage() {
       </section>
 
       {/* Room Preview */}
-      <section className="py-12">
+      <section className="py-8 sm:py-12">
         <div className="container">
           <MotionWrapper
             variants={fadeInUp}
@@ -987,9 +1888,9 @@ export default function LandingPage() {
                   interview-room — InterviewOS
                 </span>
               </div>
-              <div className="bg-background rounded-lg p-4 grid grid-cols-12 gap-3 min-h-[350px]">
+              <div className="bg-background rounded-lg p-2 sm:p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-2 sm:gap-3 min-h-[200px] md:min-h-[350px]">
                 {/* Video panel mock */}
-                <div className="col-span-3 space-y-3">
+                <div className="sm:col-span-1 md:col-span-3 space-y-2 sm:space-y-3">
                   <div className="aspect-video rounded-lg bg-secondary flex items-center justify-center">
                     <motion.div
                       animate={{ scale: [1, 1.1, 1] }}
@@ -1070,7 +1971,7 @@ export default function LandingPage() {
                   </div>
                 </div>
                 {/* Editor mock */}
-                <div className="col-span-6 rounded-lg bg-card border border-border overflow-hidden">
+                <div className="sm:col-span-1 md:col-span-6 rounded-lg bg-card border border-border overflow-hidden">
                   <div className="flex items-center justify-between px-3 py-2 border-b border-border">
                     <span className="text-xs text-muted-foreground font-mono">
                       solution.ts
@@ -1109,7 +2010,7 @@ export default function LandingPage() {
                   </div>
                 </div>
                 {/* Chat mock */}
-                <div className="col-span-3 rounded-lg bg-card border border-border flex flex-col">
+                <div className="sm:col-span-2 md:col-span-3 rounded-lg bg-card border border-border flex flex-col">
                   <div className="px-3 py-2 border-b border-border">
                     <span className="text-xs font-medium text-foreground">
                       Chat
@@ -1203,7 +2104,7 @@ export default function LandingPage() {
       </section>
 
       {/* Features */}
-      <section id="features" className="py-20">
+      <section id="features" className="py-12 sm:py-16 md:py-20">
         <div className="container">
           <motion.div
             variants={fadeInUp}
@@ -1211,48 +2112,74 @@ export default function LandingPage() {
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
-            className="text-center mb-16"
+            className="text-center mb-12 sm:mb-16 md:mb-20"
           >
             <h2
-              className="text-3xl md:text-5xl font-display font-bold mb-4 dark:text-white"
+              className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-display font-bold mb-3 sm:mb-4 dark:text-white"
               style={{ color: isDark ? undefined : "hsl(239, 40%, 25%)" }}
             >
               Everything you need to
               <span className="animate-text-shimmer"> run interviews</span>
             </h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            <p className="text-muted-foreground text-sm sm:text-base md:text-lg max-w-2xl mx-auto">
               From live coding to AI-powered feedback, InterviewOS handles the
               entire interview lifecycle.
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="space-y-16 sm:space-y-20 md:space-y-28">
             {features.map((feature, i) => (
-              <MotionWrapper
+              <motion.div
                 key={feature.title}
                 variants={fadeInUp}
                 custom={i}
+                initial="hidden"
                 whileInView="visible"
-                viewport={{ once: true }}
-                className="group p-6 rounded-xl bg-card border border-border hover:border-primary/40 transition-all duration-300 hover:shadow-[0_12px_40px_rgba(99,102,241,0.2),0_4px_12px_rgba(0,0,0,0.08)] hover:-translate-y-2 cursor-pointer"
+                viewport={{ once: true, margin: "-50px" }}
+                className={`grid md:grid-cols-2 gap-8 md:gap-12 lg:gap-16 items-center ${
+                  i % 2 === 1 ? "md:direction-rtl" : ""
+                }`}
               >
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                  <feature.icon className="w-5 h-5 text-primary" />
+                {/* Text content */}
+                <div className={`space-y-5 ${i % 2 === 1 ? "md:order-2" : ""}`}>
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
+                    <feature.icon className="w-3.5 h-3.5 text-primary" />
+                    <span className="text-xs font-semibold tracking-wider text-primary">{feature.badge}</span>
+                  </div>
+                  <h3 className="text-xl sm:text-2xl md:text-3xl font-display font-bold dark:text-white"
+                    style={{ color: isDark ? undefined : "hsl(239, 40%, 25%)" }}
+                  >
+                    {feature.headline}
+                  </h3>
+                  <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+                    {feature.description}
+                  </p>
+                  <div className="grid grid-cols-2 gap-2.5 pt-1">
+                    {feature.highlights.map((highlight) => (
+                      <div key={highlight} className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                        <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+                        {highlight}
+                      </div>
+                    ))}
+                  </div>
+                  <a href="#" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors pt-2 group/link">
+                    Learn more
+                    <ArrowRight className="w-4 h-4 group-hover/link:translate-x-1 transition-transform" />
+                  </a>
                 </div>
-                <h3 className="text-lg font-display font-semibold mb-2">
-                  {feature.title}
-                </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {feature.description}
-                </p>
-              </MotionWrapper>
+
+                {/* Preview mockup */}
+                <div className={`${i % 2 === 1 ? "md:order-1" : ""}`}>
+                  {renderFeaturePreview(feature.previewType)}
+                </div>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
       {/* How It Works */}
-      <section id="how-it-works" className="py-20 bg-card/50">
+      <section id="how-it-works" className="py-12 sm:py-16 md:py-20 bg-card/50">
         <div className="container">
           <MotionWrapper
             variants={fadeInUp}
@@ -1260,15 +2187,15 @@ export default function LandingPage() {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl md:text-5xl font-display font-bold mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-display font-bold mb-3 sm:mb-4">
               How it works
             </h2>
-            <p className="text-muted-foreground text-lg">
+            <p className="text-muted-foreground text-sm sm:text-base md:text-lg">
               Three steps to a better interview experience.
             </p>
           </MotionWrapper>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+          <div className="grid sm:grid-cols-3 gap-6 sm:gap-8 max-w-4xl mx-auto">
             {[
               {
                 step: "01",
@@ -1310,7 +2237,7 @@ export default function LandingPage() {
       </section>
 
       {/* Testimonials slider */}
-      <section className="py-12 bg-card/50">
+      <section className="py-8 sm:py-12 bg-card/50">
         <div
           ref={testimonialsRef}
           className="container relative overflow-hidden"
@@ -1328,7 +2255,7 @@ export default function LandingPage() {
             viewport={{ once: true }}
             className="mb-10 text-center"
           >
-            <h3 className="text-xl md:text-2xl font-bold text-foreground">
+            <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground">
               What People Are Saying
             </h3>
             <p className="text-muted-foreground text-sm mt-1">
@@ -1480,110 +2407,101 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Partner logos marquee */}
-      <motion.section
-        className="py-20 bg-gradient-to-b from-card/30 via-card/60 to-card/30"
-        initial={{ opacity: 0, x: -25 }}
-        whileInView={{ opacity: 1, x: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
-      >
-        <div className="container relative overflow-hidden">
-          <div className="text-center mb-10">
-            <h3 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+      {/* Partner logos grid */}
+      <section className="py-10 sm:py-14 md:py-20 bg-gradient-to-b from-card/30 via-card/60 to-card/30">
+        <div className="container">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="text-center mb-6 sm:mb-8 md:mb-10"
+          >
+            <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground mb-2">
               Trusted by Top Companies & Colleges
             </h3>
-            <p className="text-muted-foreground text-sm md:text-base max-w-lg mx-auto">
+            <p className="text-muted-foreground text-xs sm:text-sm md:text-base max-w-lg mx-auto">
               Leading organizations and institutions rely on{" "}
               <span className="text-foreground">Interview</span>
               <span className="text-primary font-semibold">OS</span> for
               seamless technical hiring.
             </p>
-          </div>
-          <div
-            ref={partnersRef}
-            className="relative overflow-hidden"
-            style={{
-              WebkitMaskImage:
-                "linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)",
-              maskImage:
-                "linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)",
-            }}
+          </motion.div>
+
+          {/* Row 1: Companies */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
+            className="flex flex-wrap items-center justify-center gap-x-8 sm:gap-x-12 md:gap-x-16 gap-y-6 sm:gap-y-8 mb-8 sm:mb-10"
           >
-            <div
-              onClick={() => handleMarqueePause("partners", setPartnersPaused)}
-              className={`flex items-center gap-6 w-max cursor-pointer ${
-                partnersInView
-                  ? "animate-[marquee-right_100s_linear_infinite]"
-                  : ""
-              }`}
-              style={{
-                animationPlayState: partnersPaused ? "paused" : "running",
-              }}
-            >
-              {[
-                ...partnerLogos,
-                ...partnerLogos,
-                ...partnerLogos,
-                ...partnerLogos,
-              ].map((logo, idx) => (
+            {partnerLogos
+              .filter((l) => !["MSU Baroda", "LDCE", "Parul University", "GTU"].includes(l.alt))
+              .map((logo) => (
                 <div
-                  key={idx}
-                  className="flex-shrink-0 flex items-center justify-center h-72 w-56 px-2"
+                  key={logo.alt}
+                  className="flex items-center justify-center"
                 >
-                  {logo.alt === "Parul University" || logo.alt === "GTU" ? (
-                    <img
-                      src={logo.src}
-                      alt={logo.alt}
-                      className="max-h-80 object-contain"
-                    />
-                  ) : logo.alt === "MSU Baroda" || logo.alt === "LDCE" ? (
-                    <img
-                      src={logo.src}
-                      alt={logo.alt}
-                      className="max-h-32 object-contain"
-                    />
-                  ) : logo.alt === "Accenture" ? (
-                    <img
-                      src={logo.src}
-                      alt={logo.alt}
-                      className="max-h-32 object-contain"
-                    />
-                  ) : logo.alt === "Oracle" ? (
-                    <img
-                      src={logo.src}
-                      alt={logo.alt}
-                      className="max-h-80 object-contain"
-                    />
-                  ) : (
-                    <img
-                      src={logo.src}
-                      alt={logo.alt}
-                      className="max-h-68 object-contain"
-                    />
-                  )}
+                  <img
+                    src={logo.src}
+                    alt={logo.alt}
+                    className="h-12 sm:h-16 md:h-20 w-auto object-contain"
+                  />
                 </div>
               ))}
-            </div>
+          </motion.div>
+
+          {/* Divider */}
+          <div className="flex items-center gap-4 mb-8 sm:mb-10 max-w-xl mx-auto">
+            <div className="flex-1 h-px bg-border/60" />
+            <span className="text-[10px] sm:text-xs uppercase tracking-widest text-muted-foreground font-medium">
+              Universities
+            </span>
+            <div className="flex-1 h-px bg-border/60" />
           </div>
+
+          {/* Row 2: Colleges */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
+            className="flex flex-wrap items-center justify-center gap-x-8 sm:gap-x-12 md:gap-x-16 gap-y-6 sm:gap-y-8"
+          >
+            {partnerLogos
+              .filter((l) => ["MSU Baroda", "LDCE", "Parul University", "GTU"].includes(l.alt))
+              .map((logo) => (
+                <div
+                  key={logo.alt}
+                  className="flex items-center justify-center"
+                >
+                  <img
+                    src={logo.src}
+                    alt={logo.alt}
+                    className={logo.alt === "GTU" ? "h-24 sm:h-32 md:h-40 w-auto object-contain" : "h-16 sm:h-20 md:h-24 w-auto object-contain"}
+                  />
+                </div>
+              ))}
+          </motion.div>
         </div>
-      </motion.section>
+      </section>
 
       {/* CTA */}
-      <section className="py-16">
+      <section className="py-10 sm:py-12 md:py-16">
         <div className="container">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="max-w-3xl mx-auto text-center p-12 rounded-[28px] bg-gradient-to-br from-primary via-indigo-500/90 to-purple-600/95 shadow-[0_22px_60px_rgba(67,56,202,0.28)] ring-1 ring-white/15 relative overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_26px_70px_rgba(67,56,202,0.32)]"
+            className="max-w-3xl mx-auto text-center p-6 sm:p-8 md:p-12 rounded-[20px] sm:rounded-[28px] bg-gradient-to-br from-primary via-indigo-500/90 to-purple-600/95 shadow-[0_22px_60px_rgba(67,56,202,0.28)] ring-1 ring-white/15 relative overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_26px_70px_rgba(67,56,202,0.32)]"
           >
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.1),transparent)]" />
             <div className="relative z-10">
-              <h2 className="text-3xl md:text-4xl font-display font-bold text-primary-foreground mb-4">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-primary-foreground mb-4">
                 Revolutionize your hiring process in minutes
               </h2>
-              <p className="text-primary-foreground/80 mb-8 text-lg">
+              <p className="text-primary-foreground/80 mb-6 sm:mb-8 text-base sm:text-lg">
                 Collaborate, evaluate and onboard faster with InterviewOS—build
                 stronger engineering teams with confidence.
               </p>
@@ -1601,7 +2519,7 @@ export default function LandingPage() {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-20 bg-background">
+      <section className="py-12 sm:py-16 md:py-20 bg-background">
         <div className="container">
           <MotionWrapper
             variants={fadeInUp}
@@ -1609,14 +2527,14 @@ export default function LandingPage() {
             viewport={{ once: true }}
             className="mb-12"
           >
-            <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-foreground">
               Frequently Asked Questions
             </h2>
           </MotionWrapper>
 
-          <div className="flex flex-col lg:flex-row gap-10">
+          <div className="flex flex-col lg:flex-row gap-6 sm:gap-8 lg:gap-10">
             {/* Category tabs - left side */}
-            <div className="flex flex-row lg:flex-col flex-wrap gap-2 lg:w-72 shrink-0">
+            <div className="flex flex-row lg:flex-col flex-wrap gap-1.5 sm:gap-2 lg:w-72 shrink-0 overflow-x-auto pb-2 lg:pb-0">
               {faqCategories.map((cat) => (
                 <button
                   key={cat}
@@ -1658,20 +2576,20 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-card/50 border-t border-border mt-8">
-        <div className="container py-5">
-          <div className="flex flex-wrap items-center justify-between gap-4">
+      <footer className="bg-card/50 border-t border-border mt-4 sm:mt-6 md:mt-8">
+        <div className="container py-4 sm:py-5">
+          <div className="flex flex-wrap items-center justify-center sm:justify-between gap-4">
             {/* Logo */}
             <a href="/">
               <img
                 src={isDark ? logo : logoLight}
                 alt="InterviewOS Logo"
-                className="w-60 h-16 object-contain"
+                className="w-40 sm:w-60 h-12 sm:h-16 object-contain"
               />
             </a>
 
             {/* Copyright */}
-            <div className="flex-1 text-center text-xs text-muted-foreground italic mt-4">
+            <div className="flex-1 text-center text-xs text-muted-foreground italic mt-2 sm:mt-4 order-last lg:order-none w-full lg:w-auto">
               © 2026 InterviewOS. All rights reserved.
               <span className="block">Made with ❤️ by Bharat Dhuva.</span>
             </div>
