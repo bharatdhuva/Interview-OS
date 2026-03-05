@@ -1,26 +1,27 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import axios from 'axios';
 import { User, IUser } from '../models/user.model';
 import { generateAccessToken, generateRefreshToken } from '../utils/jwt';
 import logger from '../utils/logger';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { registerSchema, loginSchema, googleAuthSchema } from '../middleware/validation/auth.validation';
-import axios from 'axios';
+
+const REFRESH_COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'strict' as const,
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+};
 
 const setRefreshCookie = (res: Response, token: string) => {
-  res.cookie('refreshToken', token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-  });
+  res.cookie('refreshToken', token, REFRESH_COOKIE_OPTIONS);
 };
 
 export const register = async (req: Request, res: Response) => {
   try {
-    const validatedData = registerSchema.parse(req.body);
-    const { name, email, password, role } = validatedData;
+    const { name, email, password, role } = registerSchema.parse(req.body);
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -28,8 +29,7 @@ export const register = async (req: Request, res: Response) => {
       return;
     }
 
-    const salt = await bcrypt.genSalt(12);
-    const passwordHash = await bcrypt.hash(password, salt);
+    const passwordHash = await bcrypt.hash(password, 12);
 
     const user = await User.create({
       name,
@@ -43,7 +43,6 @@ export const register = async (req: Request, res: Response) => {
 
     user.refreshTokens.push(refreshToken);
     await user.save();
-
     setRefreshCookie(res, refreshToken);
 
     res.status(201).json({
@@ -58,8 +57,8 @@ export const register = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     if (error.name === 'ZodError') {
-       res.status(400).json({ success: false, message: 'Validation Error', errors: error.errors });
-       return;
+      res.status(400).json({ success: false, message: 'Validation Error', errors: error.errors });
+      return;
     }
     logger.error('Register error', error);
     res.status(500).json({ success: false, message: 'Server error during registration' });
@@ -68,8 +67,7 @@ export const register = async (req: Request, res: Response) => {
 
 export const login = async (req: Request, res: Response) => {
   try {
-    const validatedData = loginSchema.parse(req.body);
-    const { email, password } = validatedData;
+    const { email, password } = loginSchema.parse(req.body);
 
     const user = await User.findOne({ email });
     if (!user || !user.passwordHash) {
@@ -88,7 +86,6 @@ export const login = async (req: Request, res: Response) => {
 
     user.refreshTokens.push(refreshToken);
     await user.save();
-
     setRefreshCookie(res, refreshToken);
 
     res.status(200).json({
@@ -103,8 +100,8 @@ export const login = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     if (error.name === 'ZodError') {
-       res.status(400).json({ success: false, message: 'Validation Error', errors: error.errors });
-       return;
+      res.status(400).json({ success: false, message: 'Validation Error', errors: error.errors });
+      return;
     }
     logger.error('Login error', error);
     res.status(500).json({ success: false, message: 'Server error during login' });
@@ -114,11 +111,11 @@ export const login = async (req: Request, res: Response) => {
 export const logout = async (req: Request, res: Response) => {
   try {
     const { refreshToken } = req.cookies;
-    
+
     if (refreshToken) {
       const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET as string) as any;
       await User.findByIdAndUpdate(decoded.id, {
-        $pull: { refreshTokens: refreshToken }
+        $pull: { refreshTokens: refreshToken },
       });
     }
 
@@ -132,22 +129,18 @@ export const logout = async (req: Request, res: Response) => {
 };
 
 export const getMe = async (req: AuthRequest, res: Response) => {
-  res.status(200).json({
-    success: true,
-    data: req.user,
-  });
+  res.status(200).json({ success: true, data: req.user });
 };
 
 export const googleSignIn = async (req: Request, res: Response) => {
   try {
-    const validatedData = googleAuthSchema.parse(req.body);
-    const { token, role } = validatedData;
+    const { token, role } = googleAuthSchema.parse(req.body);
 
     const googleRes = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (!googleRes.data || !googleRes.data.email) {
+    if (!googleRes.data?.email) {
       res.status(401).json({ success: false, message: 'Invalid Google Token' });
       return;
     }
@@ -176,7 +169,6 @@ export const googleSignIn = async (req: Request, res: Response) => {
 
     user.refreshTokens.push(refreshToken);
     await user.save();
-
     setRefreshCookie(res, refreshToken);
 
     res.status(200).json({
@@ -195,7 +187,7 @@ export const googleSignIn = async (req: Request, res: Response) => {
       res.status(400).json({ success: false, message: 'Validation Error', errors: error.errors });
       return;
     }
-    logger.error('Google Sign-In error full trace', { message: error.message, stack: error.stack, response: error.response?.data });
-    res.status(500).json({ success: false, message: 'Server error during Google authentication', error: error.message });
+    logger.error('Google Sign-In error', { message: error.message, stack: error.stack, response: error.response?.data });
+    res.status(500).json({ success: false, message: 'Server error during Google authentication' });
   }
 };

@@ -9,13 +9,8 @@ export interface AuthRequest extends Request {
 
 export const protect = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    let token;
-    if (
-      req.headers.authorization &&
-      req.headers.authorization.startsWith('Bearer')
-    ) {
-      token = req.headers.authorization.split(' ')[1];
-    }
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.startsWith('Bearer') ? authHeader.split(' ')[1] : undefined;
 
     if (!token) {
       res.status(401).json({ success: false, message: 'Not authorized to access this route' });
@@ -34,7 +29,6 @@ export const protect = async (req: AuthRequest, res: Response, next: NextFunctio
   } catch (error) {
     logger.error('Auth Error', error);
     res.status(401).json({ success: false, message: 'Not authorized to access this route' });
-    return;
   }
 };
 
