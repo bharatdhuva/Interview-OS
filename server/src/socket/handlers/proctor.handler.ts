@@ -2,17 +2,12 @@ import { Server, Socket } from 'socket.io';
 import logger from '../../utils/logger';
 import { InterviewSession } from '../../models/session.model';
 
+const MAX_VIOLATIONS = 3;
+
 export default (io: Server, socket: Socket) => {
   socket.on(
     'proctor:warning',
-    async ({
-      roomId,
-      sessionId,
-      type,
-      count,
-      timestamp,
-      userId,
-    }: {
+    async ({ roomId, sessionId, type, count, timestamp, userId }: {
       roomId: string;
       sessionId: string;
       type: string;
@@ -20,21 +15,15 @@ export default (io: Server, socket: Socket) => {
       timestamp: Date;
       userId: string;
     }) => {
-      logger.warn(`📸 Proctoring alert in room ${roomId} by user ${userId} - ${type} (${count}/3)`);
-
-      // Alert the interviewer in real-time
+      logger.warn(`Proctoring alert in room ${roomId} by user ${userId} - ${type} (${count}/${MAX_VIOLATIONS})`);
       socket.to(roomId).emit('proctor:alert', { type, count, timestamp, userId });
 
-      // Save to database
       try {
         await InterviewSession.findByIdAndUpdate(sessionId, {
-          $push: {
-            violationLog: { type, timestamp, count },
-          },
+          $push: { violationLog: { type, timestamp, count } },
         });
 
-        // 3 strikes: Auto end the session
-        if (count >= 3) {
+        if (count >= MAX_VIOLATIONS) {
           await InterviewSession.findByIdAndUpdate(sessionId, {
             proctoringResult: 'terminated',
           });
@@ -43,7 +32,7 @@ export default (io: Server, socket: Socket) => {
           });
         }
       } catch (error) {
-        logger.error('Failed to save proctoring violation:', error);
+        logger.error('Failed to save proctoring violation', error);
       }
     }
   );
