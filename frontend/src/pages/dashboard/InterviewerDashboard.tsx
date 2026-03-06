@@ -2,7 +2,9 @@
   import { Link, useNavigate } from 'react-router-dom';
   import { motion, AnimatePresence } from 'framer-motion';
   import { format } from 'date-fns';
-  import { Plus, Calendar, Clock, Users, Copy, ArrowRight, BarChart3, CheckCircle2, User, LogOut, Terminal, X } from 'lucide-react';
+  import { Plus, Calendar, Clock, Users, Copy, ArrowRight, BarChart3, CheckCircle2, User, LogOut, Terminal, X, AlertCircle } from 'lucide-react';
+  import { useForm, Controller } from 'react-hook-form';
+  import { zodResolver } from '@hookform/resolvers/zod';
   import { Button } from '@/components/ui/button';
   import { Badge } from '@/components/ui/badge';
   import { Input } from '@/components/ui/input';
@@ -12,6 +14,7 @@
   import { useAuthStore } from '@/store/authStore';
   import { mockRooms } from '@/data/mockData';
   import { useToast } from '@/hooks/use-toast';
+  import { createRoomSchema, type CreateRoomFormData } from '@/lib/validations';
   import type { RoomStatus } from '@/types';
 
   const statusConfig: Record<RoomStatus, { label: string; className: string }> = {
@@ -170,86 +173,166 @@
         {/* Create Room Modal */}
         <AnimatePresence>
           {showCreate && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4"
-              onClick={() => setShowCreate(false)}
-            >
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                onClick={(e) => e.stopPropagation()}
-                className="w-full max-w-lg rounded-xl bg-card border border-border p-6"
-              >
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-display font-bold">Create Interview Room</h2>
-                  <button onClick={() => setShowCreate(false)} className="text-muted-foreground hover:text-foreground">
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-                <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); setShowCreate(false); toast({ title: 'Room created!', description: 'Invite link has been sent to the candidate.' }); }}>
-                  <div>
-                    <Label>Title</Label>
-                    <Input placeholder="Frontend Engineer — React Assessment" className="mt-1.5 bg-secondary border-border" required />
-                  </div>
-                  <div>
-                    <Label>Candidate Email</Label>
-                    <Input type="email" placeholder="candidate@example.com" className="mt-1.5 bg-secondary border-border" required />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Date & Time</Label>
-                      <Input type="datetime-local" className="mt-1.5 bg-secondary border-border" required />
-                    </div>
-                    <div>
-                      <Label>Duration (min)</Label>
-                      <Select defaultValue="60">
-                        <SelectTrigger className="mt-1.5 bg-secondary border-border">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="30">30 min</SelectItem>
-                          <SelectItem value="45">45 min</SelectItem>
-                          <SelectItem value="60">60 min</SelectItem>
-                          <SelectItem value="90">90 min</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div>
-                    <Label>Tech Stack</Label>
-                    <Input placeholder="React, TypeScript, Node.js" className="mt-1.5 bg-secondary border-border" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Difficulty</Label>
-                      <Select defaultValue="medium">
-                        <SelectTrigger className="mt-1.5 bg-secondary border-border"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="easy">Easy</SelectItem>
-                          <SelectItem value="medium">Medium</SelectItem>
-                          <SelectItem value="hard">Hard</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div />
-                  </div>
-                  <div>
-                    <Label>Problem Statement</Label>
-                    <Textarea placeholder="Describe the coding problem..." className="mt-1.5 bg-secondary border-border min-h-[80px]" />
-                  </div>
-                  <div className="flex gap-3 pt-2">
-                    <Button type="button" variant="outline" onClick={() => setShowCreate(false)} className="flex-1">Cancel</Button>
-                    <Button type="submit" className="flex-1 bg-gradient-primary hover:opacity-90">Create Room</Button>
-                  </div>
-                </form>
-              </motion.div>
-            </motion.div>
+            <CreateRoomModal onClose={() => setShowCreate(false)} toast={toast} />
           )}
         </AnimatePresence>
       </div>
+    );
+  }
+
+  /* ─── Create Room Modal Component ─── */
+  function CreateRoomModal({ onClose, toast }: { onClose: () => void; toast: ReturnType<typeof useToast>['toast'] }) {
+    const {
+      register,
+      handleSubmit,
+      control,
+      formState: { errors },
+    } = useForm<CreateRoomFormData>({
+      resolver: zodResolver(createRoomSchema),
+      mode: "onTouched",
+      defaultValues: {
+        title: "",
+        candidateEmail: "",
+        dateTime: "",
+        duration: "60",
+        techStack: "",
+        difficulty: "medium",
+        problemStatement: "",
+      },
+    });
+
+    const onSubmit = (_data: CreateRoomFormData) => {
+      onClose();
+      toast({ title: 'Room created!', description: 'Invite link has been sent to the candidate.' });
+    };
+
+    const FieldError = ({ message }: { message?: string }) =>
+      message ? (
+        <motion.p initial={{ y: -4, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-[11px] mt-1 flex items-center gap-1 text-destructive" role="alert">
+          <AlertCircle className="w-3 h-3" /> {message}
+        </motion.p>
+      ) : null;
+
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          onClick={(e) => e.stopPropagation()}
+          className="w-full max-w-lg rounded-xl bg-card border border-border p-6 max-h-[90vh] overflow-y-auto"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-display font-bold">Create Interview Room</h2>
+            <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <form className="space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
+            <div>
+              <Label>Title <span className="text-destructive">*</span></Label>
+              <Input
+                placeholder="Frontend Engineer — React Assessment"
+                className={`mt-1.5 bg-secondary border-border ${errors.title ? "!border-destructive" : ""}`}
+                {...register("title")}
+              />
+              <FieldError message={errors.title?.message} />
+            </div>
+            <div>
+              <Label>Candidate Email <span className="text-destructive">*</span></Label>
+              <Input
+                type="email"
+                placeholder="candidate@example.com"
+                className={`mt-1.5 bg-secondary border-border ${errors.candidateEmail ? "!border-destructive" : ""}`}
+                {...register("candidateEmail")}
+              />
+              <FieldError message={errors.candidateEmail?.message} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Date & Time <span className="text-destructive">*</span></Label>
+                <Input
+                  type="datetime-local"
+                  className={`mt-1.5 bg-secondary border-border ${errors.dateTime ? "!border-destructive" : ""}`}
+                  {...register("dateTime")}
+                />
+                <FieldError message={errors.dateTime?.message} />
+              </div>
+              <div>
+                <Label>Duration (min) <span className="text-destructive">*</span></Label>
+                <Controller
+                  name="duration"
+                  control={control}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger className={`mt-1.5 bg-secondary border-border ${errors.duration ? "!border-destructive" : ""}`}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="30">30 min</SelectItem>
+                        <SelectItem value="45">45 min</SelectItem>
+                        <SelectItem value="60">60 min</SelectItem>
+                        <SelectItem value="90">90 min</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                <FieldError message={errors.duration?.message} />
+              </div>
+            </div>
+            <div>
+              <Label>Tech Stack <span className="text-destructive">*</span></Label>
+              <Input
+                placeholder="React, TypeScript, Node.js"
+                className={`mt-1.5 bg-secondary border-border ${errors.techStack ? "!border-destructive" : ""}`}
+                {...register("techStack")}
+              />
+              <FieldError message={errors.techStack?.message} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Difficulty <span className="text-destructive">*</span></Label>
+                <Controller
+                  name="difficulty"
+                  control={control}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger className={`mt-1.5 bg-secondary border-border ${errors.difficulty ? "!border-destructive" : ""}`}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="easy">Easy</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="hard">Hard</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                <FieldError message={errors.difficulty?.message} />
+              </div>
+              <div />
+            </div>
+            <div>
+              <Label>Problem Statement <span className="text-destructive">*</span></Label>
+              <Textarea
+                placeholder="Describe the coding problem (min 10 characters)..."
+                className={`mt-1.5 bg-secondary border-border min-h-[80px] ${errors.problemStatement ? "!border-destructive" : ""}`}
+                {...register("problemStatement")}
+              />
+              <FieldError message={errors.problemStatement?.message} />
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button type="button" variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
+              <Button type="submit" className="flex-1 bg-gradient-primary hover:opacity-90">Create Room</Button>
+            </div>
+          </form>
+        </motion.div>
+      </motion.div>
     );
   }

@@ -299,13 +299,15 @@ export default function InterviewRoom() {
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!chatInput.trim()) return;
+    const trimmed = chatInput.trim();
+    if (!trimmed) return;
+    if (trimmed.length > 500) return;
     setMessages((prev) => [
       ...prev,
       {
         id: Date.now().toString(),
         sender: user?.name || "Candidate",
-        message: chatInput,
+        message: trimmed,
         time: new Date().toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
@@ -657,21 +659,25 @@ export default function InterviewRoom() {
             <div className="relative group">
               <Input
                 value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
+                onChange={(e) => setChatInput(e.target.value.slice(0, 500))}
                 placeholder="Message interviewer..."
-                className="pr-12 bg-secondary/50 border-border focus-visible:ring-primary h-11 rounded-xl transition-all"
+                className={`pr-12 bg-secondary/50 border-border focus-visible:ring-primary h-11 rounded-xl transition-all ${chatInput.length >= 500 ? "!border-destructive" : ""}`}
+                maxLength={500}
               />
               <button
                 type="submit"
-                disabled={!chatInput.trim()}
+                disabled={!chatInput.trim() || chatInput.trim().length > 500}
                 className="absolute right-2 top-1.5 h-8 w-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 disabled:opacity-50 disabled:hover:scale-100 transition-all active:scale-95 shadow-lg shadow-primary/20"
               >
                 <Send className="w-4 h-4" />
               </button>
             </div>
-            <div className="mt-2 flex items-center gap-2">
+            <div className="mt-2 flex items-center justify-between gap-2">
               <span className="text-[10px] text-muted-foreground/60">
                 Press Enter to send
+              </span>
+              <span className={`text-[10px] ${chatInput.length >= 450 ? (chatInput.length >= 500 ? "text-destructive font-medium" : "text-warning") : "text-muted-foreground/60"}`}>
+                {chatInput.length}/500
               </span>
             </div>
           </form>

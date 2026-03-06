@@ -12,12 +12,15 @@ import {
   User,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
 import { useAuthStore } from "@/store/authStore";
 import { useToast } from "@/hooks/use-toast";
 import { useGoogleLogin } from "@react-oauth/google";
 import api from "@/lib/api";
+import { registerSchema, type RegisterFormData } from "@/lib/validations";
 
 /* ─── Password strength ─── */
 const getPasswordStrength = (
@@ -40,52 +43,50 @@ const getPasswordStrength = (
 };
 
 const RegisterPage: React.FC = () => {
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState<"candidate" | "interviewer">("candidate");
-  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [serverError, setServerError] = useState("");
 
   const navigate = useNavigate();
-  const login = useAuthStore((s) => s.login);
+  const loginAction = useAuthStore((s) => s.login);
   const { toast } = useToast();
 
-  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const strength = useMemo(() => getPasswordStrength(password), [password]);
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors, touchedFields },
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
+    mode: "onTouched",
+    defaultValues: {
+      fullName: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      role: "candidate",
+      termsAccepted: false as unknown as true,
+    },
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!termsAccepted) return;
+  const emailValue = watch("email");
+  const passwordValue = watch("password");
+  const roleValue = watch("role");
+  const termsValue = watch("termsAccepted");
+  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue);
+  const strength = useMemo(() => getPasswordStrength(passwordValue), [passwordValue]);
 
-    // Client-side validation
-    if (!fullName.trim() || fullName.trim().length < 2) {
-      setError("Please enter your full name");
-      return;
-    }
-    if (!email.trim() || !isEmailValid) {
-      setError("Please enter a valid email address");
-      return;
-    }
-    if (
-      password.length < 8 ||
-      !/[A-Za-z]/.test(password) ||
-      !/[0-9]/.test(password)
-    ) {
-      setError("Password needs min 8 chars, 1 letter, 1 number");
-      return;
-    }
-
-    setError("");
+  const onSubmit = async (data: RegisterFormData) => {
+    setServerError("");
     setLoading(true);
     try {
       const res = await api.post("/auth/register", {
-        name: fullName.trim(),
-        email: email.trim(),
-        password,
-        role,
+        name: data.fullName.trim(),
+        email: data.email.trim(),
+        password: data.password,
+        role: data.role,
       });
       const d = res.data.data;
       const user = {
@@ -97,7 +98,7 @@ const RegisterPage: React.FC = () => {
         isEmailVerified: true,
         createdAt: new Date().toISOString(),
       };
-      login(user, d.accessToken);
+      loginAction(user, d.accessToken);
       toast({
         title: "Account created!",
         description: "Welcome to InterviewOS.",
@@ -110,7 +111,7 @@ const RegisterPage: React.FC = () => {
     } catch (err: unknown) {
       const msg =
         (err as any)?.response?.data?.message || "Something went wrong";
-      setError(msg);
+      setServerError(msg);
     } finally {
       setLoading(false);
     }
@@ -119,11 +120,11 @@ const RegisterPage: React.FC = () => {
   const handleGoogle = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       try {
-        setError("");
+        setServerError("");
         setLoading(true);
         const res = await api.post("/auth/google", {
           token: tokenResponse.access_token,
-          role,
+          role: roleValue,
         });
         const d = res.data.data;
         const user = {
@@ -135,7 +136,7 @@ const RegisterPage: React.FC = () => {
           isEmailVerified: true,
           createdAt: new Date().toISOString(),
         };
-        login(user, d.accessToken);
+        loginAction(user, d.accessToken);
         toast({ title: `Welcome, ${user.name}!` });
         navigate(
           user.role === "interviewer"
@@ -143,7 +144,7 @@ const RegisterPage: React.FC = () => {
             : "/dashboard/candidate",
         );
       } catch (err: unknown) {
-        setError(
+        setServerError(
           (err as any)?.response?.data?.message ||
             "Google authentication failed",
         );
@@ -151,14 +152,14 @@ const RegisterPage: React.FC = () => {
         setLoading(false);
       }
     },
-    onError: () => setError("Google signup failed. Please try again."),
+    onError: () => setServerError("Google signup failed. Please try again."),
   });
 
   const stagger = (i: number) => ({ delay: 0.15 + i * 0.06 });
 
   return (
     <AuthLayout variant="register">
-      <form onSubmit={handleSubmit} className="flex flex-col" style={{ overflow: 'hidden', maxHeight: '100vh' }}>
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col" style={{ overflow: 'hidden', maxHeight: '100vh' }}>
         {/* Header */}
         <motion.div
           initial={{ y: 12, opacity: 0 }}
@@ -185,7 +186,7 @@ const RegisterPage: React.FC = () => {
             transition={stagger(1)}
           >
             <label htmlFor="reg-name" className="ios-label">
-              Full Name
+              Full Name <span style={{ color: "#f87171" }}>*</span>
             </label>
             <div className="relative">
               <User
@@ -196,17 +197,17 @@ const RegisterPage: React.FC = () => {
               <input
                 id="reg-name"
                 type="text"
-                className="ios-input"
+                className={`ios-input ${errors.fullName && touchedFields.fullName ? "!border-red-500" : ""}`}
                 placeholder="Enter your full name"
-                value={fullName}
-                onChange={(e) => {
-                  setFullName(e.target.value);
-                  if (error) setError("");
-                }}
-                required
+                {...register("fullName")}
                 autoComplete="name"
               />
             </div>
+            {errors.fullName && touchedFields.fullName && (
+              <motion.p initial={{ y: -4, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-[11px] mt-1" style={{ color: "#f87171" }} role="alert">
+                {errors.fullName.message}
+              </motion.p>
+            )}
           </motion.div>
 
           {/* Email */}
@@ -216,7 +217,7 @@ const RegisterPage: React.FC = () => {
             transition={stagger(2)}
           >
             <label htmlFor="reg-email" className="ios-label">
-              Email Address
+              Email Address <span style={{ color: "#f87171" }}>*</span>
             </label>
             <div className="relative">
               <Mail
@@ -227,17 +228,12 @@ const RegisterPage: React.FC = () => {
               <input
                 id="reg-email"
                 type="email"
-                className="ios-input"
+                className={`ios-input ${errors.email && touchedFields.email ? "!border-red-500" : ""}`}
                 placeholder="you@example.com"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  if (error) setError("");
-                }}
-                required
+                {...register("email")}
                 autoComplete="email"
               />
-              {isEmailValid && (
+              {isEmailValid && !errors.email && (
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
@@ -247,6 +243,11 @@ const RegisterPage: React.FC = () => {
                 </motion.div>
               )}
             </div>
+            {errors.email && touchedFields.email && (
+              <motion.p initial={{ y: -4, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-[11px] mt-1" style={{ color: "#f87171" }} role="alert">
+                {errors.email.message}
+              </motion.p>
+            )}
           </motion.div>
 
           {/* Password */}
@@ -256,7 +257,7 @@ const RegisterPage: React.FC = () => {
             transition={stagger(3)}
           >
             <label htmlFor="reg-password" className="ios-label">
-              Password
+              Password <span style={{ color: "#f87171" }}>*</span>
             </label>
             <div className="relative">
               <Lock
@@ -267,14 +268,9 @@ const RegisterPage: React.FC = () => {
               <input
                 id="reg-password"
                 type={showPassword ? "text" : "password"}
-                className="ios-input !pr-10"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  if (error) setError("");
-                }}
-                required
+                className={`ios-input !pr-10 ${errors.password && touchedFields.password ? "!border-red-500" : ""}`}
+                placeholder="Min 8 chars, 1 letter, 1 number"
+                {...register("password")}
                 autoComplete="new-password"
               />
               <button
@@ -287,7 +283,12 @@ const RegisterPage: React.FC = () => {
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
-            {password.length > 0 && (
+            {errors.password && touchedFields.password && (
+              <motion.p initial={{ y: -4, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-[11px] mt-1" style={{ color: "#f87171" }} role="alert">
+                {errors.password.message}
+              </motion.p>
+            )}
+            {passwordValue.length > 0 && (
               <motion.div
                 initial={{ opacity: 0, y: -4 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -299,12 +300,12 @@ const RegisterPage: React.FC = () => {
                     style={{
                       width: `${(strength.level / 4) * 100}%`,
                       background: strength.level === 4
-                        ? '#7c3aed' // Strong: purple
+                        ? '#7c3aed'
                         : strength.level === 3
-                        ? '#6366f1' // Good: blue
+                        ? '#6366f1'
                         : strength.level === 2
-                        ? '#f59e42' // Fair: orange
-                        : '#ef4444', // Weak: red
+                        ? '#f59e42'
+                        : '#ef4444',
                     }}
                   />
                 </div>
@@ -324,33 +325,78 @@ const RegisterPage: React.FC = () => {
             )}
           </motion.div>
 
+          {/* Confirm Password */}
+          <motion.div
+            initial={{ y: 12, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={stagger(3.5)}
+          >
+            <label htmlFor="reg-confirm-password" className="ios-label">
+              Confirm Password <span style={{ color: "#f87171" }}>*</span>
+            </label>
+            <div className="relative">
+              <Lock
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2"
+                style={{ color: "#444455" }}
+              />
+              <input
+                id="reg-confirm-password"
+                type={showConfirmPassword ? "text" : "password"}
+                className={`ios-input !pr-10 ${errors.confirmPassword && touchedFields.confirmPassword ? "!border-red-500" : ""}`}
+                placeholder="Re-enter your password"
+                {...register("confirmPassword")}
+                autoComplete="new-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer"
+                style={{ color: "#444455" }}
+                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+              >
+                {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+            {errors.confirmPassword && touchedFields.confirmPassword && (
+              <motion.p initial={{ y: -4, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-[11px] mt-1" style={{ color: "#f87171" }} role="alert">
+                {errors.confirmPassword.message}
+              </motion.p>
+            )}
+          </motion.div>
+
           {/* Role toggle */}
           <motion.div
             initial={{ y: 12, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={stagger(4)}
           >
-            <label className="ios-label">I Am A</label>
+            <label className="ios-label">I Am A <span style={{ color: "#f87171" }}>*</span></label>
             <div className="flex gap-2">
               {(["candidate", "interviewer"] as const).map((r) => (
                 <button
                   key={r}
                   type="button"
-                  onClick={() => setRole(r)}
+                  onClick={() => setValue("role", r, { shouldValidate: true })}
                   className="flex-1 h-10 rounded-lg text-[13px] font-medium cursor-pointer transition-all duration-150"
                   style={{
                     background:
-                      role === r
+                      roleValue === r
                         ? "rgba(99,102,241,0.12)"
                         : "rgba(255,255,255,0.03)",
-                    border: `1px solid ${role === r ? "rgba(99,102,241,0.35)" : "rgba(255,255,255,0.08)"}`,
-                    color: role === r ? "#a5b4fc" : "#888899",
+                    border: `1px solid ${roleValue === r ? "rgba(99,102,241,0.35)" : "rgba(255,255,255,0.08)"}`,
+                    color: roleValue === r ? "#a5b4fc" : "#888899",
                   }}
                 >
                   {r === "candidate" ? "👨‍💻 Candidate" : "🎯 Interviewer"}
                 </button>
               ))}
             </div>
+            {errors.role && (
+              <motion.p initial={{ y: -4, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-[11px] mt-1" style={{ color: "#f87171" }} role="alert">
+                {errors.role.message}
+              </motion.p>
+            )}
           </motion.div>
 
           {/* Terms */}
@@ -358,50 +404,55 @@ const RegisterPage: React.FC = () => {
             initial={{ y: 12, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={stagger(5)}
-            className="flex items-start gap-2"
+            className="flex flex-col"
           >
-            <input
-              type="checkbox"
-              id="terms"
-              className="ios-checkbox mt-0.5"
-              checked={termsAccepted}
-              onChange={(e) => {
-                setTermsAccepted(e.target.checked);
-                if (error) setError("");
-              }}
-              required
-            />
-            <label
-              htmlFor="terms"
-              className="text-xs cursor-pointer leading-relaxed"
-              style={{ color: "#888899" }}
-            >
-              I agree to the{" "}
-              <a
-                href="/terms"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-medium"
-                style={{ color: "#6366f1" }}
+            <div className="flex items-start gap-2">
+              <input
+                type="checkbox"
+                id="terms"
+                className="ios-checkbox mt-0.5"
+                checked={termsValue === true}
+                onChange={(e) => {
+                  setValue("termsAccepted", e.target.checked as unknown as true, { shouldValidate: true });
+                }}
+              />
+              <label
+                htmlFor="terms"
+                className="text-xs cursor-pointer leading-relaxed"
+                style={{ color: "#888899" }}
               >
-                Terms
-              </a>
-              {" & "}
-              <a
-                href="/privacy"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-medium"
-                style={{ color: "#6366f1" }}
-              >
-                Privacy Policy
-              </a>
-            </label>
+                I agree to the{" "}
+                <a
+                  href="/terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium"
+                  style={{ color: "#6366f1" }}
+                >
+                  Terms
+                </a>
+                {" & "}
+                <a
+                  href="/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium"
+                  style={{ color: "#6366f1" }}
+                >
+                  Privacy Policy
+                </a>
+              </label>
+            </div>
+            {errors.termsAccepted && (
+              <motion.p initial={{ y: -4, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-[11px] mt-1" style={{ color: "#f87171" }} role="alert">
+                {errors.termsAccepted.message}
+              </motion.p>
+            )}
           </motion.div>
         </div>
 
-        {/* Error */}
-        {error && (
+        {/* Server Error */}
+        {serverError && (
           <motion.p
             initial={{ y: -4, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -409,7 +460,7 @@ const RegisterPage: React.FC = () => {
             style={{ color: "#f87171" }}
             role="alert"
           >
-            {error}
+            {serverError}
           </motion.p>
         )}
 
@@ -420,7 +471,7 @@ const RegisterPage: React.FC = () => {
           transition={stagger(6)}
           type="submit"
           className="ios-btn-primary mt-5"
-          disabled={!termsAccepted || loading}
+          disabled={loading}
         >
           {loading ? (
             <>

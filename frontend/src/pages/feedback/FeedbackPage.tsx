@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { useAuthStore } from '@/store/authStore';
 import { mockFeedback } from '@/data/mockData';
 import { useToast } from '@/hooks/use-toast';
+import { feedbackSchema } from '@/lib/validations';
 import type { Recommendation } from '@/types';
 
 const recommendations: { value: Recommendation; label: string; color: string }[] = [
@@ -44,13 +45,35 @@ export default function FeedbackPage() {
 
   // For interviewer: show form. For candidate: show read-only feedback.
   const [ratings, setRatings] = useState(mockFeedback.ratings);
-  const [recommendation, setRecommendation] = useState<Recommendation>(mockFeedback.recommendation);
+  const [recommendation, setRecommendation] = useState<Recommendation | "">(mockFeedback.recommendation);
   const [strengths, setStrengths] = useState(mockFeedback.strengths);
   const [improvements, setImprovements] = useState(mockFeedback.improvements);
   const [notes, setNotes] = useState(mockFeedback.overallNotes);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate using Zod schema
+    const result = feedbackSchema.safeParse({
+      ratings,
+      recommendation: recommendation || undefined,
+      strengths,
+      improvements,
+      notes,
+    });
+
+    if (!result.success) {
+      const errs: Record<string, string> = {};
+      for (const issue of result.error.issues) {
+        const key = issue.path.join(".");
+        if (!errs[key]) errs[key] = issue.message;
+      }
+      setFieldErrors(errs);
+      return;
+    }
+
+    setFieldErrors({});
     toast({ title: 'Feedback submitted!', description: 'The candidate will be notified.' });
     navigate(-1);
   };
@@ -141,13 +164,13 @@ export default function FeedbackPage() {
 
             {/* Recommendation */}
             <div className="p-6 rounded-xl bg-card border border-border">
-              <h3 className="font-display font-semibold mb-4">Recommendation</h3>
+              <h3 className="font-display font-semibold mb-4">Recommendation <span className="text-destructive">*</span></h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 {recommendations.map((rec) => (
                   <button
                     key={rec.value}
                     type="button"
-                    onClick={() => setRecommendation(rec.value)}
+                    onClick={() => { setRecommendation(rec.value); setFieldErrors((prev) => { const next = { ...prev }; delete next.recommendation; return next; }); }}
                     className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
                       recommendation === rec.value ? rec.color + ' border-current' : 'border-border bg-secondary text-muted-foreground'
                     }`}
@@ -156,21 +179,65 @@ export default function FeedbackPage() {
                   </button>
                 ))}
               </div>
+              {fieldErrors.recommendation && (
+                <motion.p initial={{ y: -4, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-[11px] mt-2 text-destructive flex items-center gap-1" role="alert">
+                  <AlertCircle className="w-3 h-3" /> {fieldErrors.recommendation}
+                </motion.p>
+              )}
             </div>
 
             {/* Text Feedback */}
             <div className="p-6 rounded-xl bg-card border border-border space-y-4">
               <div>
-                <Label>Strengths</Label>
-                <Textarea value={strengths} onChange={(e) => setStrengths(e.target.value)} className="mt-1.5 bg-secondary border-border min-h-[80px]" />
+                <div className="flex justify-between items-center">
+                  <Label>Strengths <span className="text-destructive">*</span></Label>
+                  <span className={`text-[10px] ${strengths.length > 1000 ? 'text-destructive' : 'text-muted-foreground'}`}>{strengths.length}/1000</span>
+                </div>
+                <Textarea
+                  value={strengths}
+                  onChange={(e) => { setStrengths(e.target.value); if (fieldErrors.strengths) setFieldErrors((prev) => { const next = { ...prev }; delete next.strengths; return next; }); }}
+                  className={`mt-1.5 bg-secondary border-border min-h-[80px] ${fieldErrors.strengths ? '!border-destructive' : ''}`}
+                  placeholder="What did the candidate do well? (min 10 characters)"
+                />
+                {fieldErrors.strengths && (
+                  <motion.p initial={{ y: -4, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-[11px] mt-1 text-destructive flex items-center gap-1" role="alert">
+                    <AlertCircle className="w-3 h-3" /> {fieldErrors.strengths}
+                  </motion.p>
+                )}
               </div>
               <div>
-                <Label>Areas for Improvement</Label>
-                <Textarea value={improvements} onChange={(e) => setImprovements(e.target.value)} className="mt-1.5 bg-secondary border-border min-h-[80px]" />
+                <div className="flex justify-between items-center">
+                  <Label>Areas for Improvement <span className="text-destructive">*</span></Label>
+                  <span className={`text-[10px] ${improvements.length > 1000 ? 'text-destructive' : 'text-muted-foreground'}`}>{improvements.length}/1000</span>
+                </div>
+                <Textarea
+                  value={improvements}
+                  onChange={(e) => { setImprovements(e.target.value); if (fieldErrors.improvements) setFieldErrors((prev) => { const next = { ...prev }; delete next.improvements; return next; }); }}
+                  className={`mt-1.5 bg-secondary border-border min-h-[80px] ${fieldErrors.improvements ? '!border-destructive' : ''}`}
+                  placeholder="What areas need improvement? (min 10 characters)"
+                />
+                {fieldErrors.improvements && (
+                  <motion.p initial={{ y: -4, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-[11px] mt-1 text-destructive flex items-center gap-1" role="alert">
+                    <AlertCircle className="w-3 h-3" /> {fieldErrors.improvements}
+                  </motion.p>
+                )}
               </div>
               <div>
-                <Label>Overall Notes</Label>
-                <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} className="mt-1.5 bg-secondary border-border min-h-[80px]" />
+                <div className="flex justify-between items-center">
+                  <Label>Overall Notes</Label>
+                  <span className={`text-[10px] ${notes.length > 1000 ? 'text-destructive' : 'text-muted-foreground'}`}>{notes.length}/1000</span>
+                </div>
+                <Textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  className={`mt-1.5 bg-secondary border-border min-h-[80px] ${fieldErrors.notes ? '!border-destructive' : ''}`}
+                  placeholder="Any additional notes (optional)"
+                />
+                {fieldErrors.notes && (
+                  <motion.p initial={{ y: -4, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-[11px] mt-1 text-destructive flex items-center gap-1" role="alert">
+                    <AlertCircle className="w-3 h-3" /> {fieldErrors.notes}
+                  </motion.p>
+                )}
               </div>
             </div>
 

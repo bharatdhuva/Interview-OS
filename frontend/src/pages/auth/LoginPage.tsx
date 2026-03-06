@@ -10,44 +10,47 @@ import {
   Loader2,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
 import { useAuthStore } from "@/store/authStore";
 import { useToast } from "@/hooks/use-toast";
 import { useGoogleLogin } from "@react-oauth/google";
 import api from "@/lib/api";
+import { loginSchema, type LoginFormData } from "@/lib/validations";
 
 const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [serverError, setServerError] = useState("");
 
   const navigate = useNavigate();
-  const login = useAuthStore((s) => s.login);
+  const loginAction = useAuthStore((s) => s.login);
   const { toast } = useToast();
 
-  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors, touchedFields },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    mode: "onTouched",
+    defaultValues: { email: "", password: "" },
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email.trim() || !isEmailValid) {
-      setError("Please enter a valid email address");
-      return;
-    }
-    if (!password) {
-      setError("Please enter your password");
-      return;
-    }
+  const emailValue = watch("email");
+  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue);
 
-    setError("");
+  const onSubmit = async (data: LoginFormData) => {
+    setServerError("");
     setLoading(true);
     try {
       const res = await api.post("/auth/login", {
-        email: email.trim(),
-        password,
+        email: data.email,
+        password: data.password,
       });
       const d = res.data.data;
       const user = {
@@ -59,7 +62,7 @@ const LoginPage: React.FC = () => {
         isEmailVerified: true,
         createdAt: new Date().toISOString(),
       };
-      login(user, d.accessToken);
+      loginAction(user, d.accessToken);
       toast({
         title: "Welcome back!",
         description: "You have successfully signed in.",
@@ -72,7 +75,7 @@ const LoginPage: React.FC = () => {
     } catch (err: unknown) {
       const msg =
         (err as any)?.response?.data?.message || "Invalid email or password";
-      setError(msg);
+      setServerError(msg);
     } finally {
       setLoading(false);
     }
@@ -98,7 +101,7 @@ const LoginPage: React.FC = () => {
           isEmailVerified: true,
           createdAt: new Date().toISOString(),
         };
-        login(user, d.accessToken);
+        loginAction(user, d.accessToken);
         toast({ title: `Welcome, ${user.name}!` });
         navigate(
           user.role === "interviewer"
@@ -106,7 +109,7 @@ const LoginPage: React.FC = () => {
             : "/dashboard/candidate",
         );
       } catch (err: unknown) {
-        setError(
+        setServerError(
           (err as any)?.response?.data?.message ||
             "Google authentication failed",
         );
@@ -114,14 +117,14 @@ const LoginPage: React.FC = () => {
         setLoading(false);
       }
     },
-    onError: () => setError("Google sign-in failed. Please try again."),
+    onError: () => setServerError("Google sign-in failed. Please try again."),
   });
 
   const stagger = (i: number) => ({ delay: 0.15 + i * 0.06 });
 
   return (
     <AuthLayout variant="login">
-      <form onSubmit={handleSubmit} className="flex flex-col">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col">
         {/* Header */}
         <motion.div
           initial={{ y: 12, opacity: 0 }}
@@ -159,17 +162,12 @@ const LoginPage: React.FC = () => {
               <input
                 id="login-email"
                 type="email"
-                className="ios-input"
+                className={`ios-input ${errors.email && touchedFields.email ? "!border-red-500" : ""}`}
                 placeholder="you@example.com"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  if (error) setError("");
-                }}
-                required
+                {...register("email")}
                 autoComplete="email"
               />
-              {isEmailValid && (
+              {isEmailValid && !errors.email && (
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
@@ -179,6 +177,17 @@ const LoginPage: React.FC = () => {
                 </motion.div>
               )}
             </div>
+            {errors.email && touchedFields.email && (
+              <motion.p
+                initial={{ y: -4, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                className="text-[11px] mt-1"
+                style={{ color: "#f87171" }}
+                role="alert"
+              >
+                {errors.email.message}
+              </motion.p>
+            )}
           </motion.div>
 
           {/* Password */}
@@ -208,14 +217,9 @@ const LoginPage: React.FC = () => {
               <input
                 id="login-password"
                 type={showPassword ? "text" : "password"}
-                className="ios-input !pr-10"
+                className={`ios-input !pr-10 ${errors.password && touchedFields.password ? "!border-red-500" : ""}`}
                 placeholder="Enter your password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  if (error) setError("");
-                }}
-                required
+                {...register("password")}
                 autoComplete="current-password"
               />
               <button
@@ -228,10 +232,21 @@ const LoginPage: React.FC = () => {
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
+            {errors.password && touchedFields.password && (
+              <motion.p
+                initial={{ y: -4, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                className="text-[11px] mt-1"
+                style={{ color: "#f87171" }}
+                role="alert"
+              >
+                {errors.password.message}
+              </motion.p>
+            )}
           </motion.div>
 
-          {/* Error */}
-          {error && (
+          {/* Server Error */}
+          {serverError && (
             <motion.p
               initial={{ y: -4, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -239,7 +254,7 @@ const LoginPage: React.FC = () => {
               style={{ color: "#f87171" }}
               role="alert"
             >
-              {error}
+              {serverError}
             </motion.p>
           )}
 
