@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import Editor from "@monaco-editor/react";
 
 import {
   Mic,
@@ -10,13 +9,9 @@ import {
   VideoOff,
   Monitor,
   PhoneOff,
-  Play,
-  Save,
-  Brain,
   Send,
   Clock,
   Terminal,
-  ChevronDown,
   Users,
   PenTool,
   Code2,
@@ -24,23 +19,15 @@ import {
   Maximize2,
   ShieldCheck,
   ShieldAlert,
-  Sun,
-  Moon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useAuthStore } from "@/store/authStore";
 import { useToast } from "@/hooks/use-toast";
 import { useProctor } from "@/hooks/useProctor";
 import WhiteboardPanel from "@/components/room/WhiteboardPanel";
 import ThemeToggle from "@/components/ThemeToggle";
+import { EditorPanel } from "@/components/editor";
 
 const languages = [
   { value: "javascript", label: "JavaScript" },
