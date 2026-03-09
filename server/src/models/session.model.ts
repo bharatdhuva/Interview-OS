@@ -49,7 +49,11 @@ const interviewSessionSchema = new Schema<IInterviewSession>(
     ],
     violationLog: [
       {
-        type: { type: String, required: true },
+        type: {
+          type: String,
+          required: true,
+          enum: ['fullscreen_exit', 'tab_switch', 'window_blur', 'paste_attempt', 'suspicious_paste', 'no_face_detected', 'multiple_faces'],
+        },
         timestamp: { type: Date, default: Date.now },
         count: { type: Number, default: 1 },
       },

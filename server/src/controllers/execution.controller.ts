@@ -3,6 +3,7 @@ import axios from 'axios';
 import logger from '../utils/logger';
 import { CodeSnapshot } from '../models/codeSnapshot.model';
 import { InterviewSession } from '../models/session.model';
+import { InterviewRoom } from '../models/room.model';
 import { AuthRequest } from '../middleware/auth.middleware';
 
 const languageMap: Record<string, number> = {
@@ -17,10 +18,34 @@ const languageMap: Record<string, number> = {
 
 export const executeCode = async (req: AuthRequest, res: Response) => {
   try {
-    const { language, code, roomId, sessionId } = req.body;
+    const roomId = req.params.roomId || req.body.roomId;
+    const { language, code, sessionId } = req.body;
 
     if (!language || !code || !roomId || !sessionId) {
       res.status(400).json({ success: false, message: 'Missing required parameters' });
+      return;
+    }
+
+    // Verify room exists and user is a participant
+    const room = await InterviewRoom.findById(roomId);
+    if (!room) {
+      res.status(404).json({ success: false, message: 'Room not found' });
+      return;
+    }
+
+    const userId = req.user?.id;
+    const isParticipant =
+      room.interviewer.toString() === userId ||
+      room.candidate?.toString() === userId ||
+      req.user?.role === 'admin';
+
+    if (!isParticipant) {
+      res.status(403).json({ success: false, message: 'Not authorized to execute code in this room' });
+      return;
+    }
+
+    if (room.status !== 'active') {
+      res.status(400).json({ success: false, message: 'Code execution is only allowed during an active session' });
       return;
     }
 

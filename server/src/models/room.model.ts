@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import crypto from 'crypto';
 import { IUser } from './user.model';
 
 export interface IInterviewRoom extends Document {
@@ -21,7 +22,7 @@ export interface IInterviewRoom extends Document {
 
 const interviewRoomSchema = new Schema<IInterviewRoom>(
   {
-    roomId: { type: String, required: true, unique: true, index: true },
+    roomId: { type: String, unique: true, index: true, default: () => crypto.randomUUID() },
     title: { type: String, required: true },
     description: { type: String },
     interviewer: { type: Schema.Types.ObjectId, ref: 'User', required: true },

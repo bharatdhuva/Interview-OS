@@ -1,10 +1,11 @@
 import { Response } from 'express';
+import mongoose from 'mongoose';
 import { InterviewRoom } from '../models/room.model';
 import { User } from '../models/user.model';
 import { InterviewSession } from '../models/session.model';
 import { generateInviteToken } from '../utils/jwt';
 import logger from '../utils/logger';
-import { createRoomSchema } from '../middleware/validation/room.validation';
+import { createRoomSchema, updateRoomSchema } from '../middleware/validation/room.validation';
 import { AuthRequest } from '../middleware/auth.middleware';
 
 export const createRoom = async (req: AuthRequest, res: Response) => {
@@ -67,7 +68,10 @@ export const listMyRooms = async (req: AuthRequest, res: Response) => {
 
 export const getRoomById = async (req: AuthRequest, res: Response) => {
   try {
-    const room = await InterviewRoom.findById(req.params.roomId)
+    const roomId = req.params.roomId as string;
+    const query = mongoose.Types.ObjectId.isValid(roomId) ? { _id: roomId } : { roomId };
+
+    const room = await InterviewRoom.findOne(query)
       .populate('interviewer', 'name email avatar')
       .populate('candidate', 'name email avatar');
 
@@ -76,8 +80,10 @@ export const getRoomById = async (req: AuthRequest, res: Response) => {
       return;
     }
 
-    const isInterviewer = room.interviewer?.toString() === req.user?.id;
-    const isCandidate = room.candidate?.toString() === req.user?.id;
+    const interviewerId = (room.interviewer as any)?._id?.toString() || room.interviewer?.toString();
+    const candidateId = (room.candidate as any)?._id?.toString() || room.candidate?.toString();
+    const isInterviewer = interviewerId === req.user?.id;
+    const isCandidate = candidateId === req.user?.id;
     const isAdmin = req.user?.role === 'admin';
 
     if (!isInterviewer && !isCandidate && !isAdmin) {
@@ -131,6 +137,11 @@ export const startSession = async (req: AuthRequest, res: Response) => {
       return;
     }
 
+    if (room.status !== 'scheduled') {
+      res.status(400).json({ success: false, message: `Cannot start session — room is currently '${room.status}'` });
+      return;
+    }
+
     room.status = 'active';
     await room.save();
 
@@ -160,6 +171,11 @@ export const endSession = async (req: AuthRequest, res: Response) => {
       return;
     }
 
+    if (room.status !== 'active') {
+      res.status(400).json({ success: false, message: `Cannot end session — room is currently '${room.status}'` });
+      return;
+    }
+
     room.status = 'completed';
     await room.save();
 
@@ -179,6 +195,65 @@ export const endSession = async (req: AuthRequest, res: Response) => {
     res.status(200).json({ success: true, data: session });
   } catch (error: any) {
     logger.error('Error ending session', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+export const updateRoom = async (req: AuthRequest, res: Response) => {
+  try {
+    const validatedData = updateRoomSchema.parse(req.body);
+    const room = await InterviewRoom.findById(req.params.roomId);
+
+    if (!room) {
+      res.status(404).json({ success: false, message: 'Room not found' });
+      return;
+    }
+
+    if (room.interviewer.toString() !== req.user?.id && req.user?.role !== 'admin') {
+      res.status(403).json({ success: false, message: 'Not authorized to update this room' });
+      return;
+    }
+
+    if (room.status !== 'scheduled') {
+      res.status(400).json({ success: false, message: 'Can only update rooms in scheduled status' });
+      return;
+    }
+
+    Object.assign(room, validatedData);
+    await room.save();
+
+    res.status(200).json({ success: true, data: room });
+  } catch (error: any) {
+    logger.error('Error updating room', error);
+    res.status(400).json({ success: false, message: error.message || 'Failed to update room' });
+  }
+};
+
+export const cancelRoom = async (req: AuthRequest, res: Response) => {
+  try {
+    const room = await InterviewRoom.findById(req.params.roomId);
+
+    if (!room) {
+      res.status(404).json({ success: false, message: 'Room not found' });
+      return;
+    }
+
+    if (room.interviewer.toString() !== req.user?.id && req.user?.role !== 'admin') {
+      res.status(403).json({ success: false, message: 'Not authorized to cancel this room' });
+      return;
+    }
+
+    if (room.status === 'completed' || room.status === 'cancelled') {
+      res.status(400).json({ success: false, message: `Cannot cancel — room is already '${room.status}'` });
+      return;
+    }
+
+    room.status = 'cancelled';
+    await room.save();
+
+    res.status(200).json({ success: true, message: 'Room cancelled', data: room });
+  } catch (error: any) {
+    logger.error('Error cancelling room', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
