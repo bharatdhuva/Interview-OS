@@ -1,12 +1,10 @@
+import './config/env'; // Must be first — loads .env before any other module reads process.env
 import http from 'http';
 import { Server } from 'socket.io';
-import dotenv from 'dotenv-safe';
 import app from './app';
 import { connectDB } from './config/db';
 import logger from './utils/logger';
 import { initSocket } from './socket/index';
-
-dotenv.config({ allowEmptyValues: true, example: '.env.example' });
 
 const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);
