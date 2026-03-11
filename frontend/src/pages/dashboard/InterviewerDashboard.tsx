@@ -13,6 +13,7 @@
   import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
   import { useAuthStore } from '@/store/authStore';
   import { mockRooms } from '@/data/mockData';
+  import WelcomePopup from '@/components/WelcomePopup';
   import { useToast } from '@/hooks/use-toast';
   import { createRoomSchema, type CreateRoomFormData } from '@/lib/validations';
   import type { RoomStatus } from '@/types';
@@ -47,6 +48,7 @@
 
     return (
       <div className="min-h-screen bg-background">
+        <WelcomePopup />
         <header className="border-b border-border">
           <div className="container flex items-center justify-between h-16">
             <Link to="/" className="flex items-center gap-2">

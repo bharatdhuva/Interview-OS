@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/store/authStore';
 import { mockRooms } from '@/data/mockData';
+import WelcomePopup from '@/components/WelcomePopup';
 import type { InterviewRoom, RoomStatus } from '@/types';
 
 const statusConfig: Record<RoomStatus, { label: string; className: string }> = {
@@ -83,6 +84,7 @@ export default function CandidateDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
+      <WelcomePopup />
       {/* Header */}
       <header className="border-b border-border">
         <div className="container flex items-center justify-between h-16">

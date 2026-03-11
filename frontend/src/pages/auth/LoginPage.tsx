@@ -63,6 +63,7 @@ const LoginPage: React.FC = () => {
         createdAt: new Date().toISOString(),
       };
       loginAction(user, d.accessToken);
+      sessionStorage.setItem("justLoggedIn", "true");
       toast({
         title: "Welcome back!",
         description: "You have successfully signed in.",
@@ -102,6 +103,7 @@ const LoginPage: React.FC = () => {
           createdAt: new Date().toISOString(),
         };
         loginAction(user, d.accessToken);
+        sessionStorage.setItem("justLoggedIn", "true");
         toast({ title: `Welcome, ${user.name}!` });
         navigate(
           user.role === "interviewer"

@@ -47,7 +47,7 @@ import {
 } from "@/components/ui/accordion";
 import heroBg from "@/assets/hero-bg.jpg";
 import heroInterview from "@/assets/hero-interview.png";
-import logo from "@/assets/logo.png";
+import logo from "@/assets/Logo.png";
 import msuLogo from "@/assets/Partner-Logos/msu.png";
 import ldceLogo from "@/assets/Partner-Logos/ldce.png";
 import parulLogo from "@/assets/Partner-Logos/ParulU.png";
