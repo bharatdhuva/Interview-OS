@@ -1,3 +1,24 @@
+/**
+ * controllers/room.controller.ts
+ *
+ * Interview room lifecycle management.
+ *
+ * Handlers:
+ *  createRoom        POST   /api/v1/rooms
+ *  listMyRooms       GET    /api/v1/rooms
+ *  getRoomById       GET    /api/v1/rooms/:roomId
+ *  updateRoom        PATCH  /api/v1/rooms/:roomId
+ *  cancelRoom        POST   /api/v1/rooms/:roomId/cancel
+ *  joinRoomViaToken  GET    /api/v1/rooms/join/:inviteToken
+ *  startSession      POST   /api/v1/rooms/:roomId/start
+ *  endSession        POST   /api/v1/rooms/:roomId/end
+ *
+ * Room status flow:
+ *   scheduled → active (startSession)
+ *             → completed (endSession)
+ *             → cancelled (cancelRoom)
+ */
+
 import { Response } from 'express';
 import mongoose from 'mongoose';
 import { InterviewRoom } from '../models/room.model';
@@ -8,7 +29,15 @@ import logger from '../utils/logger';
 import { createRoomSchema, updateRoomSchema } from '../middleware/validation/room.validation';
 import { AuthRequest } from '../middleware/auth.middleware';
 
-export const createRoom = async (req: AuthRequest, res: Response) => {
+/**
+ * POST /api/v1/rooms  (interviewer | admin only)
+ *
+ * Creates a new interview room.
+ * - If no user exists for `candidateEmail`, a placeholder account is created
+ *   so the invite link can be associated with a user record from day one.
+ * - An invite token (24 h JWT) is generated and saved on the room.
+ */
+export const createRoom = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const validatedData = createRoomSchema.parse(req.body);
     const interviewerId = req.user?.id;
@@ -35,7 +64,9 @@ export const createRoom = async (req: AuthRequest, res: Response) => {
       difficultyLevel: validatedData.difficultyLevel,
     });
 
+    // Generate a signed invite token that encodes the room ID for the candidate
     room.inviteToken = generateInviteToken(room._id);
+    // Token expires when the scheduled session window closes
     room.inviteExpiresAt = new Date(
       new Date(validatedData.scheduledAt).getTime() + validatedData.durationMinutes * 60000
     );
@@ -48,7 +79,13 @@ export const createRoom = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const listMyRooms = async (req: AuthRequest, res: Response) => {
+/**
+ * GET /api/v1/rooms  (authenticated)
+ *
+ * Returns all rooms where the calling user is the interviewer or candidate,
+ * sorted by most recent scheduled time.
+ */
+export const listMyRooms = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user?.id;
     const role = req.user?.role;
@@ -66,9 +103,17 @@ export const listMyRooms = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const getRoomById = async (req: AuthRequest, res: Response) => {
+/**
+ * GET /api/v1/rooms/:roomId  (authenticated)
+ *
+ * Returns full room details.  Accepts both the MongoDB _id and the
+ * UUID `roomId` field so that Socket.IO room names can be used as well.
+ * Only the interviewer, candidate, or an admin may view a room.
+ */
+export const getRoomById = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const roomId = req.params.roomId as string;
+    // Accept both Mongo ObjectId and UUID roomId (used as Socket.IO channel)
     const query = mongoose.Types.ObjectId.isValid(roomId) ? { _id: roomId } : { roomId };
 
     const room = await InterviewRoom.findOne(query)
@@ -98,7 +143,14 @@ export const getRoomById = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const joinRoomViaToken = async (req: AuthRequest, res: Response) => {
+/**
+ * GET /api/v1/rooms/join/:inviteToken  (authenticated)
+ *
+ * Resolves an invite token to the room's full document so the candidate
+ * can be redirected to the correct room page after clicking their email link.
+ * Returns 400 if the token has expired.
+ */
+export const joinRoomViaToken = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { inviteToken } = req.params;
 
@@ -123,7 +175,13 @@ export const joinRoomViaToken = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const startSession = async (req: AuthRequest, res: Response) => {
+/**
+ * POST /api/v1/rooms/:roomId/start  (interviewer only)
+ *
+ * Transitions the room from 'scheduled' to 'active' and creates an
+ * InterviewSession document to begin recording activity.
+ */
+export const startSession = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const room = await InterviewRoom.findById(req.params.roomId);
 
@@ -157,7 +215,13 @@ export const startSession = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const endSession = async (req: AuthRequest, res: Response) => {
+/**
+ * POST /api/v1/rooms/:roomId/end  (interviewer only)
+ *
+ * Transitions the room to 'completed', finds the in-progress session, and
+ * records its end time + computed duration in seconds.
+ */
+export const endSession = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const room = await InterviewRoom.findById(req.params.roomId);
 
@@ -199,7 +263,14 @@ export const endSession = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const updateRoom = async (req: AuthRequest, res: Response) => {
+/**
+ * PATCH /api/v1/rooms/:roomId  (interviewer | admin)
+ *
+ * Partially updates room metadata (title, schedule, problem, etc.).
+ * Only allowed while the room is still in 'scheduled' status to prevent
+ * mid-session confusion.
+ */
+export const updateRoom = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const validatedData = updateRoomSchema.parse(req.body);
     const room = await InterviewRoom.findById(req.params.roomId);
@@ -229,7 +300,13 @@ export const updateRoom = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const cancelRoom = async (req: AuthRequest, res: Response) => {
+/**
+ * POST /api/v1/rooms/:roomId/cancel  (interviewer | admin)
+ *
+ * Cancels a room that hasn't finished yet.
+ * Cannot cancel a room that is already 'completed' or 'cancelled'.
+ */
+export const cancelRoom = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const room = await InterviewRoom.findById(req.params.roomId);
 
