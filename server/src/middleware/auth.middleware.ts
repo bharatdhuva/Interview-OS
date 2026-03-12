@@ -1,14 +1,47 @@
+/**
+ * middleware/auth.middleware.ts
+ *
+ * Authentication and authorisation middleware.
+ *
+ * `protect`   — verifies the JWT access token from the Authorization header
+ *               and attaches the decoded user to req.user.
+ * `authorize` — factory that returns a middleware enforcing role-based access
+ *               control; must be chained AFTER `protect`.
+ */
+
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/user.model';
 import logger from '../utils/logger';
 
+/**
+ * Extended Express Request that carries the authenticated user document.
+ * Controllers that need the current user should type their `req` parameter
+ * as AuthRequest instead of the plain Request.
+ */
 export interface AuthRequest extends Request {
   user?: any;
 }
 
-export const protect = async (req: AuthRequest, res: Response, next: NextFunction) => {
+/**
+ * Protect middleware — validates the Bearer access token.
+ *
+ * Flow:
+ *  1. Extract the token from the `Authorization: Bearer <token>` header.
+ *  2. Verify signature and expiry using the JWT_ACCESS_SECRET.
+ *  3. Load the full user document from MongoDB (ensures the user still exists
+ *     and their data is fresh, e.g. role changes are immediately reflected).
+ *  4. Attach the user to req.user and call next().
+ *
+ * Returns 401 if the token is missing, invalid, or the user no longer exists.
+ */
+export const protect = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
+    // Extract token — only accept the Bearer scheme
     const authHeader = req.headers.authorization;
     const token = authHeader?.startsWith('Bearer') ? authHeader.split(' ')[1] : undefined;
 
@@ -17,7 +50,10 @@ export const protect = async (req: AuthRequest, res: Response, next: NextFunctio
       return;
     }
 
+    // Verify and decode; throws if token is expired or signature is invalid
     const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET as string) as any;
+
+    // Fetch user fresh from DB — excludes sensitive fields
     req.user = await User.findById(decoded.id).select('-passwordHash -refreshTokens');
 
     if (!req.user) {
@@ -27,17 +63,26 @@ export const protect = async (req: AuthRequest, res: Response, next: NextFunctio
 
     next();
   } catch (error) {
-    logger.error('Auth Error', error);
+    logger.error('Auth middleware error', error);
     res.status(401).json({ success: false, message: 'Not authorized to access this route' });
   }
 };
 
+/**
+ * Authorize middleware factory — restricts access to specific roles.
+ *
+ * Usage: router.get('/admin', protect, authorize('admin'), handler)
+ *
+ * @param roles - One or more roles that are allowed to access the route
+ * @returns Express middleware that calls next() if the user has an allowed role,
+ *          or responds with 403 Forbidden otherwise.
+ */
 export const authorize = (...roles: string[]) => {
-  return (req: AuthRequest, res: Response, next: NextFunction) => {
+  return (req: AuthRequest, res: Response, next: NextFunction): void => {
     if (!req.user || !roles.includes(req.user.role)) {
       res.status(403).json({
         success: false,
-        message: `User role ${req.user?.role} is not authorized to access this route`,
+        message: `User role '${req.user?.role}' is not authorized to access this route`,
       });
       return;
     }
