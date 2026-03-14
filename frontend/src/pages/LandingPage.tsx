@@ -32,7 +32,6 @@ import infosysLogo from "@/assets/Partner-Logos/Infosys.png";
 import matrixLogo from "@/assets/Partner-Logos/Matrix.png";
 import oracleLogo from "@/assets/Partner-Logos/Oracle.png";
 import accentureLogo from "@/assets/Partner-Logos/Accenture.png";
-import HomeWelcomePopup from "@/components/HomeWelcomePopup";
 
 const partnerLogos = [
   { src: msuLogo, alt: "MSU Baroda" },
@@ -135,7 +134,6 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
-      <HomeWelcomePopup />
       <div className="fixed inset-0 -z-10 overflow-hidden">
         <div className="absolute -left-24 -top-20 h-80 w-80 rounded-full bg-cyan-200/60 blur-3xl" />
         <div className="absolute right-0 top-48 h-96 w-96 rounded-full bg-amber-200/50 blur-3xl" />

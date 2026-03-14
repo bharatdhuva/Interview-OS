@@ -10,7 +10,6 @@ import CandidateDashboard from "./pages/dashboard/CandidateDashboard";
 import InterviewerDashboard from "./pages/dashboard/InterviewerDashboard";
 import InterviewRoom from "./pages/room/InterviewRoom";
 import FeedbackPage from "./pages/feedback/FeedbackPage";
-import ThankYouPage from "./pages/ThankYouPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,7 +28,6 @@ const App = () => (
           <Route path="/dashboard/interviewer" element={<InterviewerDashboard />} />
           <Route path="/room/:roomId" element={<InterviewRoom />} />
           <Route path="/feedback/:roomId" element={<FeedbackPage />} />
-          <Route path="/thank-you" element={<ThankYouPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
