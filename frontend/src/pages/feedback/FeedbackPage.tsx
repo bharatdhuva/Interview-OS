@@ -75,7 +75,7 @@ export default function FeedbackPage() {
 
     setFieldErrors({});
     toast({ title: 'Feedback submitted!', description: 'The candidate will be notified.' });
-    navigate(-1);
+    navigate(`/thank-you?stage=feedback${roomId ? `&roomId=${encodeURIComponent(roomId)}` : ''}`);
   };
 
   const avgRating = Object.values(ratings).reduce((a, b) => a + b, 0) / 4;

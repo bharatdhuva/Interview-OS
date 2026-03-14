@@ -304,6 +304,15 @@ export default function InterviewRoom() {
     setChatInput("");
   };
 
+  const handleEndSession = () => {
+    if (user?.role === "interviewer") {
+      navigate(`/feedback/${roomId}`);
+      return;
+    }
+
+    navigate(`/thank-you?stage=interview${roomId ? `&roomId=${encodeURIComponent(roomId)}` : ""}`);
+  };
+
   return (
     <div className="h-[100dvh] flex flex-col bg-background overflow-hidden selection:bg-primary/30">
       {/* Header */}
@@ -373,6 +382,7 @@ export default function InterviewRoom() {
             size="sm"
             variant="destructive"
             className="h-8 text-xs font-semibold px-4 shadow-lg shadow-destructive/20"
+            onClick={handleEndSession}
           >
             <span className="hidden sm:inline">End Session</span>
             <span className="sm:hidden">End</span>
@@ -451,7 +461,10 @@ export default function InterviewRoom() {
             <button className="w-10 h-10 rounded-xl bg-background hover:bg-secondary text-foreground flex items-center justify-center transition-all">
               <Monitor className="w-4.5 h-4.5" />
             </button>
-            <button className="w-10 h-10 rounded-xl bg-destructive/10 hover:bg-destructive text-destructive hover:text-white flex items-center justify-center transition-all group">
+            <button
+              onClick={handleEndSession}
+              className="w-10 h-10 rounded-xl bg-destructive/10 hover:bg-destructive text-destructive hover:text-white flex items-center justify-center transition-all group"
+            >
               <PhoneOff className="w-4.5 h-4.5 group-hover:scale-110" />
             </button>
           </div>
