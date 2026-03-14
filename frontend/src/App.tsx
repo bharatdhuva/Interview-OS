@@ -13,17 +13,42 @@ import InterviewRoom from "./pages/room/InterviewRoom";
 import FeedbackPage from "./pages/feedback/FeedbackPage";
 import NotFound from "./pages/NotFound";
 import SiteLoader from "./components/SiteLoader";
+import { subscribeToApiActivity } from "./lib/api";
 
 const queryClient = new QueryClient();
 
 const AppRoutes = () => {
   const location = useLocation();
-  const [isLoading, setIsLoading] = useState(true);
+  const [isRouteLoading, setIsRouteLoading] = useState(true);
+  const [isApiLoading, setIsApiLoading] = useState(false);
   const isFirstRender = useRef(true);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setIsLoading(false), 650);
+    const timer = window.setTimeout(() => setIsRouteLoading(false), 650);
     return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    let hideTimer: number | undefined;
+
+    const unsubscribe = subscribeToApiActivity((count) => {
+      if (count > 0) {
+        if (hideTimer) {
+          window.clearTimeout(hideTimer);
+        }
+        setIsApiLoading(true);
+        return;
+      }
+
+      hideTimer = window.setTimeout(() => setIsApiLoading(false), 150);
+    });
+
+    return () => {
+      if (hideTimer) {
+        window.clearTimeout(hideTimer);
+      }
+      unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -32,14 +57,14 @@ const AppRoutes = () => {
       return;
     }
 
-    setIsLoading(true);
-    const timer = window.setTimeout(() => setIsLoading(false), 280);
+    setIsRouteLoading(true);
+    const timer = window.setTimeout(() => setIsRouteLoading(false), 280);
     return () => window.clearTimeout(timer);
   }, [location.pathname, location.search]);
 
   return (
     <>
-      <SiteLoader visible={isLoading} />
+      <SiteLoader visible={isRouteLoading || isApiLoading} />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
