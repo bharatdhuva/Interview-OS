@@ -19,8 +19,6 @@ import {
   Maximize2,
   ShieldCheck,
   ShieldAlert,
-  Hand,
-  Wifi,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -153,11 +151,6 @@ export default function InterviewRoom() {
   const [isSaving, setIsSaving] = useState(false);
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
-  const [isHandRaised, setIsHandRaised] = useState(false);
-  const [showEndSessionPrompt, setShowEndSessionPrompt] = useState(false);
-  const [connectionQuality, setConnectionQuality] = useState<
-    "Excellent" | "Good" | "Unstable"
-  >("Excellent");
   const [chatInput, setChatInput] = useState("");
   const [timer, setTimer] = useState(3600);
   const [messages, setMessages] = useState<ChatMsg[]>([
@@ -183,22 +176,6 @@ export default function InterviewRoom() {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
-
-  useEffect(() => {
-    const interval = window.setInterval(() => {
-      const samples: Array<"Excellent" | "Good" | "Unstable"> = [
-        "Excellent",
-        "Good",
-        "Excellent",
-        "Good",
-        "Unstable",
-      ];
-      const next = samples[Math.floor(Math.random() * samples.length)];
-      setConnectionQuality(next);
-    }, 7000);
-
-    return () => window.clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     setCode(codeByLanguage[language] ?? defaultCode[language] ?? "");
@@ -327,61 +304,13 @@ export default function InterviewRoom() {
     setChatInput("");
   };
 
-  const appendSystemMessage = (message: string) => {
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: `${Date.now()}-system`,
-        sender: "System",
-        message,
-        time: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      },
-    ]);
-  };
-
-  const handleToggleRaiseHand = () => {
-    const next = !isHandRaised;
-    setIsHandRaised(next);
-    appendSystemMessage(
-      next ? `${user?.name || "Candidate"} raised a hand` : `${user?.name || "Candidate"} lowered a hand`,
-    );
-    toast({
-      title: next ? "Hand raised" : "Hand lowered",
-      description: next
-        ? "The interviewer will see your request to speak."
-        : "Your raised hand status was cleared.",
-    });
-  };
-
-  const handleQuickReaction = (emoji: string, label: string) => {
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: Date.now().toString(),
-        sender: user?.name || "Candidate",
-        message: `${emoji} ${label}`,
-        time: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      },
-    ]);
-  };
-
-  const handleConfirmEndSession = () => {
+  const handleEndSession = () => {
     if (user?.role === "interviewer") {
       navigate(`/feedback/${roomId}`);
       return;
     }
 
     navigate(`/thank-you?stage=interview${roomId ? `&roomId=${encodeURIComponent(roomId)}` : ""}`);
-  };
-
-  const handleEndSession = () => {
-    setShowEndSessionPrompt(true);
   };
 
   return (
@@ -409,26 +338,6 @@ export default function InterviewRoom() {
         </div>
 
         <div className="w-full lg:w-auto flex flex-wrap items-center gap-2 sm:gap-3 lg:gap-4">
-          <div
-            className={`flex items-center gap-2 px-2.5 sm:px-3 py-1 rounded-full border text-[11px] sm:text-xs font-medium transition-colors ${
-              connectionQuality === "Excellent"
-                ? "bg-success/10 border-success/20 text-success"
-                : connectionQuality === "Good"
-                  ? "bg-warning/10 border-warning/20 text-warning"
-                  : "bg-destructive/10 border-destructive/20 text-destructive"
-            }`}
-          >
-            <Wifi className="w-3.5 h-3.5" />
-            <span>{connectionQuality} Network</span>
-          </div>
-
-          {isHandRaised && (
-            <div className="flex items-center gap-2 px-2.5 sm:px-3 py-1 rounded-full border text-[11px] sm:text-xs font-medium bg-primary/10 border-primary/20 text-primary">
-              <Hand className="w-3.5 h-3.5" />
-              <span>Hand Raised</span>
-            </div>
-          )}
-
           {/* Proctoring Status */}
           <div
             className={`flex items-center gap-2 px-2.5 sm:px-3 py-1 rounded-full border text-[11px] sm:text-xs font-medium transition-colors ${
@@ -551,17 +460,6 @@ export default function InterviewRoom() {
             </button>
             <button className="w-10 h-10 rounded-xl bg-background hover:bg-secondary text-foreground flex items-center justify-center transition-all">
               <Monitor className="w-4.5 h-4.5" />
-            </button>
-            <button
-              onClick={handleToggleRaiseHand}
-              className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
-                isHandRaised
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-background hover:bg-secondary text-foreground"
-              }`}
-              title={isHandRaised ? "Lower hand" : "Raise hand"}
-            >
-              <Hand className="w-4.5 h-4.5" />
             </button>
             <button
               onClick={handleEndSession}
@@ -758,24 +656,6 @@ export default function InterviewRoom() {
             onSubmit={handleSendMessage}
             className="p-4 border-t border-border bg-background/50 backdrop-blur-sm"
           >
-            <div className="mb-2 flex flex-wrap gap-1.5">
-              {[
-                { emoji: "👏", label: "Nice point" },
-                { emoji: "👍", label: "Agree" },
-                { emoji: "🙌", label: "Great" },
-                { emoji: "⏳", label: "Need a minute" },
-              ].map((reaction) => (
-                <button
-                  key={reaction.label}
-                  type="button"
-                  onClick={() => handleQuickReaction(reaction.emoji, reaction.label)}
-                  className="rounded-full border border-border bg-secondary/60 px-2.5 py-1 text-[10px] font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground"
-                >
-                  {reaction.emoji} {reaction.label}
-                </button>
-              ))}
-            </div>
-
             <div className="relative group">
               <Input
                 value={chatInput}
@@ -832,43 +712,6 @@ export default function InterviewRoom() {
                 Return to Dashboard
               </Button>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showEndSessionPrompt && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[120] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
-          >
-            <motion.div
-              initial={{ y: 16, opacity: 0, scale: 0.98 }}
-              animate={{ y: 0, opacity: 1, scale: 1 }}
-              exit={{ y: 10, opacity: 0, scale: 0.98 }}
-              className="w-full max-w-md rounded-2xl border border-border bg-background p-6 shadow-2xl"
-            >
-              <h3 className="text-lg font-semibold text-foreground">End this session?</h3>
-              <p className="mt-2 text-sm text-muted-foreground">
-                This is a standard meeting safeguard. You will leave the room and continue to the next step.
-              </p>
-              <div className="mt-5 flex items-center justify-end gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowEndSessionPrompt(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={handleConfirmEndSession}
-                >
-                  End Session
-                </Button>
-              </div>
-            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
