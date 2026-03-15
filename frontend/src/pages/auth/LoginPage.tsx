@@ -15,7 +15,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
 import { useAuthStore } from "@/store/authStore";
-import { useToast } from "@/hooks/use-toast";
 import { useGoogleLogin } from "@react-oauth/google";
 import api from "@/lib/api";
 import { loginSchema, type LoginFormData } from "@/lib/validations";
@@ -28,7 +27,6 @@ const LoginPage: React.FC = () => {
 
   const navigate = useNavigate();
   const loginAction = useAuthStore((s) => s.login);
-  const { toast } = useToast();
 
   const {
     register,
@@ -64,10 +62,6 @@ const LoginPage: React.FC = () => {
       };
       loginAction(user, d.accessToken);
       sessionStorage.setItem("justLoggedIn", "true");
-      toast({
-        title: "Welcome back!",
-        description: "You have successfully signed in.",
-      });
       navigate(
         user.role === "interviewer"
           ? "/dashboard/interviewer"
@@ -104,7 +98,6 @@ const LoginPage: React.FC = () => {
         };
         loginAction(user, d.accessToken);
         sessionStorage.setItem("justLoggedIn", "true");
-        toast({ title: `Welcome, ${user.name}!` });
         navigate(
           user.role === "interviewer"
             ? "/dashboard/interviewer"
