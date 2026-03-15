@@ -5,10 +5,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Mic,
   MicOff,
+  Brain,
   Video as VideoIcon,
   VideoOff,
   Monitor,
   PhoneOff,
+  Play,
+  Save,
   Send,
   Clock,
   Terminal,
