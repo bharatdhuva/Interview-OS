@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import Editor from "@monaco-editor/react";
 
 import {
   Mic,
@@ -37,7 +38,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useProctor } from "@/hooks/useProctor";
 import WhiteboardPanel from "@/components/room/WhiteboardPanel";
 import ThemeToggle from "@/components/ThemeToggle";
-import { EditorPanel } from "@/components/editor";
 
 const languages = [
   { value: "javascript", label: "JavaScript" },

@@ -16,7 +16,52 @@
   import WelcomePopup from '@/components/WelcomePopup';
   import { useToast } from '@/hooks/use-toast';
   import { createRoomSchema, type CreateRoomFormData } from '@/lib/validations';
-  import type { RoomStatus } from '@/types';
+  import type { InterviewRoom, RoomStatus, User } from '@/types';
+
+  const CUSTOM_ROOMS_STORAGE_KEY = 'interviewos:customRooms';
+
+  const loadCustomRooms = (): InterviewRoom[] => {
+    if (typeof window === 'undefined') {
+      return [];
+    }
+
+    try {
+      const savedRooms = window.localStorage.getItem(CUSTOM_ROOMS_STORAGE_KEY);
+      if (!savedRooms) {
+        return [];
+      }
+
+      const parsedRooms = JSON.parse(savedRooms);
+      return Array.isArray(parsedRooms) ? parsedRooms : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const saveCustomRooms = (rooms: InterviewRoom[]) => {
+    window.localStorage.setItem(CUSTOM_ROOMS_STORAGE_KEY, JSON.stringify(rooms));
+  };
+
+  const generateRoomId = () => `rm_${Math.random().toString(36).slice(2, 8)}`;
+
+  const buildRoomFromForm = (data: CreateRoomFormData, interviewer: User): InterviewRoom => ({
+    id: `custom_${Date.now()}`,
+    roomId: generateRoomId(),
+    title: data.title.trim(),
+    description: data.problemStatement.trim(),
+    interviewer,
+    candidateEmail: data.candidateEmail.trim(),
+    scheduledAt: new Date(data.dateTime).toISOString(),
+    durationMinutes: Number(data.duration),
+    status: 'scheduled',
+    problemStatement: data.problemStatement.trim(),
+    techStack: data.techStack
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean),
+    difficultyLevel: data.difficulty,
+    createdAt: new Date().toISOString(),
+  });
 
   const statusConfig: Record<RoomStatus, { label: string; className: string }> = {
     scheduled: { label: 'Scheduled', className: 'bg-info/10 text-info border-info/20' },
@@ -28,13 +73,37 @@
   export default function InterviewerDashboard() {
     const [showCreate, setShowCreate] = useState(false);
     const [filter, setFilter] = useState<RoomStatus | 'all'>('all');
+    const [customRooms, setCustomRooms] = useState<InterviewRoom[]>(() => loadCustomRooms());
     const user = useAuthStore((s) => s.user);
     const logout = useAuthStore((s) => s.logout);
     const navigate = useNavigate();
     const { toast } = useToast();
+    const rooms = [...customRooms, ...mockRooms];
 
-    const filtered = filter === 'all' ? mockRooms : mockRooms.filter((r) => r.status === filter);
-    const completedCount = mockRooms.filter((r) => r.status === 'completed').length;
+    const filtered = filter === 'all' ? rooms : rooms.filter((r) => r.status === filter);
+    const completedCount = rooms.filter((r) => r.status === 'completed').length;
+    const candidateCount = new Set(rooms.map((room) => room.candidateEmail).filter(Boolean)).size;
+
+    const handleCreateRoom = (data: CreateRoomFormData) => {
+      if (!user) {
+        toast({
+          title: 'Unable to create room',
+          description: 'Please sign in again and retry.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const newRoom = buildRoomFromForm(data, user);
+      const nextCustomRooms = [newRoom, ...customRooms];
+      setCustomRooms(nextCustomRooms);
+      saveCustomRooms(nextCustomRooms);
+      setShowCreate(false);
+      toast({
+        title: 'Room created!',
+        description: 'The interview room is now available in your list.',
+      });
+    };
 
     const handleLogout = () => {
       logout();
@@ -85,9 +154,9 @@
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
             {[
-              { icon: Calendar, label: 'Total Interviews', value: mockRooms.length },
+              { icon: Calendar, label: 'Total Interviews', value: rooms.length },
               { icon: CheckCircle2, label: 'Completed', value: completedCount },
-              { icon: Users, label: 'Candidates', value: 3 },
+              { icon: Users, label: 'Candidates', value: candidateCount },
               { icon: BarChart3, label: 'Avg Rating', value: '4.2' },
             ].map((stat) => (
               <div key={stat.label} className="p-4 rounded-xl bg-card border border-border">
@@ -175,7 +244,7 @@
         {/* Create Room Modal */}
         <AnimatePresence>
           {showCreate && (
-            <CreateRoomModal onClose={() => setShowCreate(false)} toast={toast} />
+            <CreateRoomModal onClose={() => setShowCreate(false)} onCreateRoom={handleCreateRoom} />
           )}
         </AnimatePresence>
       </div>
@@ -183,7 +252,7 @@
   }
 
   /* ─── Create Room Modal Component ─── */
-  function CreateRoomModal({ onClose, toast }: { onClose: () => void; toast: ReturnType<typeof useToast>['toast'] }) {
+  function CreateRoomModal({ onClose, onCreateRoom }: { onClose: () => void; onCreateRoom: (data: CreateRoomFormData) => void }) {
     const {
       register,
       handleSubmit,
@@ -203,9 +272,8 @@
       },
     });
 
-    const onSubmit = (_data: CreateRoomFormData) => {
-      onClose();
-      toast({ title: 'Room created!', description: 'Invite link has been sent to the candidate.' });
+    const onSubmit = (data: CreateRoomFormData) => {
+      onCreateRoom(data);
     };
 
     const FieldError = ({ message }: { message?: string }) =>
