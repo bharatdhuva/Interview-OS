@@ -1,4 +1,4 @@
-  import { useState } from 'react';
+  import { useEffect, useState } from 'react';
   import { Link, useNavigate } from 'react-router-dom';
   import { motion, AnimatePresence } from 'framer-motion';
   import { format } from 'date-fns';
@@ -12,56 +12,82 @@
   import { Textarea } from '@/components/ui/textarea';
   import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
   import { useAuthStore } from '@/store/authStore';
-  import { mockRooms } from '@/data/mockData';
   import WelcomePopup from '@/components/WelcomePopup';
   import { useToast } from '@/hooks/use-toast';
+  import api from '@/lib/api';
   import { createRoomSchema, type CreateRoomFormData } from '@/lib/validations';
-  import type { InterviewRoom, RoomStatus, User } from '@/types';
+  import type { DifficultyLevel, InterviewRoom, RoomStatus, User } from '@/types';
 
-  const CUSTOM_ROOMS_STORAGE_KEY = 'interviewos:customRooms';
-
-  const loadCustomRooms = (): InterviewRoom[] => {
-    if (typeof window === 'undefined') {
-      return [];
-    }
-
-    try {
-      const savedRooms = window.localStorage.getItem(CUSTOM_ROOMS_STORAGE_KEY);
-      if (!savedRooms) {
-        return [];
-      }
-
-      const parsedRooms = JSON.parse(savedRooms);
-      return Array.isArray(parsedRooms) ? parsedRooms : [];
-    } catch {
-      return [];
-    }
+  type ApiUser = Partial<User> & {
+    _id?: string;
+    id?: string;
   };
 
-  const saveCustomRooms = (rooms: InterviewRoom[]) => {
-    window.localStorage.setItem(CUSTOM_ROOMS_STORAGE_KEY, JSON.stringify(rooms));
+  type ApiRoom = {
+    _id?: string;
+    id?: string;
+    roomId: string;
+    title: string;
+    description?: string;
+    interviewer: ApiUser | string;
+    candidate?: ApiUser | string;
+    candidateEmail?: string;
+    scheduledAt: string;
+    durationMinutes: number;
+    status: RoomStatus;
+    problemStatement?: string;
+    techStack?: string[];
+    difficultyLevel?: DifficultyLevel;
+    createdAt?: string;
   };
 
-  const generateRoomId = () => `rm_${Math.random().toString(36).slice(2, 8)}`;
+  const getSessionStorageKey = (roomId: string) => `interviewos:room-session:${roomId}`;
 
-  const buildRoomFromForm = (data: CreateRoomFormData, interviewer: User): InterviewRoom => ({
-    id: `custom_${Date.now()}`,
-    roomId: generateRoomId(),
-    title: data.title.trim(),
-    description: data.problemStatement.trim(),
-    interviewer,
-    candidateEmail: data.candidateEmail.trim(),
-    scheduledAt: new Date(data.dateTime).toISOString(),
-    durationMinutes: Number(data.duration),
-    status: 'scheduled',
-    problemStatement: data.problemStatement.trim(),
-    techStack: data.techStack
-      .split(',')
-      .map((item) => item.trim())
-      .filter(Boolean),
-    difficultyLevel: data.difficulty,
-    createdAt: new Date().toISOString(),
-  });
+  const normalizeUser = (value: ApiUser | string | undefined, fallbackRole: User['role']): User | undefined => {
+    if (!value || typeof value === 'string') {
+      return undefined;
+    }
+
+    return {
+      id: value._id || value.id || '',
+      name: value.name || '',
+      email: value.email || '',
+      role: (value.role as User['role']) || fallbackRole,
+      avatar: value.avatar || '',
+      isEmailVerified: value.isEmailVerified ?? true,
+      createdAt: value.createdAt || new Date().toISOString(),
+    };
+  };
+
+  const mapApiRoomToRoom = (room: ApiRoom, currentUser?: User | null, fallbackCandidateEmail?: string): InterviewRoom => {
+    const interviewer = normalizeUser(room.interviewer, 'interviewer') || currentUser || {
+      id: '',
+      name: 'Interviewer',
+      email: '',
+      role: 'interviewer',
+      avatar: '',
+      isEmailVerified: true,
+      createdAt: new Date().toISOString(),
+    };
+    const candidate = normalizeUser(room.candidate, 'candidate');
+
+    return {
+      id: room._id || room.id || room.roomId,
+      roomId: room.roomId,
+      title: room.title,
+      description: room.description,
+      interviewer,
+      candidate,
+      candidateEmail: candidate?.email || room.candidateEmail || fallbackCandidateEmail || '',
+      scheduledAt: room.scheduledAt,
+      durationMinutes: room.durationMinutes,
+      status: room.status,
+      problemStatement: room.problemStatement,
+      techStack: room.techStack || [],
+      difficultyLevel: room.difficultyLevel || 'medium',
+      createdAt: room.createdAt || new Date().toISOString(),
+    };
+  };
 
   const statusConfig: Record<RoomStatus, { label: string; className: string }> = {
     scheduled: { label: 'Scheduled', className: 'bg-info/10 text-info border-info/20' },
@@ -73,18 +99,40 @@
   export default function InterviewerDashboard() {
     const [showCreate, setShowCreate] = useState(false);
     const [filter, setFilter] = useState<RoomStatus | 'all'>('all');
-    const [customRooms, setCustomRooms] = useState<InterviewRoom[]>(() => loadCustomRooms());
+    const [rooms, setRooms] = useState<InterviewRoom[]>([]);
+    const [isLoadingRooms, setIsLoadingRooms] = useState(true);
+    const [startingRoomId, setStartingRoomId] = useState<string | null>(null);
     const user = useAuthStore((s) => s.user);
     const logout = useAuthStore((s) => s.logout);
     const navigate = useNavigate();
     const { toast } = useToast();
-    const rooms = [...customRooms, ...mockRooms];
 
     const filtered = filter === 'all' ? rooms : rooms.filter((r) => r.status === filter);
     const completedCount = rooms.filter((r) => r.status === 'completed').length;
     const candidateCount = new Set(rooms.map((room) => room.candidateEmail).filter(Boolean)).size;
 
-    const handleCreateRoom = (data: CreateRoomFormData) => {
+    useEffect(() => {
+      const loadRooms = async () => {
+        try {
+          setIsLoadingRooms(true);
+          const response = await api.get<{ success: boolean; data: ApiRoom[] }>('/rooms');
+          const nextRooms = (response.data.data || []).map((room) => mapApiRoomToRoom(room, user));
+          setRooms(nextRooms);
+        } catch (error: any) {
+          toast({
+            title: 'Failed to load rooms',
+            description: error?.response?.data?.message || 'Unable to fetch interview rooms right now.',
+            variant: 'destructive',
+          });
+        } finally {
+          setIsLoadingRooms(false);
+        }
+      };
+
+      loadRooms();
+    }, [toast, user]);
+
+    const handleCreateRoom = async (data: CreateRoomFormData) => {
       if (!user) {
         toast({
           title: 'Unable to create room',
@@ -94,15 +142,59 @@
         return;
       }
 
-      const newRoom = buildRoomFromForm(data, user);
-      const nextCustomRooms = [newRoom, ...customRooms];
-      setCustomRooms(nextCustomRooms);
-      saveCustomRooms(nextCustomRooms);
-      setShowCreate(false);
-      toast({
-        title: 'Room created!',
-        description: 'The interview room is now available in your list.',
-      });
+      try {
+        const response = await api.post<{ success: boolean; data: ApiRoom }>('/rooms', {
+          title: data.title.trim(),
+          description: data.problemStatement.trim(),
+          candidateEmail: data.candidateEmail.trim(),
+          scheduledAt: new Date(data.dateTime).toISOString(),
+          durationMinutes: Number(data.duration),
+          problemStatement: data.problemStatement.trim(),
+          techStack: data.techStack
+            .split(',')
+            .map((item) => item.trim())
+            .filter(Boolean),
+          difficultyLevel: data.difficulty,
+        });
+
+        const createdRoom = mapApiRoomToRoom(response.data.data, user, data.candidateEmail.trim());
+        setRooms((prev) => [createdRoom, ...prev]);
+        setShowCreate(false);
+        toast({
+          title: 'Room created!',
+          description: 'The interview room is now available in your list.',
+        });
+      } catch (error: any) {
+        toast({
+          title: 'Unable to create room',
+          description: error?.response?.data?.message || 'Please try again.',
+          variant: 'destructive',
+        });
+      }
+    };
+
+    const handleStartRoom = async (room: InterviewRoom) => {
+      try {
+        setStartingRoomId(room.id);
+        const response = await api.post<{ success: boolean; data?: { _id?: string; id?: string } }>(`/rooms/${room.id}/start`);
+        const sessionId = response.data.data?._id || response.data.data?.id;
+        if (sessionId) {
+          sessionStorage.setItem(getSessionStorageKey(room.roomId), sessionId);
+        }
+
+        setRooms((prev) => prev.map((item) => (
+          item.id === room.id ? { ...item, status: 'active' } : item
+        )));
+        navigate(`/room/${room.roomId}`);
+      } catch (error: any) {
+        toast({
+          title: 'Unable to start room',
+          description: error?.response?.data?.message || 'Please try again.',
+          variant: 'destructive',
+        });
+      } finally {
+        setStartingRoomId(null);
+      }
     };
 
     const handleLogout = () => {
@@ -111,7 +203,7 @@
     };
 
     const copyInvite = (roomId: string) => {
-      navigator.clipboard.writeText(`${window.location.origin}/join/${roomId}`);
+      navigator.clipboard.writeText(`${window.location.origin}/room/${roomId}`);
       toast({ title: 'Invite link copied!' });
     };
 
@@ -186,6 +278,11 @@
 
           {/* Room List */}
           <div className="space-y-3">
+            {!isLoadingRooms && filtered.length === 0 && (
+              <div className="rounded-xl border border-dashed border-border bg-card/50 p-8 text-center text-sm text-muted-foreground">
+                No rooms found. Create a room to start an interview session.
+              </div>
+            )}
             {filtered.map((room, i) => (
               <motion.div
                 key={room.id}
@@ -225,8 +322,8 @@
                       <Copy className="w-3.5 h-3.5" />
                     </Button>
                     {room.status === 'scheduled' && (
-                      <Button size="sm" onClick={() => navigate(`/room/${room.roomId}`)} className="bg-gradient-primary hover:opacity-90">
-                        Start <ArrowRight className="ml-1 w-3.5 h-3.5" />
+                      <Button size="sm" onClick={() => handleStartRoom(room)} className="bg-gradient-primary hover:opacity-90" disabled={startingRoomId === room.id}>
+                        {startingRoomId === room.id ? 'Starting...' : 'Start'} <ArrowRight className="ml-1 w-3.5 h-3.5" />
                       </Button>
                     )}
                     {room.status === 'completed' && (

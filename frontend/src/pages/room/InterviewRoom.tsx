@@ -38,6 +38,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useProctor } from "@/hooks/useProctor";
 import WhiteboardPanel from "@/components/room/WhiteboardPanel";
 import ThemeToggle from "@/components/ThemeToggle";
+import api from "@/lib/api";
 
 const languages = [
   { value: "javascript", label: "JavaScript" },
@@ -102,6 +103,7 @@ export default function InterviewRoom() {
   const user = useAuthStore((s) => s.user);
   const { toast } = useToast();
   const editorStorageKey = `interviewos:room:${roomId || "default"}:editor`;
+  const roomSessionKey = `interviewos:room-session:${roomId || "default"}`;
 
   // Mode: 'editor' or 'whiteboard'
   const [activeTab, setActiveTab] = useState<"editor" | "whiteboard">("editor");
@@ -163,6 +165,7 @@ export default function InterviewRoom() {
   const [camOn, setCamOn] = useState(true);
   const [chatInput, setChatInput] = useState("");
   const [timer, setTimer] = useState(3600);
+  const [roomTitle, setRoomTitle] = useState("Interview Room");
   const [messages, setMessages] = useState<ChatMsg[]>([
     {
       id: "1",
@@ -186,6 +189,32 @@ export default function InterviewRoom() {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  useEffect(() => {
+    const loadRoom = async () => {
+      if (!roomId) {
+        return;
+      }
+
+      try {
+        const response = await api.get<{
+          success: boolean;
+          data?: { title?: string; durationMinutes?: number };
+        }>(`/rooms/${roomId}`);
+
+        if (response.data.data?.title) {
+          setRoomTitle(response.data.data.title);
+        }
+        if (response.data.data?.durationMinutes) {
+          setTimer(response.data.data.durationMinutes * 60);
+        }
+      } catch {
+        setRoomTitle("Interview Room");
+      }
+    };
+
+    loadRoom();
+  }, [roomId]);
 
   useEffect(() => {
     setCode(codeByLanguage[language] ?? defaultCode[language] ?? "");
@@ -272,18 +301,48 @@ export default function InterviewRoom() {
     }
 
     setIsRunning(true);
-    const startedAt = performance.now();
     setOutput(`Running ${language} code...\n`);
-    await new Promise((r) => setTimeout(r, 900));
 
-    const duration = Math.max(1, Math.round(performance.now() - startedAt));
-    const hasLikelyError = /\berror\b|throw\s+new|syntax/i.test(code);
-    setOutput((prev) =>
-      hasLikelyError
-        ? `${prev}✗ Runtime failed\nDetected a possible error pattern in code.\n`
-        : `${prev}> Execution completed\n✓ Finished successfully in ${duration}ms\n`,
-    );
-    setIsRunning(false);
+    try {
+      const sessionId = sessionStorage.getItem(roomSessionKey) || undefined;
+      const response = await api.post<{
+        success: boolean;
+        data?: {
+          stdout?: string;
+          stderr?: string;
+          time?: string;
+          memory?: number;
+        };
+        message?: string;
+      }>(`/rooms/${roomId}/code/execute`, {
+        roomId,
+        language,
+        code,
+        ...(sessionId ? { sessionId } : {}),
+      });
+
+      if (!response.data.success || !response.data.data) {
+        setOutput(response.data.message || "Execution failed.\n");
+        return;
+      }
+
+      const { stdout = "", stderr = "", time = "0", memory = 0 } = response.data.data;
+      const sections = [
+        stdout ? stdout.trimEnd() : "",
+        stderr ? stderr.trimEnd() : "",
+        `\nTime: ${time}s`,
+        `Memory: ${memory || 0} KB`,
+      ].filter(Boolean);
+
+      setOutput(sections.join("\n"));
+    } catch (error: any) {
+      setOutput(
+        error?.response?.data?.message ||
+          "Execution failed. Make sure the room is started and the execution service is available.\n",
+      );
+    } finally {
+      setIsRunning(false);
+    }
   };
 
   const handleCodeChange = (value?: string) => {
@@ -330,7 +389,7 @@ export default function InterviewRoom() {
           <div className="h-6 w-[1px] bg-border mx-1 sm:mx-2 hidden sm:block" />
           <div className="hidden sm:flex flex-col min-w-0">
             <span className="text-xs sm:text-sm font-semibold truncate">
-              Backend Engineering Assessment
+              {roomTitle}
             </span>
             <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
               {roomId}

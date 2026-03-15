@@ -15,6 +15,7 @@
 
 import { Response } from 'express';
 import axios from 'axios';
+import mongoose from 'mongoose';
 import logger from '../utils/logger';
 import { CodeSnapshot } from '../models/codeSnapshot.model';
 import { InterviewSession } from '../models/session.model';
@@ -45,18 +46,30 @@ const languageMap: Record<string, number> = {
 export const executeCode = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     // roomId can come from the URL param (mergeParams) or the body
-    const roomId = req.params.roomId || req.body.roomId;
+    const requestedRoomId = req.params.roomId || req.body.roomId;
     const { language, code, sessionId } = req.body;
 
-    if (!language || !code || !roomId || !sessionId) {
+    if (!language || !code || !requestedRoomId) {
       res.status(400).json({ success: false, message: 'Missing required parameters' });
       return;
     }
 
     // Verify the room exists
-    const room = await InterviewRoom.findById(roomId);
+    const roomQuery = mongoose.Types.ObjectId.isValid(requestedRoomId)
+      ? { _id: requestedRoomId }
+      : { roomId: requestedRoomId };
+    const room = await InterviewRoom.findOne(roomQuery);
     if (!room) {
       res.status(404).json({ success: false, message: 'Room not found' });
+      return;
+    }
+
+    const resolvedSession = sessionId
+      ? await InterviewSession.findById(sessionId)
+      : await InterviewSession.findOne({ room: room._id, endTime: { $exists: false } }).sort({ startTime: -1 });
+
+    if (!resolvedSession) {
+      res.status(400).json({ success: false, message: 'No active session found for this room' });
       return;
     }
 
@@ -124,8 +137,8 @@ export const executeCode = async (req: AuthRequest, res: Response): Promise<void
 
     // Persist the code + result as a snapshot for the session timeline
     const snapshot = await CodeSnapshot.create({
-      room: roomId,
-      session: sessionId,
+      room: room._id,
+      session: resolvedSession._id,
       language,
       code,
       triggeredBy: 'manual',
@@ -133,7 +146,7 @@ export const executeCode = async (req: AuthRequest, res: Response): Promise<void
     });
 
     // Link the snapshot to the session’s codeSnapshots array
-    await InterviewSession.findByIdAndUpdate(sessionId, {
+    await InterviewSession.findByIdAndUpdate(resolvedSession._id, {
       $push: { codeSnapshots: snapshot._id },
     });
 
