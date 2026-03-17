@@ -23,33 +23,185 @@
 
 import { Server, Socket } from 'socket.io';
 
+type RtcPeer = {
+  socketId: string;
+  userId: string;
+  role?: string;
+};
+
+type RtcJoinPayload = {
+  roomId: string;
+  userId: string;
+  role?: string;
+};
+
+type RtcRelayPayload<T> = {
+  roomId?: string;
+  to: string;
+  from?: string;
+  userId?: string;
+  data: T;
+};
+
+const roomPeers = new Map<string, Map<string, RtcPeer>>();
+
+const getPeersInRoom = (roomId: string): RtcPeer[] => {
+  const peers = roomPeers.get(roomId);
+  if (!peers) {
+    return [];
+  }
+  return Array.from(peers.values());
+};
+
+const addPeerToRoom = ({ roomId, userId, role }: RtcJoinPayload, socketId: string): RtcPeer[] => {
+  const peers = roomPeers.get(roomId) ?? new Map<string, RtcPeer>();
+  roomPeers.set(roomId, peers);
+
+  const existingPeers = Array.from(peers.values()).filter((peer) => peer.socketId !== socketId);
+  peers.set(socketId, { socketId, userId, role });
+
+  return existingPeers;
+};
+
+const removePeerFromRoom = (roomId: string, socketId: string): RtcPeer | null => {
+  const peers = roomPeers.get(roomId);
+  if (!peers) {
+    return null;
+  }
+
+  const removedPeer = peers.get(socketId);
+  if (!removedPeer) {
+    return null;
+  }
+
+  peers.delete(socketId);
+  if (peers.size === 0) {
+    roomPeers.delete(roomId);
+  }
+
+  return removedPeer;
+};
+
+const emitRtcError = (socket: Socket, message: string): void => {
+  socket.emit('rtc:error', { message });
+};
+
+const relayToPeer = <T>(
+  io: Server,
+  socket: Socket,
+  eventName: 'rtc:offer' | 'rtc:answer' | 'rtc:ice-candidate',
+  payload: RtcRelayPayload<T>,
+): void => {
+  if (!payload?.to || !payload?.data) {
+    emitRtcError(socket, `${eventName} requires 'to' and 'data'.`);
+    return;
+  }
+
+  const sender = payload.from ?? socket.id;
+  io.to(payload.to).emit(eventName, {
+    roomId: payload.roomId,
+    from: sender,
+    userId: payload.userId,
+    data: payload.data,
+  });
+};
+
 export default (io: Server, socket: Socket) => {
-  // ── rtc:user-ready ─────────────────────────────────────────────────────────
-  // Broadcast to the room so existing peers know to initiate an offer.
+  socket.on('rtc:join', ({ roomId, userId, role }: RtcJoinPayload) => {
+    if (!roomId || !userId) {
+      emitRtcError(socket, `rtc:join requires 'roomId' and 'userId'.`);
+      return;
+    }
+
+    socket.join(roomId);
+    const existingPeers = addPeerToRoom({ roomId, userId, role }, socket.id);
+
+    socket.emit('rtc:peers', {
+      roomId,
+      peers: existingPeers,
+    });
+
+    socket.to(roomId).emit('rtc:peer-joined', {
+      roomId,
+      peer: {
+        socketId: socket.id,
+        userId,
+        role,
+      },
+    });
+  });
+
+  socket.on('rtc:leave', ({ roomId }: { roomId: string }) => {
+    if (!roomId) {
+      emitRtcError(socket, `rtc:leave requires 'roomId'.`);
+      return;
+    }
+
+    socket.leave(roomId);
+    const removedPeer = removePeerFromRoom(roomId, socket.id);
+    if (!removedPeer) {
+      return;
+    }
+
+    socket.to(roomId).emit('rtc:peer-left', {
+      roomId,
+      peer: removedPeer,
+    });
+  });
+
+  // Legacy compatibility event used by existing clients.
   socket.on('rtc:user-ready', ({ roomId, userId }: { roomId: string; userId: string }) => {
-    socket.to(roomId).emit('rtc:user-ready', { userId });
+    if (!roomId || !userId) {
+      emitRtcError(socket, `rtc:user-ready requires 'roomId' and 'userId'.`);
+      return;
+    }
+    socket.to(roomId).emit('rtc:user-ready', { roomId, userId, socketId: socket.id });
   });
 
-  // ── rtc:offer ──────────────────────────────────────────────────────────────
-  // Forward SDP offer to the specific target socket (io.to targets a single
-  // socket ID, not a room).
-  socket.on('rtc:offer', ({ to, offer, from }: { to: string; offer: any; from: string }) => {
-    io.to(to).emit('rtc:offer', { offer, from });
-  });
-
-  // ── rtc:answer ─────────────────────────────────────────────────────────────
-  // Forward SDP answer back to the peer who sent the offer.
-  socket.on('rtc:answer', ({ to, answer, from }: { to: string; answer: any; from: string }) => {
-    io.to(to).emit('rtc:answer', { answer, from });
-  });
-
-  // ── rtc:ice-candidate ──────────────────────────────────────────────────────
-  // Relay ICE candidates between peers. Each candidate represents a potential
-  // network path; the browser picks the best one automatically (ICE trickle).
   socket.on(
-    'rtc:ice-candidate',
-    ({ to, candidate, from }: { to: string; candidate: any; from: string }) => {
-      io.to(to).emit('rtc:ice-candidate', { candidate, from });
+    'rtc:offer',
+    ({ roomId, to, offer, from, userId }: { roomId?: string; to: string; offer: unknown; from?: string; userId?: string }) => {
+      relayToPeer(io, socket, 'rtc:offer', { roomId, to, from, userId, data: offer });
     },
   );
+
+  socket.on(
+    'rtc:answer',
+    ({ roomId, to, answer, from, userId }: { roomId?: string; to: string; answer: unknown; from?: string; userId?: string }) => {
+      relayToPeer(io, socket, 'rtc:answer', { roomId, to, from, userId, data: answer });
+    },
+  );
+
+  socket.on(
+    'rtc:ice-candidate',
+    ({ roomId, to, candidate, from, userId }: { roomId?: string; to: string; candidate: unknown; from?: string; userId?: string }) => {
+      relayToPeer(io, socket, 'rtc:ice-candidate', { roomId, to, from, userId, data: candidate });
+    },
+  );
+
+  socket.on('disconnecting', () => {
+    const joinedRooms = Array.from(socket.rooms).filter((roomId) => roomId !== socket.id);
+
+    joinedRooms.forEach((roomId) => {
+      const removedPeer = removePeerFromRoom(roomId, socket.id);
+      if (!removedPeer) {
+        return;
+      }
+
+      socket.to(roomId).emit('rtc:peer-left', {
+        roomId,
+        peer: removedPeer,
+      });
+    });
+  });
+
+  socket.on('rtc:peers:get', ({ roomId }: { roomId: string }) => {
+    if (!roomId) {
+      emitRtcError(socket, `rtc:peers:get requires 'roomId'.`);
+      return;
+    }
+
+    const peers = getPeersInRoom(roomId).filter((peer) => peer.socketId !== socket.id);
+    socket.emit('rtc:peers', { roomId, peers });
+  });
 };
