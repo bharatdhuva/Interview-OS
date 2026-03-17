@@ -23,9 +23,14 @@ import {
   Maximize2,
   ShieldCheck,
   ShieldAlert,
+  Wifi,
+  WifiOff,
+  Gauge,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import {
   Select,
   SelectContent,
@@ -165,6 +170,8 @@ export default function InterviewRoom() {
   const [camOn, setCamOn] = useState(true);
   const [chatInput, setChatInput] = useState("");
   const [timer, setTimer] = useState(3600);
+  const [totalDurationSeconds, setTotalDurationSeconds] = useState(3600);
+  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
   const [roomTitle, setRoomTitle] = useState("Interview Room");
   const [messages, setMessages] = useState<ChatMsg[]>([
     {
@@ -187,6 +194,19 @@ export default function InterviewRoom() {
   }, []);
 
   useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
@@ -206,7 +226,9 @@ export default function InterviewRoom() {
           setRoomTitle(response.data.data.title);
         }
         if (response.data.data?.durationMinutes) {
-          setTimer(response.data.data.durationMinutes * 60);
+          const durationSeconds = response.data.data.durationMinutes * 60;
+          setTimer(durationSeconds);
+          setTotalDurationSeconds(durationSeconds);
         }
       } catch {
         setRoomTitle("Interview Room");
@@ -225,6 +247,12 @@ export default function InterviewRoom() {
     const sec = s % 60;
     return `${m.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
   };
+
+  const elapsedSeconds = Math.max(0, totalDurationSeconds - timer);
+  const sessionProgress =
+    totalDurationSeconds > 0
+      ? Math.min(100, Math.round((elapsedSeconds / totalDurationSeconds) * 100))
+      : 0;
 
   const persistEditorState = useCallback(
     (triggeredBy: "auto" | "manual") => {
@@ -376,7 +404,7 @@ export default function InterviewRoom() {
   return (
     <div className="h-[100dvh] flex flex-col bg-background overflow-hidden selection:bg-primary/30">
       {/* Header */}
-      <header className="border-b border-border bg-card/50 backdrop-blur-md flex flex-col lg:flex-row lg:items-center lg:justify-between px-3 sm:px-4 lg:px-6 py-2 lg:h-14 shrink-0 z-20 gap-2">
+      <header className="sticky top-0 border-b border-border bg-card/80 backdrop-blur-md flex flex-col lg:flex-row lg:items-center lg:justify-between px-3 sm:px-4 lg:px-6 py-2 lg:h-16 shrink-0 z-30 gap-2">
         <div className="flex items-center gap-2 sm:gap-4 min-w-0 w-full lg:w-auto">
           <Link to="/" className="group flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
@@ -398,6 +426,19 @@ export default function InterviewRoom() {
         </div>
 
         <div className="w-full lg:w-auto flex flex-wrap items-center gap-2 sm:gap-3 lg:gap-4">
+          <Badge
+            variant={isOnline ? "secondary" : "destructive"}
+            className="h-7 px-2.5 text-[11px] font-semibold"
+            aria-live="polite"
+          >
+            {isOnline ? (
+              <Wifi className="mr-1.5 h-3.5 w-3.5" />
+            ) : (
+              <WifiOff className="mr-1.5 h-3.5 w-3.5" />
+            )}
+            {isOnline ? "Connected" : "Offline"}
+          </Badge>
+
           {/* Proctoring Status */}
           <div
             className={`flex items-center gap-2 px-2.5 sm:px-3 py-1 rounded-full border text-[11px] sm:text-xs font-medium transition-colors ${
@@ -426,6 +467,14 @@ export default function InterviewRoom() {
             </span>
           </div>
 
+          <div className="hidden xl:flex items-center gap-2 min-w-40">
+            <Gauge className="w-4 h-4 text-muted-foreground" />
+            <Progress value={sessionProgress} className="h-2" aria-label="Session progress" />
+            <span className="text-[11px] text-muted-foreground tabular-nums w-9 text-right">
+              {sessionProgress}%
+            </span>
+          </div>
+
           <ThemeToggle isDark={isDark} onToggle={toggleTheme} size="sm" />
 
           <Button
@@ -442,6 +491,7 @@ export default function InterviewRoom() {
             size="sm"
             variant="destructive"
             className="h-8 text-xs font-semibold px-4 shadow-lg shadow-destructive/20"
+            aria-label="End interview session"
           >
             <span className="hidden sm:inline">End Session</span>
             <span className="sm:hidden">End</span>
@@ -452,7 +502,7 @@ export default function InterviewRoom() {
       {/* Main Layout */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-auto lg:overflow-hidden">
         {/* Left: Video & Controls (15%) */}
-        <aside className="w-full lg:w-64 border-b lg:border-b-0 lg:border-r border-border bg-card/30 flex flex-col p-3 sm:p-4 gap-3 sm:gap-4 shrink-0">
+        <aside className="w-full lg:w-72 border-b lg:border-b-0 lg:border-r border-border bg-card/30 flex flex-col p-3 sm:p-4 gap-3 sm:gap-4 shrink-0">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3 sm:gap-4">
             {/* Interviewer Video */}
             <div className="aspect-video rounded-xl bg-secondary/80 border border-border relative overflow-hidden shadow-inner flex flex-col items-center justify-center group">
@@ -491,6 +541,7 @@ export default function InterviewRoom() {
           <div className="flex justify-between items-center bg-secondary/30 p-2 rounded-2xl border border-border/50">
             <button
               onClick={() => setMicOn(!micOn)}
+              aria-label={micOn ? "Mute microphone" : "Unmute microphone"}
               className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
                 micOn
                   ? "bg-background hover:bg-secondary text-foreground"
@@ -505,6 +556,7 @@ export default function InterviewRoom() {
             </button>
             <button
               onClick={() => setCamOn(!camOn)}
+              aria-label={camOn ? "Turn camera off" : "Turn camera on"}
               className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
                 camOn
                   ? "bg-background hover:bg-secondary text-foreground"
@@ -517,12 +569,29 @@ export default function InterviewRoom() {
                 <VideoOff className="w-4.5 h-4.5" />
               )}
             </button>
-            <button className="w-10 h-10 rounded-xl bg-background hover:bg-secondary text-foreground flex items-center justify-center transition-all">
+            <button
+              aria-label="Share screen"
+              className="w-10 h-10 rounded-xl bg-background hover:bg-secondary text-foreground flex items-center justify-center transition-all"
+            >
               <Monitor className="w-4.5 h-4.5" />
             </button>
-            <button className="w-10 h-10 rounded-xl bg-destructive/10 hover:bg-destructive text-destructive hover:text-white flex items-center justify-center transition-all group">
+            <button
+              aria-label="Leave call"
+              className="w-10 h-10 rounded-xl bg-destructive/10 hover:bg-destructive text-destructive hover:text-white flex items-center justify-center transition-all group"
+            >
               <PhoneOff className="w-4.5 h-4.5 group-hover:scale-110" />
             </button>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-background/60 p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold tracking-wide">Session Health</span>
+              <span className="text-[10px] text-muted-foreground tabular-nums">{formatTime(timer)} left</span>
+            </div>
+            <Progress value={sessionProgress} className="h-2" />
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Keep camera on, stay fullscreen, and avoid switching tabs to maintain a valid interview session.
+            </p>
           </div>
         </aside>
 
@@ -691,13 +760,19 @@ export default function InterviewRoom() {
         </main>
 
         {/* Right: Chat (25%) */}
-        <section className="w-full lg:w-80 border-t lg:border-t-0 lg:border-l border-border bg-card/30 flex flex-col shrink-0 max-h-[45vh] lg:max-h-none">
+        <section className="w-full lg:w-80 border-t lg:border-t-0 lg:border-l border-border bg-card/30 flex flex-col shrink-0 max-h-[45vh] lg:max-h-none" aria-label="Interview chat panel">
           <div className="h-14 flex items-center justify-between px-4 border-b border-border shrink-0">
             <span className="text-sm font-bold tracking-tight">Messaging</span>
             <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div className="px-4 pt-3">
+            <div className="rounded-lg border border-border bg-background/60 px-3 py-2 text-[11px] text-muted-foreground">
+              Messages are time-stamped and retained for room history.
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-4 space-y-4" aria-live="polite" aria-relevant="additions text">
             {messages.map((msg) => (
               <MessageBubble
                 key={msg.id}
@@ -717,6 +792,7 @@ export default function InterviewRoom() {
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value.slice(0, 500))}
                 placeholder="Message interviewer..."
+                aria-label="Type your message"
                 className={`pr-12 bg-secondary/50 border-border focus-visible:ring-primary h-11 rounded-xl transition-all ${chatInput.length >= 500 ? "!border-destructive" : ""}`}
                 maxLength={500}
               />
