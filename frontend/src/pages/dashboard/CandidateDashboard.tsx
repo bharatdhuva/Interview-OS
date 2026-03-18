@@ -29,7 +29,7 @@ function RoomCard({ room }: { room: InterviewRoom }) {
       animate={{ opacity: 1, y: 0 }}
       className="p-5 rounded-xl bg-card border border-border hover:border-primary/20 transition-all group"
     >
-      <div className="flex items-start justify-between mb-3">
+      <div className="flex flex-wrap items-start justify-between gap-2 mb-3">
         <div className="flex-1">
           <h3 className="font-display font-semibold text-foreground group-hover:text-primary transition-colors">{room.title}</h3>
           {room.description && <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{room.description}</p>}
@@ -38,7 +38,7 @@ function RoomCard({ room }: { room: InterviewRoom }) {
           {statusConfig[room.status].label}
         </Badge>
       </div>
-      <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground mb-4">
         <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" />{format(scheduledDate, 'MMM d, yyyy')}</span>
         <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{format(scheduledDate, 'h:mm a')}</span>
         <span>{room.durationMinutes}min</span>
@@ -48,7 +48,7 @@ function RoomCard({ room }: { room: InterviewRoom }) {
           <span key={t} className="px-2 py-0.5 text-[10px] font-medium rounded-md bg-primary/10 text-primary">{t}</span>
         ))}
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {canJoin && room.status !== 'completed' && (
           <Button size="sm" onClick={() => navigate(`/room/${room.roomId}`)} className="bg-gradient-primary hover:opacity-90">
             Join Now <ArrowRight className="ml-1 w-3.5 h-3.5" />
@@ -108,14 +108,14 @@ export default function CandidateDashboard() {
         </div>
       </header>
 
-      <div className="container py-8">
+      <div className="container py-6 sm:py-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="text-3xl font-display font-bold mb-1">Dashboard</h1>
           <p className="text-muted-foreground mb-8">Welcome back, {user?.name}. Here are your interviews.</p>
         </motion.div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-10">
           {[
             { icon: Calendar, label: 'Upcoming', value: upcoming.length, color: 'text-info' },
             { icon: Video, label: 'Completed', value: past.length, color: 'text-success' },

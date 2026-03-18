@@ -43,7 +43,7 @@ const avatarInitials = ["AK", "SM", "JP", "LW", "RD"];
 const AuthLayout: React.FC<AuthLayoutProps> = ({ children, variant }) => {
   return (
     <div
-      className="flex h-screen overflow-hidden"
+      className="flex min-h-screen overflow-hidden"
       style={{ background: "#08080f" }}
     >
       {/* Left Panel */}
@@ -51,7 +51,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, variant }) => {
         initial={{ x: -20, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="hidden md:flex w-[42%] relative overflow-hidden flex-col"
+        className="hidden lg:flex w-[42%] relative overflow-hidden flex-col"
         style={{
           background:
             "linear-gradient(160deg, #0c0c18 0%, #0f0e1f 40%, #0c0b18 100%)",
@@ -273,9 +273,9 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children, variant }) => {
           }}
         />
 
-        <div className="w-full max-w-[440px] px-6 py-10 md:py-0 relative z-10" style={{margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'}}>
+        <div className="w-full max-w-[520px] lg:max-w-[440px] px-5 sm:px-6 py-8 sm:py-10 lg:py-0 relative z-10" style={{margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'}}>
           {/* Mobile logo */}
-          <div className="flex md:hidden items-center justify-center gap-2 mb-8">
+          <div className="flex lg:hidden items-center justify-center gap-2 mb-8">
             <div
               className="w-7 h-7 rounded-lg flex items-center justify-center"
               style={{

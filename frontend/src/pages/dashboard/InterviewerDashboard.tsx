@@ -232,19 +232,19 @@
           </div>
         </header>
 
-        <div className="container py-8">
-          <div className="flex items-center justify-between mb-8">
+        <div className="container py-6 sm:py-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
               <h1 className="text-3xl font-display font-bold mb-1">Interviewer Dashboard</h1>
               <p className="text-muted-foreground">Manage your interviews and candidates.</p>
             </motion.div>
-            <Button onClick={() => setShowCreate(true)} className="bg-gradient-primary hover:opacity-90">
+            <Button onClick={() => setShowCreate(true)} className="bg-gradient-primary hover:opacity-90 w-full sm:w-auto">
               <Plus className="w-4 h-4 mr-2" /> Create Room
             </Button>
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-10">
             {[
               { icon: Calendar, label: 'Total Interviews', value: rooms.length },
               { icon: CheckCircle2, label: 'Completed', value: completedCount },
@@ -291,7 +291,7 @@
                 transition={{ delay: i * 0.05 }}
                 className="p-5 rounded-xl bg-card border border-border hover:border-primary/20 transition-all"
               >
-                <div className="flex items-start justify-between">
+                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="font-display font-semibold">{room.title}</h3>
@@ -299,11 +299,11 @@
                         {statusConfig[room.status].label}
                       </Badge>
                     </div>
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground mb-3">
                       <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" />{format(new Date(room.scheduledAt), 'MMM d, yyyy')}</span>
                       <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{format(new Date(room.scheduledAt), 'h:mm a')}</span>
                       <span>{room.durationMinutes}min</span>
-                      <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" />{room.candidateEmail}</span>
+                      <span className="flex items-center gap-1 break-all"><Users className="w-3.5 h-3.5 shrink-0" />{room.candidateEmail}</span>
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       {room.techStack.map((t) => (
@@ -317,7 +317,7 @@
                       </span>
                     </div>
                   </div>
-                  <div className="flex gap-2 ml-4">
+                  <div className="flex flex-wrap gap-2 lg:ml-4">
                     <Button size="sm" variant="outline" onClick={() => copyInvite(room.roomId)}>
                       <Copy className="w-3.5 h-3.5" />
                     </Button>
@@ -421,7 +421,7 @@
               />
               <FieldError message={errors.candidateEmail?.message} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label>Date & Time <span className="text-destructive">*</span></Label>
                 <Input
@@ -462,7 +462,7 @@
               />
               <FieldError message={errors.techStack?.message} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label>Difficulty <span className="text-destructive">*</span></Label>
                 <Controller
