@@ -30,7 +30,7 @@ import { AuthRequest } from '../middleware/auth.middleware';
  */
 export const getProfile = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const user = await User.findById(req.user?.id).select('-passwordHash -refreshTokens');
+    const user = await User.findById(req.user.id).select('-passwordHash -refreshTokens');
     res.status(200).json({ success: true, data: user });
   } catch (error: any) {
     logger.error('Error fetching profile', error);
@@ -48,7 +48,7 @@ export const updateProfile = async (req: AuthRequest, res: Response): Promise<vo
   try {
     const validatedData = updateProfileSchema.parse(req.body);
     const user = await User.findByIdAndUpdate(
-      req.user?.id,
+      req.user.id,
       validatedData,
       { new: true, runValidators: true }
     ).select('-passwordHash -refreshTokens');
@@ -70,7 +70,7 @@ export const updateProfile = async (req: AuthRequest, res: Response): Promise<vo
 export const changePassword = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const validatedData = changePasswordSchema.parse(req.body);
-    const user = await User.findById(req.user?.id);
+    const user = await User.findById(req.user.id);
 
     if (!user) {
       res.status(404).json({ success: false, message: 'User not found' });
@@ -105,7 +105,7 @@ export const changePassword = async (req: AuthRequest, res: Response): Promise<v
 export const getInterviewHistory = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     // Enforce ownership / admin-only access
-    if (req.params.id !== req.user?.id && req.user?.role !== 'admin') {
+    if (req.params.id !== req.user.id && req.user.role !== 'admin') {
       res.status(403).json({ success: false, message: 'Not authorized' });
       return;
     }

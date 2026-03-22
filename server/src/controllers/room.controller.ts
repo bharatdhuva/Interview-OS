@@ -40,7 +40,7 @@ import { AuthRequest } from '../middleware/auth.middleware';
 export const createRoom = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const validatedData = createRoomSchema.parse(req.body);
-    const interviewerId = req.user?.id;
+    const interviewerId = req.user.id;
 
     let candidate = await User.findOne({ email: validatedData.candidateEmail });
     if (!candidate) {
@@ -87,8 +87,8 @@ export const createRoom = async (req: AuthRequest, res: Response): Promise<void>
  */
 export const listMyRooms = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const userId = req.user?.id;
-    const role = req.user?.role;
+    const userId = req.user.id;
+    const role = req.user.role;
     const query = role === 'interviewer' ? { interviewer: userId } : { candidate: userId };
 
     const rooms = await InterviewRoom.find(query)
@@ -127,9 +127,9 @@ export const getRoomById = async (req: AuthRequest, res: Response): Promise<void
 
     const interviewerId = (room.interviewer as any)?._id?.toString() || room.interviewer?.toString();
     const candidateId = (room.candidate as any)?._id?.toString() || room.candidate?.toString();
-    const isInterviewer = interviewerId === req.user?.id;
-    const isCandidate = candidateId === req.user?.id;
-    const isAdmin = req.user?.role === 'admin';
+    const isInterviewer = interviewerId === req.user.id;
+    const isCandidate = candidateId === req.user.id;
+    const isAdmin = req.user.role === 'admin';
 
     if (!isInterviewer && !isCandidate && !isAdmin) {
       res.status(403).json({ success: false, message: 'Not authorized to access this room' });
@@ -190,7 +190,7 @@ export const startSession = async (req: AuthRequest, res: Response): Promise<voi
       return;
     }
 
-    if (room.interviewer.toString() !== req.user?.id) {
+    if (room.interviewer.toString() !== req.user.id) {
       res.status(403).json({ success: false, message: 'Only the interviewer can start the session' });
       return;
     }
@@ -230,7 +230,7 @@ export const endSession = async (req: AuthRequest, res: Response): Promise<void>
       return;
     }
 
-    if (room.interviewer.toString() !== req.user?.id) {
+    if (room.interviewer.toString() !== req.user.id) {
       res.status(403).json({ success: false, message: 'Only the interviewer can end the session' });
       return;
     }

@@ -41,7 +41,7 @@ export const submitFeedback = async (req: AuthRequest, res: Response): Promise<v
     }
 
     // Only the room’s interviewer may submit feedback
-    if (room.interviewer.toString() !== req.user?.id) {
+    if (room.interviewer.toString() !== req.user.id) {
       res.status(403).json({ success: false, message: 'Only interviewer can submit feedback' });
       return;
     }
@@ -53,7 +53,7 @@ export const submitFeedback = async (req: AuthRequest, res: Response): Promise<v
     const feedback = await Feedback.create({
       room:              validatedData.roomId,
       session:           validatedData.sessionId,
-      interviewer:       req.user?.id,
+      interviewer:       req.user.id,
       candidate:         room.candidate,
       ratings:           validatedData.ratings,
       strengths:         validatedData.strengths,
@@ -88,8 +88,8 @@ export const getFeedbackForRoom = async (req: AuthRequest, res: Response): Promi
       return;
     }
 
-    const isCandidate   = (feedback.candidate as any)._id.toString() === req.user?.id;
-    const isInterviewer = (feedback.interviewer as any)._id.toString() === req.user?.id;
+    const isCandidate   = (feedback.candidate as any)._id.toString() === req.user.id;
+    const isInterviewer = (feedback.interviewer as any)._id.toString() === req.user.id;
 
     // Block candidates from reading until the interviewer shares
     if (isCandidate && !feedback.isSharedWithCandidate) {
@@ -98,7 +98,7 @@ export const getFeedbackForRoom = async (req: AuthRequest, res: Response): Promi
     }
 
     // Only the two participants + admins have any access at all
-    if (!isCandidate && !isInterviewer && req.user?.role !== 'admin') {
+    if (!isCandidate && !isInterviewer && req.user.role !== 'admin') {
       res.status(403).json({ success: false, message: 'Not authorized to view this feedback' });
       return;
     }
@@ -128,7 +128,7 @@ export const shareFeedbackWithCandidate = async (
       return;
     }
 
-    if ((feedback.interviewer as any).toString() !== req.user?.id) {
+    if ((feedback.interviewer as any).toString() !== req.user.id) {
       res.status(403).json({ success: false, message: 'Only interviewer can share feedback' });
       return;
     }

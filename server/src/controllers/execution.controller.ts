@@ -74,11 +74,11 @@ export const executeCode = async (req: AuthRequest, res: Response): Promise<void
     }
 
     // Only room participants (or admins) may execute code
-    const userId = req.user?.id;
+    const userId = req.user.id;
     const isParticipant =
       room.interviewer.toString() === userId ||
       room.candidate?.toString()  === userId ||
-      req.user?.role === 'admin';
+      req.user.role === 'admin';
 
     if (!isParticipant) {
       res.status(403).json({ success: false, message: 'Not authorized to execute code in this room' });
