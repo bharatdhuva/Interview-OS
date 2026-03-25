@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
-import { Plus, Calendar, Clock, Users, Copy, ArrowRight, BarChart3, CheckCircle2, User, LogOut, Terminal, X, AlertCircle } from 'lucide-react';
+import { Plus, Calendar, Clock, Users, Copy, ArrowRight, BarChart3, CheckCircle2, User, LogOut, Terminal, X, AlertCircle, CreditCard } from 'lucide-react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
@@ -185,6 +185,10 @@ export default function InterviewerDashboard() {
                 </div>
                 <span className="text-sm font-medium hidden sm:inline">{user?.name}</span>
               </div>
+              <Button variant="ghost" size="sm" onClick={() => navigate('/pricing')}>
+                <CreditCard className="w-4 h-4"/>
+                <span className="hidden sm:inline ml-1">Pricing</span>
+              </Button>
               <Button variant="ghost" size="sm" onClick={handleLogout}>
                 <LogOut className="w-4 h-4"/>
               </Button>

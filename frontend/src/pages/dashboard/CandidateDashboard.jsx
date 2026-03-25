@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { format, isFuture, differenceInMinutes } from 'date-fns';
-import { Calendar, Clock, ArrowRight, Video, Code2, MessageSquare, History, User, LogOut, Terminal } from 'lucide-react';
+import { Calendar, Clock, ArrowRight, Video, Code2, MessageSquare, History, User, LogOut, Terminal, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/store/authStore';
@@ -77,6 +77,10 @@ export default function CandidateDashboard() {
               </div>
               <span className="text-sm font-medium hidden sm:inline">{user?.name}</span>
             </div>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/pricing')}>
+              <CreditCard className="w-4 h-4"/>
+              <span className="hidden sm:inline ml-1">Pricing</span>
+            </Button>
             <Button variant="ghost" size="sm" onClick={handleLogout}>
               <LogOut className="w-4 h-4"/>
             </Button>

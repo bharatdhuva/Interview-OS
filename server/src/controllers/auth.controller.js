@@ -36,6 +36,20 @@ const REFRESH_COOKIE_OPTIONS = {
 const setRefreshCookie = (res, token) => {
     res.cookie('refreshToken', token, REFRESH_COOKIE_OPTIONS);
 };
+
+/**
+ * Fire-and-forget welcome email helper.
+ * Auth flow must never fail because of email provider issues.
+ */
+const sendWelcomeEmailSafely = async (user) => {
+    try {
+        const emailService = require('../utils/emailService');
+        await emailService.sendWelcomeEmail(user.email, user.name);
+    }
+    catch (error) {
+        logger_1.default.error('Failed to send welcome email', error);
+    }
+};
 // ─── Handlers ────────────────────────────────────────────────────────────────
 /**
  * POST /api/v1/auth/register
@@ -61,6 +75,25 @@ const register = async (req, res) => {
             passwordHash,
             role: role || 'candidate',
         });
+
+        // Generate email verification token
+        const TokenService = require('../utils/tokenService');
+        const verificationToken = await TokenService.createEmailVerificationToken(user);
+
+        // Send verification email
+        const emailService = require('../utils/emailService');
+        const verificationUrl = `${process.env.CLIENT_URL}/verify-email?email=${encodeURIComponent(email)}&token=${verificationToken}`;
+        
+        try {
+            await emailService.sendVerificationEmail(email, verificationToken, verificationUrl);
+        } catch (emailError) {
+            logger_1.default.error('Failed to send verification email after registration', emailError);
+            // Don't fail registration if email fails, but log it
+        }
+
+        // Send welcome email on fresh registration (non-blocking).
+        sendWelcomeEmailSafely(user).catch(() => undefined);
+
         // Generate tokens and persist the refresh token
         const accessToken = (0, jwt_1.generateAccessToken)(user.id, user.role);
         const refreshToken = (0, jwt_1.generateRefreshToken)(user.id);
@@ -69,7 +102,15 @@ const register = async (req, res) => {
         setRefreshCookie(res, refreshToken);
         res.status(201).json({
             success: true,
-            data: { id: user.id, name: user.name, email: user.email, role: user.role, accessToken },
+            data: { 
+                id: user.id, 
+                name: user.name, 
+                email: user.email, 
+                role: user.role, 
+                accessToken,
+                isEmailVerified: false,
+                message: 'Account created! Please check your email to verify your account.'
+            },
         });
     }
     catch (error) {
@@ -108,6 +149,7 @@ const login = async (req, res) => {
         user.refreshTokens.push(refreshToken);
         await user.save();
         setRefreshCookie(res, refreshToken);
+
         res.status(200).json({
             success: true,
             data: { id: user.id, name: user.name, email: user.email, role: user.role, accessToken },
@@ -209,6 +251,7 @@ const googleSignIn = async (req, res) => {
         user.refreshTokens.push(refreshToken);
         await user.save();
         setRefreshCookie(res, refreshToken);
+
         res.status(200).json({
             success: true,
             data: {
@@ -235,3 +278,250 @@ const googleSignIn = async (req, res) => {
     }
 };
 exports.googleSignIn = googleSignIn;
+
+/**
+ * POST /api/v1/auth/verify-email
+ *
+ * Verifies a user's email using a one-time token sent via email.
+ * Once verified, user can log in normally.
+ */
+const verifyEmail = async (req, res) => {
+    try {
+        const { email, token } = auth_validation_1.verifyEmailSchema.parse(req.body);
+        const user = await user_model_1.User.findOne({ email });
+        
+        if (!user) {
+            res.status(404).json({ success: false, message: 'User not found' });
+            return;
+        }
+
+        if (user.isEmailVerified) {
+            res.status(400).json({ success: false, message: 'Email already verified' });
+            return;
+        }
+
+        // Use tokenService to verify the token
+        const TokenService = require('../utils/tokenService');
+        const isValid = await TokenService.verifyEmailToken(user, token);
+
+        if (!isValid) {
+            res.status(400).json({ success: false, message: 'Invalid or expired verification token' });
+            return;
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Email verified successfully. Welcome to InterviewOS!',
+            data: { id: user.id, email: user.email, name: user.name },
+        });
+    } catch (error) {
+        if (error.name === 'ZodError') {
+            res.status(400).json({ success: false, message: 'Validation Error', errors: error.errors });
+            return;
+        }
+        logger_1.default.error('Email verification error', error);
+        res.status(500).json({ success: false, message: 'Server error during email verification' });
+    }
+};
+exports.verifyEmail = verifyEmail;
+
+/**
+ * POST /api/v1/auth/resend-verification-email
+ *
+ * Resends the verification email to the user.
+ * Useful if the original email was lost or expired.
+ */
+const resendVerificationEmail = async (req, res) => {
+    try {
+        const { email } = auth_validation_1.resendVerificationSchema.parse(req.body);
+        const user = await user_model_1.User.findOne({ email });
+
+        if (!user) {
+            // Don't reveal whether email exists (security)
+            res.status(200).json({ success: true, message: 'If account exists, verification email will be sent' });
+            return;
+        }
+
+        if (user.isEmailVerified) {
+            res.status(400).json({ success: false, message: 'Email is already verified' });
+            return;
+        }
+
+        // Generate new verification token
+        const TokenService = require('../utils/tokenService');
+        const verificationToken = await TokenService.createEmailVerificationToken(user);
+
+        // Send verification email
+        const emailService = require('../utils/emailService');
+        const verificationUrl = `${process.env.CLIENT_URL}/verify-email?email=${encodeURIComponent(email)}&token=${verificationToken}`;
+        
+        await emailService.sendVerificationEmail(email, verificationToken, verificationUrl).catch((err) => {
+            logger_1.default.error('Failed to send verification email', err);
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'Verification email has been sent. Check your inbox.',
+        });
+    } catch (error) {
+        if (error.name === 'ZodError') {
+            res.status(400).json({ success: false, message: 'Validation Error', errors: error.errors });
+            return;
+        }
+        logger_1.default.error('Resend verification email error', error);
+        res.status(500).json({ success: false, message: 'Server error while sending verification email' });
+    }
+};
+exports.resendVerificationEmail = resendVerificationEmail;
+
+/**
+ * POST /api/v1/auth/forgot-password
+ *
+ * Sends a password reset email to the provided email address.
+ * The email contains a link with a one-time reset token (1 hour expiry).
+ */
+const forgotPassword = async (req, res) => {
+    try {
+        const { email } = auth_validation_1.forgotPasswordSchema.parse(req.body);
+        const user = await user_model_1.User.findOne({ email });
+
+        if (!user) {
+            // Don't reveal whether email exists (security)
+            res.status(200).json({ success: true, message: 'If account exists, password reset email will be sent' });
+            return;
+        }
+
+        // Generate password reset token
+        const TokenService = require('../utils/tokenService');
+        const resetToken = await TokenService.createPasswordResetToken(user);
+
+        // Send password reset email
+        const emailService = require('../utils/emailService');
+        const resetUrl = `${process.env.CLIENT_URL}/reset-password?email=${encodeURIComponent(email)}&token=${resetToken}`;
+        
+        await emailService.sendPasswordResetEmail(email, resetToken, resetUrl).catch((err) => {
+            logger_1.default.error('Failed to send password reset email', err);
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'Password reset email has been sent. Check your inbox.',
+        });
+    } catch (error) {
+        if (error.name === 'ZodError') {
+            res.status(400).json({ success: false, message: 'Validation Error', errors: error.errors });
+            return;
+        }
+        logger_1.default.error('Forgot password error', error);
+        res.status(500).json({ success: false, message: 'Server error while processing password reset' });
+    }
+};
+exports.forgotPassword = forgotPassword;
+
+/**
+ * POST /api/v1/auth/reset-password
+ *
+ * Resets the user's password using a one-time token.
+ * Token must be valid and not expired (1 hour from creation).
+ */
+const resetPassword = async (req, res) => {
+    try {
+        const { email, token, newPassword } = auth_validation_1.resetPasswordSchema.parse(req.body);
+        const user = await user_model_1.User.findOne({ email });
+
+        if (!user) {
+            res.status(404).json({ success: false, message: 'User not found' });
+            return;
+        }
+
+        // Verify the reset token
+        const TokenService = require('../utils/tokenService');
+        const isValid = await TokenService.verifyPasswordResetToken(user, token);
+
+        if (!isValid) {
+            res.status(400).json({ success: false, message: 'Invalid or expired password reset token' });
+            return;
+        }
+
+        // Hash new password and save
+        const newPasswordHash = await bcrypt_1.default.hash(newPassword, 12);
+        user.passwordHash = newPasswordHash;
+        
+        // Clear all refresh tokens (force re-login on all devices)
+        user.refreshTokens = [];
+        
+        // Clear the reset token
+        await TokenService.clearPasswordResetToken(user);
+
+        res.status(200).json({
+            success: true,
+            message: 'Password has been reset successfully. Please log in with your new password.',
+        });
+    } catch (error) {
+        if (error.name === 'ZodError') {
+            res.status(400).json({ success: false, message: 'Validation Error', errors: error.errors });
+            return;
+        }
+        logger_1.default.error('Reset password error', error);
+        res.status(500).json({ success: false, message: 'Server error while resetting password' });
+    }
+};
+exports.resetPassword = resetPassword;
+
+/**
+ * POST /api/v1/auth/refresh
+ *
+ * Exchanges a refresh token for a new access token.
+ * Refresh token is read from the httpOnly cookie.
+ * 
+ * Implements refresh token rotation: the old token is replaced with a new one.
+ */
+const refresh = async (req, res) => {
+    try {
+        const { refreshToken } = req.cookies;
+
+        if (!refreshToken) {
+            res.status(401).json({ success: false, message: 'Refresh token not found' });
+            return;
+        }
+
+        // Verify the refresh token
+        const decoded = jsonwebtoken_1.default.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+        const user = await user_model_1.User.findById(decoded.id);
+
+        if (!user || !user.refreshTokens.includes(refreshToken)) {
+            res.status(401).json({ success: false, message: 'Invalid refresh token' });
+            return;
+        }
+
+        // Generate new access token and refresh token (rotation)
+        const newAccessToken = (0, jwt_1.generateAccessToken)(user.id, user.role);
+        const newRefreshToken = (0, jwt_1.generateRefreshToken)(user.id);
+
+        // Update refresh tokens: remove old, add new
+        user.refreshTokens = user.refreshTokens.filter((t) => t !== refreshToken);
+        user.refreshTokens.push(newRefreshToken);
+        await user.save();
+
+        // Set new refresh token cookie
+        const REFRESH_COOKIE_OPTIONS_REFRESH = {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
+        };
+        res.cookie('refreshToken', newRefreshToken, REFRESH_COOKIE_OPTIONS_REFRESH);
+
+        res.status(200).json({
+            success: true,
+            data: {
+                accessToken: newAccessToken,
+                expiresIn: '15m',
+            },
+        });
+    } catch (error) {
+        logger_1.default.error('Token refresh error', error);
+        res.status(401).json({ success: false, message: 'Failed to refresh token' });
+    }
+};
+exports.refresh = refresh;

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import Editor from "@monaco-editor/react";
-import { Mic, MicOff, Brain, Video as VideoIcon, VideoOff, Monitor, PhoneOff, Play, Save, Send, Clock, Terminal, Users, PenTool, Code2, AlertTriangle, Maximize2, ShieldCheck, ShieldAlert, Wifi, WifiOff, Gauge, } from "lucide-react";
+import { Mic, MicOff, Brain, Video as VideoIcon, VideoOff, Monitor, PhoneOff, Play, Save, Send, Clock, Terminal, Users, PenTool, Code2, Maximize2, ShieldCheck, ShieldAlert, Wifi, WifiOff, Gauge, } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,7 @@ import { useProctor } from "@/hooks/useProctor";
 import WhiteboardPanel from "@/components/room/WhiteboardPanel";
 import ThemeToggle from "@/components/ThemeToggle";
 import api from "@/lib/api";
+import { io } from "socket.io-client";
 const languages = [
     { value: "javascript", label: "JavaScript" },
     { value: "typescript", label: "TypeScript" },
@@ -32,23 +33,45 @@ const defaultCode = {
     go: `package main\n\nimport "fmt"\n\nfunc twoSum(nums []int, target int) []int {\n    m := make(map[int]int)\n    for i, num := range nums {\n        complement := target - num\n        if j, ok := m[complement]; ok {\n            return []int{j, i}\n        }\n        m[num] = i\n    }\n    return nil\n}\n\nfunc main() {\n    fmt.Println(twoSum([]int{2, 7, 11, 15}, 9))\n}`,
     rust: `use std::collections::HashMap;\n\nfn two_sum(nums: Vec<i32>, target: i32) -> Vec<i32> {\n    let mut map = HashMap::new();\n    for (i, &num) in nums.iter().enumerate() {\n        let complement = target - num;\n        if let Some(&j) = map.get(&complement) {\n            return vec![j as i32, i as i32];\n        }\n        map.insert(num, i);\n    }\n    vec![]\n}\n\nfn main() {\n    println!("{:?}", two_sum(vec![2, 7, 11, 15], 9));\n}`,
 };
-const MessageBubble = ({ msg, currentUserName, }) => {
-    return (<motion.div key={msg.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`flex flex-col ${msg.sender === currentUserName ? "items-end" : "items-start"} mb-3`}>
+const MessageBubble = ({ msg, currentUserName, currentUserId, }) => {
+    const isOwnMessage = msg.userId
+        ? String(msg.userId) === String(currentUserId)
+        : msg.sender === currentUserName;
+    return (<motion.div key={msg.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`flex flex-col ${isOwnMessage ? "items-end" : "items-start"} mb-3`}>
       <div className="flex items-center gap-2 mb-1">
         <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
           {msg.sender}
         </span>
         <span className="text-[10px] text-muted-foreground/60">{msg.time}</span>
       </div>
-      <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${msg.sender === currentUserName
+      <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${isOwnMessage
             ? "bg-primary text-primary-foreground rounded-tr-none"
             : "bg-secondary text-secondary-foreground rounded-tl-none"}`}>
         {msg.message}
       </div>
     </motion.div>);
 };
+
+  const formatMessageTime = (value) => {
+    if (!value)
+      return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    return new Date(value).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
+
+  const getSocketServerUrl = () => {
+    if (import.meta.env.VITE_SOCKET_URL) {
+      return import.meta.env.VITE_SOCKET_URL;
+    }
+    const apiBase = import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1";
+    return apiBase.replace(/\/api\/v1\/?$/, "");
+  };
+
 export default function InterviewRoom() {
     const { roomId } = useParams();
+  const roleParam = new URLSearchParams(window.location.search).get("role");
+  const roleOverride = roleParam === "interviewer" || roleParam === "candidate"
+    ? roleParam
+    : null;
     const navigate = useNavigate();
     const user = useAuthStore((s) => s.user);
     const { toast } = useToast();
@@ -71,15 +94,7 @@ export default function InterviewRoom() {
         document.documentElement.classList.toggle("dark");
     };
     const { violationCount, enterFullscreen } = useProctor({
-        roomId,
-        onEndSession: () => {
-            toast({
-                title: "Session Ended",
-                description: "Too many violations. Redirecting...",
-                variant: "destructive",
-            });
-            setTimeout(() => navigate("/"), 3000);
-        },
+      roomId,
     });
     const [language, setLanguage] = useState("typescript");
     const [codeByLanguage, setCodeByLanguage] = useState(() => {
@@ -109,16 +124,53 @@ export default function InterviewRoom() {
     const [totalDurationSeconds, setTotalDurationSeconds] = useState(3600);
     const [isOnline, setIsOnline] = useState(navigator.onLine);
     const [roomTitle, setRoomTitle] = useState("Interview Room");
-    const [messages, setMessages] = useState([
-        {
-            id: "1",
-            sender: "Interviewer",
-            message: "Hello! Are you ready to begin?",
-            time: "2:00 PM",
-        },
-    ]);
+    const [messages, setMessages] = useState([]);
+    const [connectedUsers, setConnectedUsers] = useState([]);
+    const [remoteUserName, setRemoteUserName] = useState("Interviewer");
+    const [rtcConnected, setRtcConnected] = useState(false);
     const chatEndRef = useRef(null);
     const autosaveTimeoutRef = useRef(null);
+    const socketRef = useRef(null);
+    const peerConnectionRef = useRef(null);
+    const localStreamRef = useRef(null);
+    const remoteStreamRef = useRef(null);
+    const localVideoRef = useRef(null);
+    const remoteVideoRef = useRef(null);
+    const targetPeerUserIdRef = useRef(null);
+    const readySignalSentRef = useRef(false);
+    const [identity, setIdentity] = useState(() => {
+      const fallbackName = user?.name || "Candidate";
+      const fallbackRole = roleOverride || user?.role || "candidate";
+      const fallbackDisplayName = roleOverride
+        ? roleOverride === "interviewer"
+          ? "Interviewer"
+          : "Candidate"
+        : fallbackName;
+      const storageKey = `interviewos:identity:${roomId || "default"}`;
+      const baseFallbackId = user?.id || user?._id || `guest-${Math.random().toString(36).slice(2, 10)}`;
+      const fallbackId = roleOverride ? `${baseFallbackId}:${roleOverride}` : baseFallbackId;
+      try {
+        const stored = sessionStorage.getItem(storageKey);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed?.userId) {
+            return {
+              userId: parsed.userId,
+              userName: parsed.userName || fallbackName,
+              role: parsed.role || fallbackRole,
+            };
+          }
+        }
+      }
+      catch {
+        // ignore malformed identity payload and regenerate
+      }
+      return {
+        userId: fallbackId,
+        userName: fallbackDisplayName,
+        role: fallbackRole,
+      };
+    });
     useEffect(() => {
         const interval = setInterval(() => setTimer((t) => Math.max(0, t - 1)), 1000);
         return () => clearInterval(interval);
@@ -137,6 +189,153 @@ export default function InterviewRoom() {
         chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
     useEffect(() => {
+      if (roleOverride)
+        return;
+      const nextIdentity = {
+        userId: user?.id || user?._id || identity.userId,
+        userName: user?.name || identity.userName,
+        role: user?.role || identity.role,
+      };
+      setIdentity((prev) => {
+        if (prev.userId === nextIdentity.userId && prev.userName === nextIdentity.userName && prev.role === nextIdentity.role) {
+          return prev;
+        }
+        return nextIdentity;
+      });
+    }, [identity.role, identity.userId, identity.userName, roleOverride, user]);
+    useEffect(() => {
+      try {
+        sessionStorage.setItem(`interviewos:identity:${roomId || "default"}`, JSON.stringify(identity));
+      }
+      catch {
+        // no-op for private browsing quota failures
+      }
+    }, [identity, roomId]);
+
+    const cleanupPeerConnection = useCallback(() => {
+      if (peerConnectionRef.current) {
+        peerConnectionRef.current.ontrack = null;
+        peerConnectionRef.current.onicecandidate = null;
+        peerConnectionRef.current.close();
+        peerConnectionRef.current = null;
+      }
+      targetPeerUserIdRef.current = null;
+      setRtcConnected(false);
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = null;
+      }
+    }, []);
+
+    const announceReadyIfPossible = useCallback(() => {
+      if (!roomId || readySignalSentRef.current)
+        return;
+      if (!socketRef.current || !socketRef.current.connected)
+        return;
+      if (!localStreamRef.current)
+        return;
+      readySignalSentRef.current = true;
+      socketRef.current.emit("webrtc:user-ready", {
+        roomId,
+        userId: identity.userId,
+      });
+    }, [identity.userId, roomId]);
+
+    const buildPeerConnection = useCallback((targetUserId) => {
+      const peer = new RTCPeerConnection({
+        iceServers: [
+          { urls: "stun:stun.l.google.com:19302" },
+          { urls: "stun:stun1.l.google.com:19302" },
+        ],
+      });
+
+      targetPeerUserIdRef.current = targetUserId;
+
+      peer.onicecandidate = (event) => {
+        if (!event.candidate || !socketRef.current)
+          return;
+        socketRef.current.emit("webrtc:ice-candidate", {
+          roomId,
+          candidate: event.candidate,
+          fromUserId: identity.userId,
+          toUserId: targetPeerUserIdRef.current,
+        });
+      };
+
+      peer.ontrack = (event) => {
+        const [stream] = event.streams;
+        remoteStreamRef.current = stream;
+        setRtcConnected(true);
+        if (remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject = stream;
+        }
+      };
+
+      const localStream = localStreamRef.current;
+      if (localStream) {
+        localStream.getTracks().forEach((track) => {
+          peer.addTrack(track, localStream);
+        });
+      }
+
+      peerConnectionRef.current = peer;
+      return peer;
+    }, [identity.userId, roomId]);
+
+    const startOffer = useCallback(async (toUserId) => {
+      if (!toUserId || toUserId === identity.userId)
+        return;
+      if (!localStreamRef.current)
+        return;
+
+      let peer = peerConnectionRef.current;
+      if (!peer || targetPeerUserIdRef.current !== toUserId) {
+        cleanupPeerConnection();
+        peer = buildPeerConnection(toUserId);
+      }
+
+      const offer = await peer.createOffer();
+      await peer.setLocalDescription(offer);
+      socketRef.current?.emit("webrtc:offer", {
+        roomId,
+        offer,
+        fromUserId: identity.userId,
+        toUserId,
+      });
+    }, [buildPeerConnection, cleanupPeerConnection, identity.userId, roomId]);
+
+    useEffect(() => {
+      const startLocalMedia = async () => {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+          localStreamRef.current = stream;
+          if (localVideoRef.current) {
+            localVideoRef.current.srcObject = stream;
+          }
+          setMicOn(stream.getAudioTracks().some((track) => track.enabled));
+          setCamOn(stream.getVideoTracks().some((track) => track.enabled));
+          announceReadyIfPossible();
+        }
+        catch {
+          setMicOn(false);
+          setCamOn(false);
+          toast({
+            title: "Media access denied",
+            description: "Camera and microphone access is required for live interview calls.",
+            variant: "destructive",
+          });
+        }
+      };
+
+      startLocalMedia();
+
+      return () => {
+        localStreamRef.current?.getTracks().forEach((track) => track.stop());
+        localStreamRef.current = null;
+        remoteStreamRef.current = null;
+        cleanupPeerConnection();
+      };
+    }, [announceReadyIfPossible, cleanupPeerConnection, toast]);
+    useEffect(() => {
         const loadRoom = async () => {
             if (!roomId) {
                 return;
@@ -146,6 +345,50 @@ export default function InterviewRoom() {
                 if (response.data.data?.title) {
                     setRoomTitle(response.data.data.title);
                 }
+                const room = response.data.data;
+                const interviewerId = room?.interviewer?._id || room?.interviewer;
+                const candidateId = room?.candidate?._id || room?.candidate;
+                const interviewerName = room?.interviewer?.name;
+                const candidateName = room?.candidate?.name;
+
+                setIdentity((prev) => {
+                  if (roleOverride) {
+                    const normalizedBaseId = String(user?.id || user?._id || prev.userId).split(":")[0];
+                    const forcedRoleName = roleOverride === "interviewer"
+                      ? interviewerName || "Interviewer"
+                      : candidateName || "Candidate";
+                    return {
+                      ...prev,
+                      role: roleOverride,
+                      userId: `${normalizedBaseId}:${roleOverride}`,
+                      userName: forcedRoleName,
+                    };
+                  }
+                  const normalizedId = String(prev.userId);
+                  let role = prev.role;
+                  if (interviewerId && String(interviewerId) === normalizedId)
+                    role = "interviewer";
+                  if (candidateId && String(candidateId) === normalizedId)
+                    role = "candidate";
+                  const hasDefaultName = !prev.userName || prev.userName === "Candidate";
+                  return {
+                    ...prev,
+                    role,
+                    userName: hasDefaultName
+                      ? (role === "interviewer" ? interviewerName : candidateName) || prev.userName || "Candidate"
+                      : prev.userName,
+                  };
+                });
+
+                setRemoteUserName((name) => {
+                  if (name && name !== "Interviewer")
+                    return name;
+                  const iAmInterviewer = roleOverride
+                    ? roleOverride === "interviewer"
+                    : interviewerId && String(interviewerId) === String(identity.userId);
+                  return iAmInterviewer ? candidateName || "Candidate" : interviewerName || "Interviewer";
+                });
+
                 if (response.data.data?.durationMinutes) {
                     const durationSeconds = response.data.data.durationMinutes * 60;
                     setTimer(durationSeconds);
@@ -157,10 +400,153 @@ export default function InterviewRoom() {
             }
         };
         loadRoom();
-    }, [roomId]);
+    }, [identity.userId, roleOverride, roomId, user?.id, user?._id]);
     useEffect(() => {
         setCode(codeByLanguage[language] ?? defaultCode[language] ?? "");
     }, [language, codeByLanguage]);
+    useEffect(() => {
+      if (!roomId)
+        return;
+
+      const socket = io(getSocketServerUrl(), {
+        transports: ["websocket", "polling"],
+        withCredentials: true,
+      });
+
+      socketRef.current = socket;
+
+      const onConnect = () => {
+        socket.emit("room:join", {
+          roomId,
+          userId: identity.userId,
+          role: identity.role,
+          userName: identity.userName,
+        });
+        announceReadyIfPossible();
+      };
+
+      const onUserList = ({ users }) => {
+        const list = Array.isArray(users) ? users : [];
+        setConnectedUsers(list);
+
+        const remoteUsers = list.filter((entry) => String(entry.userId) !== String(identity.userId));
+        if (remoteUsers.length > 0) {
+          const preferredRemote = remoteUsers[0];
+          setRemoteUserName(preferredRemote.userName || "Interviewer");
+          const shouldInitiate = String(identity.userId) > String(preferredRemote.userId);
+          if (shouldInitiate) {
+            startOffer(preferredRemote.userId).catch(() => {
+              // offer retries are handled on future presence and ready events
+            });
+          }
+        }
+        else {
+          cleanupPeerConnection();
+        }
+      };
+
+      const onChatMessage = (payload) => {
+        if (!payload?.message)
+          return;
+        const senderName = payload.userName || (String(payload.userId) === String(identity.userId) ? identity.userName : "Participant");
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: payload.chatId || `${payload.userId || "msg"}-${payload.timestamp || Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            userId: payload.userId,
+            sender: senderName,
+            message: payload.message,
+            time: formatMessageTime(payload.timestamp),
+          },
+        ]);
+      };
+
+      const onUserReady = ({ userId }) => {
+        if (!userId || String(userId) === String(identity.userId))
+          return;
+        const shouldInitiate = String(identity.userId) > String(userId);
+        if (shouldInitiate) {
+          startOffer(userId).catch(() => {
+            // noop
+          });
+        }
+      };
+
+      const onOffer = async ({ offer, fromUserId }) => {
+        if (!offer || !fromUserId || String(fromUserId) === String(identity.userId))
+          return;
+        cleanupPeerConnection();
+        const peer = buildPeerConnection(fromUserId);
+        await peer.setRemoteDescription(new RTCSessionDescription(offer));
+        const answer = await peer.createAnswer();
+        await peer.setLocalDescription(answer);
+        socket.emit("webrtc:answer", {
+          roomId,
+          answer,
+          fromUserId: identity.userId,
+          toUserId: fromUserId,
+        });
+      };
+
+      const onAnswer = async ({ answer, fromUserId }) => {
+        if (!answer || !peerConnectionRef.current)
+          return;
+        if (targetPeerUserIdRef.current && String(fromUserId) !== String(targetPeerUserIdRef.current))
+          return;
+        await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(answer));
+        setRtcConnected(true);
+      };
+
+      const onIceCandidate = async ({ candidate, fromUserId }) => {
+        if (!candidate || !peerConnectionRef.current)
+          return;
+        if (targetPeerUserIdRef.current && String(fromUserId) !== String(targetPeerUserIdRef.current))
+          return;
+        try {
+          await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+        }
+        catch {
+          // ICE candidates can arrive before remote description in unstable networks.
+        }
+      };
+
+      const onCallEnd = () => {
+        cleanupPeerConnection();
+      };
+
+      socket.on("connect", onConnect);
+      socket.on("room:user-list", onUserList);
+      socket.on("chat:message", onChatMessage);
+      socket.on("webrtc:user-ready", onUserReady);
+      socket.on("webrtc:offer", onOffer);
+      socket.on("webrtc:answer", onAnswer);
+      socket.on("webrtc:ice-candidate", onIceCandidate);
+      socket.on("webrtc:call-end", onCallEnd);
+
+      return () => {
+        if (socket.connected) {
+          socket.emit("room:leave", {
+            roomId,
+            userId: identity.userId,
+          });
+          socket.emit("webrtc:call-end", {
+            roomId,
+            fromUserId: identity.userId,
+          });
+        }
+        socket.off("connect", onConnect);
+        socket.off("room:user-list", onUserList);
+        socket.off("chat:message", onChatMessage);
+        socket.off("webrtc:user-ready", onUserReady);
+        socket.off("webrtc:offer", onOffer);
+        socket.off("webrtc:answer", onAnswer);
+        socket.off("webrtc:ice-candidate", onIceCandidate);
+        socket.off("webrtc:call-end", onCallEnd);
+        socket.disconnect();
+        socketRef.current = null;
+        readySignalSentRef.current = false;
+      };
+    }, [announceReadyIfPossible, buildPeerConnection, cleanupPeerConnection, identity.role, identity.userId, identity.userName, roomId, startOffer]);
     const formatTime = (s) => {
         const m = Math.floor(s / 60);
         const sec = s % 60;
@@ -268,6 +654,33 @@ export default function InterviewRoom() {
         setCode(nextCode);
         setCodeByLanguage((prev) => prev[language] === nextCode ? prev : { ...prev, [language]: nextCode });
     };
+    const handleToggleMic = () => {
+      const stream = localStreamRef.current;
+      if (!stream)
+        return;
+      const tracks = stream.getAudioTracks();
+      tracks.forEach((track) => {
+        track.enabled = !micOn;
+      });
+      setMicOn((prev) => !prev);
+    };
+    const handleToggleCam = () => {
+      const stream = localStreamRef.current;
+      if (!stream)
+        return;
+      const tracks = stream.getVideoTracks();
+      tracks.forEach((track) => {
+        track.enabled = !camOn;
+      });
+      setCamOn((prev) => !prev);
+    };
+    const handleEndCall = () => {
+      socketRef.current?.emit("webrtc:call-end", {
+        roomId,
+        fromUserId: identity.userId,
+      });
+      cleanupPeerConnection();
+    };
     const handleSendMessage = (e) => {
         e.preventDefault();
         const trimmed = chatInput.trim();
@@ -275,18 +688,13 @@ export default function InterviewRoom() {
             return;
         if (trimmed.length > 500)
             return;
-        setMessages((prev) => [
-            ...prev,
-            {
-                id: Date.now().toString(),
-                sender: user?.name || "Candidate",
-                message: trimmed,
-                time: new Date().toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                }),
-            },
-        ]);
+      socketRef.current?.emit("chat:message", {
+        roomId,
+        message: trimmed,
+        userId: identity.userId,
+        userName: identity.userName,
+        timestamp: new Date().toISOString(),
+      });
         setChatInput("");
     };
     return (<div className="h-[100dvh] flex flex-col bg-background overflow-hidden selection:bg-primary/30">
@@ -349,7 +757,7 @@ export default function InterviewRoom() {
             <span className="hidden sm:inline">Fullscreen</span>
           </Button>
 
-          <Button size="sm" variant="destructive" className="h-8 text-xs font-semibold px-4 shadow-lg shadow-destructive/20" aria-label="End interview session">
+          <Button size="sm" variant="destructive" className="h-8 text-xs font-semibold px-4 shadow-lg shadow-destructive/20" aria-label="End interview session" onClick={handleEndCall}>
             <span className="hidden sm:inline">End Session</span>
             <span className="sm:hidden">End</span>
           </Button>
@@ -363,41 +771,45 @@ export default function InterviewRoom() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3 sm:gap-4">
             {/* Interviewer Video */}
             <div className="aspect-video rounded-xl bg-secondary/80 border border-border relative overflow-hidden shadow-inner flex flex-col items-center justify-center group">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
-                <Users className="w-6 h-6 text-primary/60"/>
-              </div>
-              <span className="text-[10px] font-medium text-muted-foreground uppercase">
-                Interviewer
-              </span>
+              <video ref={remoteVideoRef} autoPlay playsInline className="absolute inset-0 w-full h-full object-cover"/>
+              {!rtcConnected && (<>
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2 z-10">
+                    <Users className="w-6 h-6 text-primary/60"/>
+                  </div>
+                  <span className="text-[10px] font-medium text-muted-foreground uppercase z-10">
+                    Waiting for peer...
+                  </span>
+                </>)}
               <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-black/60 backdrop-blur-sm text-[10px] text-white">
-                Alex Chen
+                {remoteUserName}
               </div>
             </div>
 
             {/* Candidate Video */}
             <div className="aspect-video rounded-xl bg-secondary/80 border border-border relative overflow-hidden shadow-inner flex flex-col items-center justify-center">
+              <video ref={localVideoRef} autoPlay muted playsInline className={`absolute inset-0 w-full h-full object-cover ${camOn ? "opacity-100" : "opacity-0"}`}/>
               {!camOn ? (<div className="flex flex-col items-center">
                   <VideoOff className="w-8 h-8 text-muted-foreground/40 mb-2"/>
                   <span className="text-[10px] font-medium text-muted-foreground uppercase">
                     Camera Off
                   </span>
                 </div>) : (<div className="w-full h-full bg-gradient-to-t from-black/20 to-transparent flex items-center justify-center">
-                  <Users className="w-10 h-10 text-success/40"/>
+                  <span className="sr-only">Local camera preview active</span>
                 </div>)}
               <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-primary/80 backdrop-blur-sm text-[10px] text-white font-medium">
-                You (Candidate)
+                You ({identity.role})
               </div>
             </div>
           </div>
 
           {/* Media Controls */}
           <div className="flex justify-between items-center bg-secondary/30 p-2 rounded-2xl border border-border/50">
-            <button onClick={() => setMicOn(!micOn)} aria-label={micOn ? "Mute microphone" : "Unmute microphone"} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${micOn
+            <button onClick={handleToggleMic} aria-label={micOn ? "Mute microphone" : "Unmute microphone"} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${micOn
             ? "bg-background hover:bg-secondary text-foreground"
             : "bg-destructive text-destructive-foreground rotate-12"}`}>
               {micOn ? (<Mic className="w-4.5 h-4.5"/>) : (<MicOff className="w-4.5 h-4.5"/>)}
             </button>
-            <button onClick={() => setCamOn(!camOn)} aria-label={camOn ? "Turn camera off" : "Turn camera on"} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${camOn
+            <button onClick={handleToggleCam} aria-label={camOn ? "Turn camera off" : "Turn camera on"} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${camOn
             ? "bg-background hover:bg-secondary text-foreground"
             : "bg-destructive text-destructive-foreground rotate-12"}`}>
               {camOn ? (<VideoIcon className="w-4.5 h-4.5"/>) : (<VideoOff className="w-4.5 h-4.5"/>)}
@@ -405,7 +817,7 @@ export default function InterviewRoom() {
             <button aria-label="Share screen" className="w-10 h-10 rounded-xl bg-background hover:bg-secondary text-foreground flex items-center justify-center transition-all">
               <Monitor className="w-4.5 h-4.5"/>
             </button>
-            <button aria-label="Leave call" className="w-10 h-10 rounded-xl bg-destructive/10 hover:bg-destructive text-destructive hover:text-white flex items-center justify-center transition-all group">
+            <button onClick={handleEndCall} aria-label="Leave call" className="w-10 h-10 rounded-xl bg-destructive/10 hover:bg-destructive text-destructive hover:text-white flex items-center justify-center transition-all group">
               <PhoneOff className="w-4.5 h-4.5 group-hover:scale-110"/>
             </button>
           </div>
@@ -418,6 +830,9 @@ export default function InterviewRoom() {
             <Progress value={sessionProgress} className="h-2"/>
             <p className="text-[11px] text-muted-foreground leading-relaxed">
               Keep camera on, stay fullscreen, and avoid switching tabs to maintain a valid interview session.
+            </p>
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Connected participants: {Math.max(connectedUsers.length, 1)}
             </p>
           </div>
         </aside>
@@ -533,7 +948,7 @@ export default function InterviewRoom() {
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 space-y-4" aria-live="polite" aria-relevant="additions text">
-            {messages.map((msg) => (<MessageBubble key={msg.id} msg={msg} currentUserName={user?.name || "Candidate"}/>))}
+            {messages.map((msg) => (<MessageBubble key={msg.id} msg={msg} currentUserName={identity.userName} currentUserId={identity.userId}/>))}
             <div ref={chatEndRef}/>
           </div>
 
@@ -556,26 +971,5 @@ export default function InterviewRoom() {
         </section>
       </div>
 
-      {/* Anti-Paste & Suspicious Activity Overlay */}
-      <AnimatePresence>
-        {violationCount >= 3 && (<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-[100] bg-destructive/20 backdrop-blur-xl flex items-center justify-center p-8">
-            <div className="bg-background border-2 border-destructive p-8 rounded-3xl shadow-2xl max-w-md w-full text-center space-y-6">
-              <div className="w-20 h-20 rounded-full bg-destructive/10 text-destructive flex items-center justify-center mx-auto mb-4 animate-bounce">
-                <AlertTriangle className="w-10 h-10"/>
-              </div>
-              <h2 className="text-2xl font-bold text-destructive">
-                Session Terminated
-              </h2>
-              <p className="text-muted-foreground">
-                Multiple proctoring violations were detected. Your interview has
-                been automatically ended and your activity has been logged for
-                review.
-              </p>
-              <Button variant="destructive" className="w-full" onClick={() => navigate("/")}>
-                Return to Dashboard
-              </Button>
-            </div>
-          </motion.div>)}
-      </AnimatePresence>
     </div>);
 }

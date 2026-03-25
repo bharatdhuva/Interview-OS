@@ -15,6 +15,8 @@ exports.createRoomSchema = zod_1.z.object({
     scheduledAt: zod_1.z.string().datetime(), // ISO 8601 datetime string
     durationMinutes: zod_1.z.number().int().min(15).max(240),
     problemStatement: zod_1.z.string().optional(),
+    mode: zod_1.z.enum(['live', 'take_home']).optional(),
+    questionId: zod_1.z.string().optional(),
     techStack: zod_1.z.array(zod_1.z.string()).optional(),
     difficultyLevel: zod_1.z.enum(['easy', 'medium', 'hard']).optional(),
 });
@@ -26,6 +28,8 @@ exports.updateRoomSchema = zod_1.z.object({
     durationMinutes: zod_1.z.number().int().min(15).max(240).optional(),
     status: zod_1.z.enum(['scheduled', 'active', 'completed', 'cancelled']).optional(),
     problemStatement: zod_1.z.string().optional(),
+    mode: zod_1.z.enum(['live', 'take_home']).optional(),
+    questionId: zod_1.z.string().optional(),
     techStack: zod_1.z.array(zod_1.z.string()).optional(),
     difficultyLevel: zod_1.z.enum(['easy', 'medium', 'hard']).optional(),
 });

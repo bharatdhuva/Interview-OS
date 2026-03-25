@@ -55,6 +55,7 @@ const mongoose_1 = __importStar(require("mongoose"));
 const userSchema = new mongoose_1.Schema({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true, index: true },
+    username: { type: String, unique: true, sparse: true, trim: true },
     passwordHash: { type: String }, // omitted for Google-only users
     role: {
         type: String,
@@ -64,7 +65,39 @@ const userSchema = new mongoose_1.Schema({
     avatar: { type: String },
     googleId: { type: String },
     isEmailVerified: { type: Boolean, default: false },
+    // Email verification token (one-time use, expires)
+    emailVerification: {
+        token: { type: String },
+        expiresAt: { type: Date },
+    },
+    // Password reset token (one-time use, 1 hour expiry)
+    passwordReset: {
+        token: { type: String },
+        expiresAt: { type: Date },
+    },
     refreshTokens: [{ type: String }], // array of active refresh tokens
+    organization: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Organization', index: true },
+    orgRole: {
+        type: String,
+        enum: ['owner', 'admin', 'interviewer', 'candidate'],
+    },
+    subscription: {
+        stripeCustomerId: { type: String },
+        stripeSubscriptionId: { type: String },
+        plan: {
+            type: String,
+            enum: ['free', 'pro', 'team'],
+            default: 'free',
+        },
+        status: {
+            type: String,
+            enum: ['active', 'cancelled', 'past_due', 'trialing', 'incomplete', 'unpaid'],
+            default: 'active',
+        },
+        currentPeriodEnd: { type: Date },
+        cancelAtPeriodEnd: { type: Boolean, default: false },
+        trialEnd: { type: Date },
+    },
 }, {
     timestamps: true, // auto-manages createdAt and updatedAt
 });

@@ -1,0 +1,128 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Render.yaml — Infrastructure as Code for InterviewOS Backend
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# This file defines all services for the backend on Render.com:
+#  - Web server (Node.js Express)
+#  - PostgreSQL database (optional, for future analytics)
+#  - Scheduled jobs (email reminders, AI report generation, etc.)
+#
+# Deploy:
+#  1. Push this file to your GitHub repo
+#  2. Connect repo to Render: https://dashboard.render.com
+#  3. Render auto-detects this file and deploys all services
+
+services:
+  # ─── Backend Web Service ──────────────────────────────────────────────────
+  - type: web
+    name: interviewos-api
+    runtime: node
+    plan: standard  # $12/month (more than free tier)
+    buildCommand: npm install
+    startCommand: npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 8090
+      - key: CLIENT_URL
+        value: ${FRONTEND_URL}  # Set on Render dashboard
+      - key: MONGODB_URI
+        value: ${MONGODB_URI}  # MongoDB Atlas connection string
+      - key: JWT_ACCESS_SECRET
+        value: ${JWT_ACCESS_SECRET}
+      - key: JWT_REFRESH_SECRET
+        value: ${JWT_REFRESH_SECRET}
+      - key: INVITE_TOKEN_SECRET
+        value: ${INVITE_TOKEN_SECRET}
+      - key: GOOGLE_CLIENT_ID
+        value: ${GOOGLE_CLIENT_ID}
+      - key: GOOGLE_CLIENT_SECRET
+        value: ${GOOGLE_CLIENT_SECRET}
+      - key: SENDGRID_API_KEY
+        value: ${SENDGRID_API_KEY}
+      - key: FROM_EMAIL
+        value: noreply@interviewos.io
+      - key: CLOUDINARY_CLOUD_NAME
+        value: ${CLOUDINARY_CLOUD_NAME}
+      - key: CLOUDINARY_API_KEY
+        value: ${CLOUDINARY_API_KEY}
+      - key: CLOUDINARY_API_SECRET
+        value: ${CLOUDINARY_API_SECRET}
+      - key: JUDGE0_API_KEY
+        value: ${JUDGE0_API_KEY}
+      - key: OPENAI_API_KEY
+        value: ${OPENAI_API_KEY}
+      - key: STRIPE_SECRET_KEY
+        value: ${STRIPE_SECRET_KEY}
+      - key: STRIPE_WEBHOOK_SECRET
+        value: ${STRIPE_WEBHOOK_SECRET}
+      - key: REDIS_URL
+        value: ${REDIS_URL}
+    healthCheckPath: /health
+
+  # ─── PostgreSQL Database (Optional) ────────────────────────────────────────
+  # For storing analytics, audit logs, etc. (not MongoDB)
+  # Uncomment if you decide to use PostgreSQL alongside MongoDB
+  # 
+  # - type: pserv
+  #   name: interviewos-postgres
+  #   plan: standard  # $15/month
+  #   ipAllowList: []  # Only allow our API
+  #   postgresMajorVersion: 15
+
+  # ─── Redis (Optional) ──────────────────────────────────────────────────────
+  # For session storage, rate limiting, real-time features
+  # Can be replaced with Redis Cloud free tier for cost savings
+  #
+  # - type: redis
+  #   name: interviewos-redis
+  #   plan: standard  # $12/month
+  #   ipAllowList: []  # Only allow our API
+
+  # ─── Background Jobs Service (Cron) ────────────────────────────────────────
+  # For scheduled tasks (email reminders, AI report generation, etc.)
+  # This requires a separate application that uses node-cron
+  # Can be merged into the main API service for simplicity
+  #
+  # - type: web
+  #   name: interviewos-jobs
+  #   runtime: node
+  #   plan: standard
+  #   buildCommand: npm install
+  #   startCommand: npm run jobs
+  #   envVars: # Same as API service above
+  #   # ... (same environment variables as API)
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DEPLOYMENT NOTES
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# 1. Database Setup:
+#    - Use MongoDB Atlas (free tier available)
+#    - Connection string format:
+#      mongodb+srv://user:password@cluster.mongodb.net/interviewos
+#
+# 2. Secrets Management:
+#    - Add all environment variables in Render dashboard
+#    - Reference them with ${VARIABLE_NAME} syntax
+#
+# 3. Pricing (as of 2024):
+#    - Standard plan (web): $12/month (0.5GB RAM, 1 vCPU)
+#    - Minimum estimated cost: $24-36/month (API + DB)
+#
+# 4. Build Optimizations:
+#    - Install only production dependencies: npm ci --only=production
+#    - Use Node 18+ for best performance
+#    - Build in CI/CD before Render to fail fast
+#
+# 5. Monitoring:
+#    - Enable Render logging: https://dashboard.render.com/logs
+#    - Set up Health Checks (/health endpoint)
+#    - Configure Slack/email alerts
+#
+# 6. Zero-Downtime Deployments:
+#    - Render supports rolling deploys by default
+#    - Ensure database migrations are backward compatible
+#
+# ═══════════════════════════════════════════════════════════════════════════════

@@ -9,7 +9,7 @@
  * converts to a 400 Bad Request response.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.googleAuthSchema = exports.loginSchema = exports.registerSchema = void 0;
+exports.googleAuthSchema = exports.resetPasswordSchema = exports.forgotPasswordSchema = exports.resendVerificationSchema = exports.verifyEmailSchema = exports.loginSchema = exports.registerSchema = void 0;
 const zod_1 = require("zod");
 /** Schema for POST /api/v1/auth/register */
 exports.registerSchema = zod_1.z.object({
@@ -28,4 +28,23 @@ exports.loginSchema = zod_1.z.object({
 exports.googleAuthSchema = zod_1.z.object({
     token: zod_1.z.string(), // Google OAuth2 access token
     role: zod_1.z.enum(['candidate', 'interviewer', 'admin']).optional(),
+});
+/** Schema for POST /api/v1/auth/verify-email */
+exports.verifyEmailSchema = zod_1.z.object({
+    email: zod_1.z.string().email(),
+    token: zod_1.z.string().min(32), // should be 32-char hex token
+});
+/** Schema for POST /api/v1/auth/resend-verification-email */
+exports.resendVerificationSchema = zod_1.z.object({
+    email: zod_1.z.string().email(),
+});
+/** Schema for POST /api/v1/auth/forgot-password */
+exports.forgotPasswordSchema = zod_1.z.object({
+    email: zod_1.z.string().email(),
+});
+/** Schema for POST /api/v1/auth/reset-password */
+exports.resetPasswordSchema = zod_1.z.object({
+    email: zod_1.z.string().email(),
+    token: zod_1.z.string().min(32),
+    newPassword: zod_1.z.string().min(6),
 });

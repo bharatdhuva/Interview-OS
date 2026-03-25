@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, LayoutGroup, useInView } from "framer-motion";
-import { Code2, Video, MessageSquare, Brain, PenLine, Zap, ArrowRight, Users, Mic, Monitor, PhoneOff, Home, Sparkles, HelpCircle, MicOff, VideoOff, MonitorOff, Phone, Rocket, Menu, X, Terminal, Play, CheckCircle2, Layout, Wifi, Send, } from "lucide-react";
+import { Code2, Video, MessageSquare, Brain, PenLine, Zap, ArrowRight, Users, Mic, Monitor, PhoneOff, Home, Sparkles, HelpCircle, MicOff, VideoOff, MonitorOff, Phone, Rocket, Menu, X, Terminal, Play, CheckCircle2, Layout, Wifi, Send, CreditCard, } from "lucide-react";
 import { MotionWrapper } from "@/components/MotionWrapper";
 import ThemeToggle from "@/components/ThemeToggle";
 import AnimatedCTAButton from "@/components/AnimatedCTAButton";
@@ -1141,6 +1141,9 @@ export default function LandingPage() {
             <a href="#how-it-works" className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors duration-200">
               <HelpCircle className="w-4 h-4"/> How It Works
             </a>
+            <a href="/pricing" className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors duration-200">
+              <CreditCard className="w-4 h-4"/> Pricing
+            </a>
           </div>
 
           {/* Right side: theme + CTA + hamburger */}
@@ -1168,6 +1171,9 @@ export default function LandingPage() {
                 </a>
                 <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-foreground hover:bg-secondary transition-colors">
                   <HelpCircle className="w-4 h-4 text-primary"/> How It Works
+                </a>
+                <a href="/pricing" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-foreground hover:bg-secondary transition-colors">
+                  <CreditCard className="w-4 h-4 text-primary"/> Pricing
                 </a>
                 <div className="sm:hidden pt-2">
                   <AnimatedCTAButton to="/login" variant="primary" size="sm" className="w-full justify-center" trailingIcon={<Rocket className="w-4 h-4"/>}>
