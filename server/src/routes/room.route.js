@@ -20,6 +20,7 @@ const express_1 = require("express");
 const room_controller_1 = require("../controllers/room.controller");
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const planLimit_middleware_1 = require("../middleware/planLimit.middleware");
+const codeExecutionController = require('../controllers/codeExecution.controller');
 const router = (0, express_1.Router)();
 // Resolve invite token before the global protect middleware so unauthenticated
 // candidates can be redirected to login with the room context preserved.
@@ -34,4 +35,7 @@ router.patch('/:roomId', (0, auth_middleware_1.authorize)('interviewer', 'admin'
 router.post('/:roomId/start', (0, auth_middleware_1.authorize)('interviewer'), room_controller_1.startSession);
 router.post('/:roomId/end', (0, auth_middleware_1.authorize)('interviewer'), room_controller_1.endSession);
 router.post('/:roomId/cancel', (0, auth_middleware_1.authorize)('interviewer', 'admin'), room_controller_1.cancelRoom);
+
+// Code execution endpoint (Node.js only, safe)
+router.post('/:roomId/code/execute', codeExecutionController.executeCode);
 exports.default = router;
