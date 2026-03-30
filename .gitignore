@@ -18,7 +18,7 @@ build/
 
 # Environment variables
 .env
-.env.*
+# .env.example should be tracked (do not ignore)
 
 # Bun
 bun.lockb
@@ -26,6 +26,9 @@ bun.lockb
 # Misc
 *.local
 *.pid
+
+# Ignore other folder
+other/
 
 # Vercel/Netlify
 .vercel/
