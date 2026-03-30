@@ -73,13 +73,28 @@ const RegisterPage = () => {
                 password,
                 role,
             });
-            // Store email for verification page
-            sessionStorage.setItem("verifyEmail", email.trim());
+            const d = res.data.data;
+            const user = {
+                id: d.id,
+                name: d.name,
+                email: d.email,
+                role: d.role,
+                avatar: d.avatar || "",
+                isEmailVerified: true,
+                createdAt: new Date().toISOString(),
+            };
+            
+            // Log in directly
+            login(user, d.accessToken);
+            
             toast({
-              title: "Account created!",
-              description: "Check your email to verify your account.",
+                title: "Welcome to InterviewOS!",
+                description: "Your account has been created successfully.",
             });
-            navigate("/verify-email");
+            
+            navigate(user.role === "interviewer"
+                ? "/dashboard/interviewer"
+                : "/dashboard/candidate");
         }
         catch (err) {
             const msg = err?.response?.data?.message || "Something went wrong";

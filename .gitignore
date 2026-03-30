@@ -7,16 +7,36 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
+
+# Node modules
+node_modules/
+
+# Build output
+dist/
 dist-ssr
+build/
+
+# Environment variables
+.env
+.env.*
+
+# Bun
+bun.lockb
+
+# Misc
 *.local
+*.pid
+
+# Vercel/Netlify
+.vercel/
+.netlify/
 
 # Editor directories and files
-.vscode/*
+ .vscode/
 !.vscode/extensions.json
 .idea
 .DS_Store
+Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj

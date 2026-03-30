@@ -37,6 +37,11 @@ const VerifyEmailPage = () => {
     },
   });
 
+  // Redirect away as verification is now skipped
+  useEffect(() => {
+    navigate("/");
+  }, [navigate]);
+
   const emailValue = watch("email");
   const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue);
 

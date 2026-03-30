@@ -76,11 +76,11 @@ const register = async (req, res) => {
             role: role || 'candidate',
         });
 
-        // Generate email verification token
+        /* 
+        // Verification email logic - DISABLED as per user request
         const TokenService = require('../utils/tokenService');
         const verificationToken = await TokenService.createEmailVerificationToken(user);
 
-        // Send verification email
         const emailService = require('../utils/emailService');
         const verificationUrl = `${process.env.CLIENT_URL}/verify-email?email=${encodeURIComponent(email)}&token=${verificationToken}`;
         
@@ -88,10 +88,10 @@ const register = async (req, res) => {
             await emailService.sendVerificationEmail(email, verificationToken, verificationUrl);
         } catch (emailError) {
             logger_1.default.error('Failed to send verification email after registration', emailError);
-            // Don't fail registration if email fails, but log it
         }
+        */
 
-        // Send welcome email on fresh registration (non-blocking).
+        // Send welcome email directly
         sendWelcomeEmailSafely(user).catch(() => undefined);
 
         // Generate tokens and persist the refresh token
@@ -108,8 +108,8 @@ const register = async (req, res) => {
                 email: user.email, 
                 role: user.role, 
                 accessToken,
-                isEmailVerified: false,
-                message: 'Account created! Please check your email to verify your account.'
+                isEmailVerified: true,
+                message: 'Account created successfully!'
             },
         });
     }
