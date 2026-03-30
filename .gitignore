@@ -11,13 +11,38 @@ lerna-debug.log*
 # Node modules
 node_modules/
 
+# pnpm, npm, bun lock files
+pnpm-lock.yaml
+package-lock.json
+bun.lockb
+
 # Build output
 dist/
 dist-ssr
 build/
 
+# Vite/React build output
+frontend/dist/
+frontend/node_modules/
+frontend/npm_install_log.txt
+frontend/.env
+frontend/.env.local
+frontend/.env.*
+frontend/bun.lockb
+frontend/pnpm-lock.yaml
+frontend/package-lock.json
+frontend/.DS_Store
+frontend/.vscode/
+frontend/.idea/
+frontend/.bin/
+frontend/.pnpm/
+frontend/.vercel/
+frontend/.netlify/
+
 # Environment variables
 .env
+.env.local
+.env.*
 # .env.example should be tracked (do not ignore)
 
 # Bun
@@ -26,6 +51,24 @@ bun.lockb
 # Misc
 *.local
 *.pid
+
+# Backend build/test artifacts
+backend/.env
+backend/.env.local
+backend/.env.*
+backend/node_modules/
+backend/dist/
+backend/.DS_Store
+backend/.vscode/
+backend/.idea/
+backend/.bin/
+backend/.pnpm/
+backend/.vercel/
+backend/.netlify/
+backend/.dockerignore
+backend/build_errors.txt
+backend/start_log*.txt
+backend/test-mongo*.js
 
 # Ignore other folder
 other/
