@@ -23,7 +23,7 @@ You juggle Zoom for video, Google Docs for coding, Excalidraw for diagrams, and 
 
 One single link → real-time video call starts automatically. Both interviewer and candidate code together live, draw on a shared whiteboard, run code instantly, and chat — all inside the same room.
 
-**Pro-level interviews. Zero tab switching.**
+**Pro-level interviews. Zero tab switchingass.**
 
 ---
 
