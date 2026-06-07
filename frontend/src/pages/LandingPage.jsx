@@ -1,5 +1,7 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import manVideo from "../assets/man.mp4";
+import womenVideo from "../assets/women.mp4";
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -229,18 +231,15 @@ export default function LandingPage() {
         <main className="pt-20 overflow-x-hidden w-full flex flex-col items-center">
           {/* Hero Section */}
           <section id="platform" className="hero-gradient relative hero-padding px-margin-desktop w-full">
-            <div className="w-full max-w-[1280px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-lg items-start lg:pt-6">
+            <div className="w-full max-w-[1280px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-lg items-center lg:pt-6">
               <div className="flex flex-col gap-5">
-                <div className="inline-flex items-center px-sm py-xs bg-[#acf4a4] text-[#307231] rounded-full text-label-sm uppercase tracking-wider font-bold">
-                  New: AI-Enhanced Reviews
-                </div>
                 <h1 className="font-display-lg text-display-lg text-[#191c1b] leading-tight">
                   The Engineering<br />
                   Leader's <span className="text-[#0d631b]">Technical<br />
                   Interview Platform.</span>
                 </h1>
                 <p className="font-body-lg text-body-lg text-[#40493d] max-w-xl">
-                  A collaborative environment designed for elite engineering teams. Real-time code execution, persistent whiteboards, and AI insights that reveal a candidate's true potential.
+                  A collaborative environment designed for elite engineering teams. Real-time code execution, persistent whiteboards, and interactive video features that reveal a candidate's true potential.
                 </p>
                 <div className="flex flex-wrap gap-md pt-sm">
                   <button
@@ -258,22 +257,46 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              <div className="relative group">
-                <div className="absolute -inset-4 bg-[#0d631b]/5 blur-2xl rounded-full group-hover:bg-[#0d631b]/10 transition-all duration-700"></div>
-                <div className="relative bg-[#0d2c1f] rounded-[32px] p-6 shadow-2xl border border-[#bfcaba]/10 overflow-visible">
-                  <img
-                    alt="Platform Interface Mockup"
-                    className="w-full h-auto rounded-2xl"
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuDsL8LVqjFOYP5YZVP_-jyKvHpO0BXowKBAJjvml9JE-gQtHgm8pDuMF57tU-5BgZVPnaKwS3MOYD6G74G25tU_Kuir9mwM1H7EjoZDPnvzZOJeFO2BLheZ0m8jhyFuQW9DhDVT8f3WnEqr_nxTXQKeJZMiSVy4xj2HlnF7AfHcf9-0ZMaY-CQO5Xu1DuGtsVvCq-DOjJWG3Fgc3-CtcLbLcIu2MP4DXdxC3SmBH1plJVND-oKVa_sMVoX8AncDy3FPIPFP1J6xVA8"
-                  />
-                  {/* Floating AI Performance Score Card */}
-                  <div className="absolute -left-6 bottom-10 bg-white/95 backdrop-blur-md rounded-2xl p-5 shadow-2xl border border-[#bfcaba]/30 z-20 max-w-[260px] transform hover:scale-105 transition-transform duration-300">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-[#707a6c] mb-1">AI Performance Score</p>
-                    <div className="flex items-center gap-2">
-                      <span className="text-3xl font-extrabold text-[#0d631b]">94%</span>
-                      <span className="text-sm font-semibold text-[#40493d] leading-tight">Top 5% of Candidates</span>
-                    </div>
+              <div className="relative w-full max-w-[550px] aspect-[1.2] mx-auto mt-6 lg:mt-0">
+                {/* Glow/blur background shadow */}
+                <div className="absolute -inset-4 bg-[#0d631b]/5 blur-3xl rounded-full z-0"></div>
+
+                {/* Top-Right Window (Women Video) */}
+                <div className="absolute top-[4%] right-0 w-[64%] rounded-2xl overflow-hidden bg-[#111c24] border border-[#1e293b]/80 shadow-2xl z-10 transform hover:-translate-y-1 transition-transform duration-300">
+                  {/* Header Bar */}
+                  <div className="bg-[#0f172a] px-4 py-3 flex items-center gap-1.5 border-b border-[#1e293b]/50">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#1e3a8a] opacity-90"></span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#2563eb] opacity-90"></span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#60a5fa] opacity-90"></span>
                   </div>
+                  {/* Video */}
+                  <video
+                    src={womenVideo}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="w-full aspect-[4/3] object-cover"
+                  />
+                </div>
+
+                {/* Bottom-Left Window (Man Video) */}
+                <div className="absolute bottom-[4%] left-0 w-[64%] rounded-2xl overflow-hidden bg-[#f8fafc] border border-slate-200/80 shadow-2xl z-20 transform hover:translate-y-1 transition-transform duration-300">
+                  {/* Header Bar */}
+                  <div className="bg-[#dbeafe] px-4 py-3 flex items-center gap-1.5 border-b border-slate-200/40">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#1e3a8a]"></span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#2563eb]"></span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#60a5fa]"></span>
+                  </div>
+                  {/* Video */}
+                  <video
+                    src={manVideo}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="w-full aspect-[4/3] object-cover"
+                  />
                 </div>
               </div>
             </div>
@@ -342,12 +365,6 @@ export default function LandingPage() {
                     </svg>
                     <span>Socket.IO</span>
                   </div>
-                  <div className="flex items-center gap-2 font-semibold text-lg text-zinc-700 dark:text-zinc-300">
-                    <svg className="w-6 h-6 text-[#707a6c]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 21l-.813-5.096L3 15l5.187-.813L9 9l.813 5.187L15 15l-5.187.813zM18 10.5l-.5-3L14.5 7l3-.5.5-3 .5 3 3 .5-3 .5-.5 3z" />
-                    </svg>
-                    <span>GPT-4</span>
-                  </div>
                 </div>
               </div>
             </div>
@@ -390,49 +407,57 @@ export default function LandingPage() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
-                {/* Card 1 */}
-                <div className="bg-[#0d2c1f] p-lg rounded-2xl border border-[#bfcaba]/10 flex flex-col gap-sm hover:shadow-lg transition-all">
-                  <div className="w-12 h-12 rounded-lg bg-[#acf4a4]/20 flex items-center justify-center text-[#acf4a4]">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-y-12 gap-x-12">
+                {/* Feature 1 */}
+                <div className="flex gap-5 items-start">
+                  <div className="w-14 h-14 rounded-xl bg-[#0d631b]/10 flex items-center justify-center text-[#0d631b] shrink-0 shadow-sm">
                     <span className="material-symbols-outlined text-3xl">code</span>
                   </div>
-                  <h3 className="font-title-lg text-white font-bold">Collaborative Code Editor</h3>
-                  <p className="font-body-md text-zinc-300">
-                    Real-time code execution with Judge0. Multiple programming languages supported.
-                  </p>
-                </div>
-
-                {/* Card 2 */}
-                <div className="bg-[#0d2c1f] p-lg rounded-2xl border border-[#bfcaba]/10 flex flex-col gap-sm hover:shadow-lg transition-all">
-                  <div className="w-12 h-12 rounded-lg bg-[#acf4a4]/20 flex items-center justify-center text-[#acf4a4]">
-                    <span className="material-symbols-outlined text-3xl">psychology</span>
+                  <div>
+                    <h3 className="font-title-lg text-[#191c1b] font-bold mb-2">Collaborative Code Editor</h3>
+                    <p className="font-body-md text-[#40493d] leading-relaxed">
+                      Real-time code execution with Judge0. Multiple programming languages supported.
+                    </p>
                   </div>
-                  <h3 className="font-title-lg text-white font-bold">AI-Powered Feedback</h3>
-                  <p className="font-body-md text-zinc-300">
-                    GPT-4 analyzes candidate responses and generates structured review reports.
-                  </p>
                 </div>
 
-                {/* Card 3 */}
-                <div className="bg-[#0d2c1f] p-lg rounded-2xl border border-[#bfcaba]/10 flex flex-col gap-sm hover:shadow-lg transition-all">
-                  <div className="w-12 h-12 rounded-lg bg-[#acf4a4]/20 flex items-center justify-center text-[#acf4a4]">
+                {/* Feature 2 */}
+                <div className="flex gap-5 items-start">
+                  <div className="w-14 h-14 rounded-xl bg-[#0d631b]/10 flex items-center justify-center text-[#0d631b] shrink-0 shadow-sm">
+                    <span className="material-symbols-outlined text-3xl">search</span>
+                  </div>
+                  <div>
+                    <h3 className="font-title-lg text-[#191c1b] font-bold mb-2">Search Internet</h3>
+                    <p className="font-body-md text-[#40493d] leading-relaxed">
+                      Enable candidates to search the internet or reference external documentation directly within the room.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Feature 3 */}
+                <div className="flex gap-5 items-start">
+                  <div className="w-14 h-14 rounded-xl bg-[#0d631b]/10 flex items-center justify-center text-[#0d631b] shrink-0 shadow-sm">
                     <span className="material-symbols-outlined text-3xl">videocam</span>
                   </div>
-                  <h3 className="font-title-lg text-white font-bold">Live Video Interviews</h3>
-                  <p className="font-body-md text-zinc-300">
-                    WebRTC-based video calls with zero plugin requirements.
-                  </p>
+                  <div>
+                    <h3 className="font-title-lg text-[#191c1b] font-bold mb-2">Live Video Interviews</h3>
+                    <p className="font-body-md text-[#40493d] leading-relaxed">
+                      WebRTC-based video calls with zero plugin requirements.
+                    </p>
+                  </div>
                 </div>
 
-                {/* Card 4 */}
-                <div className="bg-[#0d2c1f] p-lg rounded-2xl border border-[#bfcaba]/10 flex flex-col gap-sm hover:shadow-lg transition-all">
-                  <div className="w-12 h-12 rounded-lg bg-[#acf4a4]/20 flex items-center justify-center text-[#acf4a4]">
+                {/* Feature 4 */}
+                <div className="flex gap-5 items-start">
+                  <div className="w-14 h-14 rounded-xl bg-[#0d631b]/10 flex items-center justify-center text-[#0d631b] shrink-0 shadow-sm">
                     <span className="material-symbols-outlined text-3xl">fiber_manual_record</span>
                   </div>
-                  <h3 className="font-title-lg text-white font-bold">Interview Recording</h3>
-                  <p className="font-body-md text-zinc-300">
-                    Sessions are recorded and stored for async review by hiring teams.
-                  </p>
+                  <div>
+                    <h3 className="font-title-lg text-[#191c1b] font-bold mb-2">Interview Recording</h3>
+                    <p className="font-body-md text-[#40493d] leading-relaxed">
+                      Sessions are recorded and stored for async review by hiring teams.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -481,7 +506,7 @@ export default function LandingPage() {
                   </div>
                   <h3 className="font-title-lg text-[#191c1b] font-bold mb-sm">Review &amp; Decide</h3>
                   <p className="font-body-md text-[#40493d] max-w-xs px-2">
-                    AI summary + full recording available instantly after session ends.
+                    Detailed transcripts + full recording available instantly after session ends.
                   </p>
                 </div>
               </div>
