@@ -102,11 +102,11 @@ const register = async (req, res) => {
         setRefreshCookie(res, refreshToken);
         res.status(201).json({
             success: true,
-            data: { 
-                id: user.id, 
-                name: user.name, 
-                email: user.email, 
-                role: user.role, 
+            data: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
                 accessToken,
                 isEmailVerified: true,
                 message: 'Account created successfully!'
@@ -289,7 +289,7 @@ const verifyEmail = async (req, res) => {
     try {
         const { email, token } = auth_validation_1.verifyEmailSchema.parse(req.body);
         const user = await user_model_1.User.findOne({ email });
-        
+
         if (!user) {
             res.status(404).json({ success: false, message: 'User not found' });
             return;
@@ -354,7 +354,7 @@ const resendVerificationEmail = async (req, res) => {
         // Send verification email
         const emailService = require('../utils/emailService');
         const verificationUrl = `${process.env.CLIENT_URL}/verify-email?email=${encodeURIComponent(email)}&token=${verificationToken}`;
-        
+
         await emailService.sendVerificationEmail(email, verificationToken, verificationUrl).catch((err) => {
             logger_1.default.error('Failed to send verification email', err);
         });
@@ -398,7 +398,7 @@ const forgotPassword = async (req, res) => {
         // Send password reset email
         const emailService = require('../utils/emailService');
         const resetUrl = `${process.env.CLIENT_URL}/reset-password?email=${encodeURIComponent(email)}&token=${resetToken}`;
-        
+
         await emailService.sendPasswordResetEmail(email, resetToken, resetUrl).catch((err) => {
             logger_1.default.error('Failed to send password reset email', err);
         });
@@ -446,10 +446,10 @@ const resetPassword = async (req, res) => {
         // Hash new password and save
         const newPasswordHash = await bcrypt_1.default.hash(newPassword, 12);
         user.passwordHash = newPasswordHash;
-        
+
         // Clear all refresh tokens (force re-login on all devices)
         user.refreshTokens = [];
-        
+
         // Clear the reset token
         await TokenService.clearPasswordResetToken(user);
 
