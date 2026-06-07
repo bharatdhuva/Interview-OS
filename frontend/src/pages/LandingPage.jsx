@@ -257,14 +257,21 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              <div className="relative w-full max-w-[550px] aspect-[1.2] mx-auto mt-6 lg:mt-0">
-                {/* Glow/blur background shadow */}
-                <div className="absolute -inset-4 bg-[#0d631b]/5 blur-3xl rounded-full z-0"></div>
+              <div className="relative w-full max-w-[550px] aspect-[1.3] mx-auto mt-6 lg:mt-0">
+                {/* Decorative background circle */}
+                <div className="absolute left-[18%] top-[35%] w-36 h-36 rounded-full border border-dashed border-[#0d631b]/20 bg-blue-50/50 z-0"></div>
+
+                {/* Decorative background dot matrix */}
+                <div className="absolute bottom-[10%] right-[12%] z-0 grid grid-cols-5 gap-x-2 gap-y-2.5">
+                  {Array.from({ length: 35 }).map((_, i) => (
+                    <div key={i} className="w-1.5 h-1.5 rounded-full bg-blue-600/30" />
+                  ))}
+                </div>
 
                 {/* Top-Right Window (Women Video) */}
-                <div className="absolute top-[4%] right-0 w-[64%] rounded-2xl overflow-hidden bg-[#111c24] border border-[#1e293b]/80 shadow-2xl z-10 transform hover:-translate-y-1 transition-transform duration-300">
+                <div className="absolute top-0 right-4 w-[66%] rounded-2xl overflow-hidden bg-[#111c24] border border-slate-700/30 shadow-2xl z-10 transform hover:-translate-y-1 transition-transform duration-300">
                   {/* Header Bar */}
-                  <div className="bg-[#0f172a] px-4 py-3 flex items-center gap-1.5 border-b border-[#1e293b]/50">
+                  <div className="bg-[#0b1217] px-4 py-2.5 flex items-center gap-1.5 border-b border-slate-800/50">
                     <span className="w-2.5 h-2.5 rounded-full bg-[#1e3a8a] opacity-90"></span>
                     <span className="w-2.5 h-2.5 rounded-full bg-[#2563eb] opacity-90"></span>
                     <span className="w-2.5 h-2.5 rounded-full bg-[#60a5fa] opacity-90"></span>
@@ -281,9 +288,9 @@ export default function LandingPage() {
                 </div>
 
                 {/* Bottom-Left Window (Man Video) */}
-                <div className="absolute bottom-[4%] left-0 w-[64%] rounded-2xl overflow-hidden bg-[#f8fafc] border border-slate-200/80 shadow-2xl z-20 transform hover:translate-y-1 transition-transform duration-300">
+                <div className="absolute bottom-4 left-4 w-[56%] rounded-2xl overflow-hidden bg-[#f8fafc] border border-slate-200/80 shadow-2xl z-20 transform hover:translate-y-1 transition-transform duration-300">
                   {/* Header Bar */}
-                  <div className="bg-[#dbeafe] px-4 py-3 flex items-center gap-1.5 border-b border-slate-200/40">
+                  <div className="bg-[#dbeafe] px-4 py-2.5 flex items-center gap-1.5 border-b border-slate-200/40">
                     <span className="w-2.5 h-2.5 rounded-full bg-[#1e3a8a]"></span>
                     <span className="w-2.5 h-2.5 rounded-full bg-[#2563eb]"></span>
                     <span className="w-2.5 h-2.5 rounded-full bg-[#60a5fa]"></span>
