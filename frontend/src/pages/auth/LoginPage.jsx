@@ -87,7 +87,8 @@ const LoginPage = () => {
 
   return (
     <div className="login-container min-h-screen w-full flex flex-col justify-center">
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
 
@@ -243,7 +244,7 @@ const LoginPage = () => {
           <div className="absolute inset-0 opacity-20 pointer-events-none">
             <div className="absolute top-0 left-0 w-full h-full" style={{ backgroundImage: "radial-gradient(circle at 2px 2px, rgba(163, 246, 156, 0.15) 1px, transparent 0)", backgroundSize: "40px 40px" }}></div>
           </div>
-          
+
           <div className="relative z-10 w-full max-w-lg text-on-primary">
             {/* Branding Header */}
             <div className="mb-12">
@@ -255,7 +256,7 @@ const LoginPage = () => {
                 Elevate your engineering standards with the world's most sophisticated technical assessment platform.
               </p>
             </div>
-            
+
             {/* Code Snippet Card (Glassmorphism) */}
             <div className="glass-effect rounded-2xl p-md border border-outline-variant/20 shadow-2xl overflow-hidden text-on-surface-variant">
               <div className="flex items-center gap-base mb-md border-b border-outline-variant/10 pb-sm">
@@ -317,14 +318,14 @@ const LoginPage = () => {
                 <label className="font-label-md text-label-md text-on-surface-variant mb-1.5" htmlFor="email">Work Email</label>
                 <div className="relative">
                   <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/60" />
-                  <input 
-                    id="email" 
+                  <input
+                    id="email"
                     type="email"
-                    placeholder="name@company.com" 
+                    placeholder="name@company.com"
                     {...register("email")}
                     required
                     autoComplete="email"
-                    className="w-full pl-10 pr-md py-sm rounded-xl border border-outline-variant/30 focus:border-primary focus:ring-1 focus:ring-primary bg-surface-container-lowest transition-all outline-none font-body-md text-body-md text-on-surface" 
+                    className="w-full pl-10 pr-md py-sm rounded-xl border border-outline-variant/30 focus:border-primary focus:ring-1 focus:ring-primary bg-surface-container-lowest transition-all outline-none font-body-md text-body-md text-on-surface"
                   />
                 </div>
                 {errors.email && touchedFields.email && (
@@ -344,22 +345,22 @@ const LoginPage = () => {
                 </div>
                 <div className="relative">
                   <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/60" />
-                  <input 
-                    id="password" 
+                  <input
+                    id="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="••••••••" 
+                    placeholder="••••••••"
                     {...register("password")}
                     required
                     autoComplete="current-password"
-                    className="w-full pl-10 pr-10 py-sm rounded-xl border border-outline-variant/30 focus:border-primary focus:ring-1 focus:ring-primary bg-surface-container-lowest transition-all outline-none font-body-md text-body-md text-on-surface" 
+                    className="w-full pl-10 pr-10 py-sm rounded-xl border border-outline-variant/30 focus:border-primary focus:ring-1 focus:ring-primary bg-surface-container-lowest transition-all outline-none font-body-md text-body-md text-on-surface"
                   />
-                  <button 
-                    type="button" 
-                    onClick={() => setShowPassword(!showPassword)} 
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer text-on-surface-variant/60 hover:text-on-surface transition-colors"
                     aria-label={showPassword ? "Hide password" : "Show password"}
                   >
-                    {showPassword ? <EyeOff size={18}/> : <Eye size={18}/>}
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
                 {errors.password && touchedFields.password && (
@@ -378,12 +379,12 @@ const LoginPage = () => {
 
               {/* Remember Me Checkbox */}
               <div className="flex items-center gap-sm py-1">
-                <input 
-                  id="remember" 
+                <input
+                  id="remember"
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="rounded border-outline text-primary focus:ring-primary h-4 w-4" 
+                  className="rounded border-outline text-primary focus:ring-primary h-4 w-4"
                 />
                 <label className="font-body-md text-body-md text-on-surface-variant cursor-pointer select-none" htmlFor="remember">
                   Remember this device
@@ -391,7 +392,7 @@ const LoginPage = () => {
               </div>
 
               {/* Submit Button */}
-              <button 
+              <button
                 type="submit"
                 disabled={loading}
                 className="w-full py-md bg-[#0d631b] hover:bg-[#094713] disabled:opacity-50 text-white rounded-xl font-headline-md text-headline-md shadow-sm hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all duration-200 flex items-center justify-center gap-2"
@@ -419,7 +420,7 @@ const LoginPage = () => {
 
             {/* Social Logins */}
             <div className="flex gap-3">
-              <button 
+              <button
                 type="button"
                 onClick={() => handleGoogle()}
                 disabled={loading}
@@ -433,7 +434,7 @@ const LoginPage = () => {
                 </svg>
                 Google
               </button>
-              <button 
+              <button
                 type="button"
                 disabled={loading}
                 className="flex-1 flex items-center justify-center gap-sm py-sm border border-outline-variant/30 rounded-xl bg-white hover:bg-[#f2f4f2] transition-all font-label-md text-label-md text-on-surface font-semibold shadow-sm hover:shadow active:scale-[0.99]"

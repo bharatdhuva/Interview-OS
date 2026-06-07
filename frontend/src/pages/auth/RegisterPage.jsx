@@ -2,7 +2,6 @@ import React, { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
 import { useToast } from "@/hooks/use-toast";
-import { useGoogleLogin } from "@react-oauth/google";
 import api from "@/lib/api";
 import { Loader2 } from "lucide-react";
 
@@ -92,37 +91,6 @@ const RegisterPage = () => {
       setLoading(false);
     }
   };
-
-  const handleGoogle = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      try {
-        setError("");
-        setLoading(true);
-        const res = await api.post("/auth/google", {
-          token: tokenResponse.access_token,
-          role,
-        });
-        const d = res.data.data;
-        const user = {
-          id: d.id,
-          name: d.name,
-          email: d.email,
-          role: d.role,
-          avatar: d.avatar || "",
-          isEmailVerified: true,
-          createdAt: new Date().toISOString(),
-        };
-        login(user, d.accessToken);
-        toast({ title: `Welcome, ${user.name}!` });
-        navigate(user.role === "interviewer" ? "/dashboard/interviewer" : "/dashboard/candidate");
-      } catch (err) {
-        setError(err?.response?.data?.message || "Google authentication failed");
-      } finally {
-        setLoading(false);
-      }
-    },
-    onError: () => setError("Google signup failed. Please try again."),
-  });
 
   return (
     <div className="signup-container min-h-screen w-full flex flex-col justify-center">
