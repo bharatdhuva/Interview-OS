@@ -206,7 +206,7 @@ export default function LandingPage() {
             <div className="hidden md:flex gap-lg items-center text-body-md font-body-md">
               <a className="text-[#40493d] hover:text-[#0d631b] hover:border-[#0d631b] border-b-2 border-transparent pb-1 transition-all cursor-pointer active:scale-95 duration-200" href="#platform">Platform</a>
               <a className="text-[#40493d] hover:text-[#0d631b] hover:border-[#0d631b] border-b-2 border-transparent pb-1 transition-all cursor-pointer active:scale-95 duration-200" href="#features">Features</a>
-              <a className="text-[#40493d] hover:text-[#0d631b] hover:border-[#0d631b] border-b-2 border-transparent pb-1 transition-all cursor-pointer active:scale-95 duration-200" href="#pricing">Pricing</a>
+              <a className="text-[#40493d] hover:text-[#0d631b] hover:border-[#0d631b] border-b-2 border-transparent pb-1 transition-all cursor-pointer active:scale-95 duration-200" href="#how-it-works">How It Works</a>
             </div>
 
             <div className="flex items-center gap-md">
@@ -256,14 +256,6 @@ export default function LandingPage() {
                     Start for Free
                   </button>
                 </div>
-                <div className="flex items-center gap-3 mt-8">
-                  <div className="flex -space-x-2">
-                    <div className="w-8 h-8 rounded-full bg-zinc-200 text-zinc-700 flex items-center justify-center font-bold text-xs border-2 border-white">JD</div>
-                    <div className="w-8 h-8 rounded-full bg-[#acf4a4] text-[#307231] flex items-center justify-center font-bold text-xs border-2 border-white">AS</div>
-                    <div className="w-8 h-8 rounded-full bg-[#2e7d32] text-white flex items-center justify-center font-bold text-xs border-2 border-white">MK</div>
-                  </div>
-                  <span className="text-sm text-[#40493d] font-medium">Join 5,000+ hiring managers today</span>
-                </div>
               </div>
 
               <div className="relative group">
@@ -287,19 +279,6 @@ export default function LandingPage() {
             </div>
           </section>
 
-          {/* Trusted By */}
-          <section className="py-lg border-y border-[#bfcaba]/30 bg-surface w-full">
-            <div className="w-full max-w-[1280px] mx-auto px-margin-desktop text-center">
-              <p className="text-xs uppercase tracking-widest text-[#707a6c] font-bold mb-md">Trusted by 500+ engineering teams worldwide</p>
-              <div className="flex flex-wrap justify-between items-center gap-lg md:gap-xl opacity-60 grayscale hover:grayscale-0 transition-all duration-700 max-w-[960px] mx-auto">
-                <span className="font-headline-md text-headline-md font-extrabold tracking-widest text-[#191c1b] text-lg">STELLAR</span>
-                <span className="font-headline-md text-headline-md font-extrabold tracking-widest text-[#191c1b] text-lg">FLUX</span>
-                <span className="font-headline-md text-headline-md font-extrabold tracking-widest text-[#191c1b] text-lg">NEXUS</span>
-                <span className="font-headline-md text-headline-md font-extrabold tracking-widest text-[#191c1b] text-lg">APEX</span>
-                <span className="font-headline-md text-headline-md font-extrabold tracking-widest text-[#191c1b] text-lg">VORTEX</span>
-              </div>
-            </div>
-          </section>
 
           {/* Integrations & Tech Stack */}
           <section id="features" className="py-20 px-margin-desktop bg-background w-full border-t border-[#bfcaba]/30">
@@ -332,18 +311,42 @@ export default function LandingPage() {
                   </div>
                   <div className="flex items-center gap-2 font-semibold text-lg text-zinc-700 dark:text-zinc-300">
                     <svg className="w-6 h-6 text-[#707a6c]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0v3.75" />
+                    </svg>
+                    <span>MongoDB</span>
+                  </div>
+                  <div className="flex items-center gap-2 font-semibold text-lg text-zinc-700 dark:text-zinc-300">
+                    <svg className="w-6 h-6 text-[#707a6c]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                       <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
                     </svg>
                     <span>AWS</span>
                   </div>
                 </div>
                 {/* Row 2 */}
-                <div className="flex items-center pl-16 md:pl-28">
+                <div className="flex flex-wrap items-center gap-x-12 gap-y-6">
                   <div className="flex items-center gap-2 font-semibold text-lg text-zinc-700 dark:text-zinc-300">
                     <svg className="w-6 h-6 text-[#707a6c]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                       <path d="M8 7L3 12l5 5M16 7l5 5-5 5M3 12h18" />
                     </svg>
                     <span>WebRTC</span>
+                  </div>
+                  <div className="flex items-center gap-2 font-semibold text-lg text-zinc-700 dark:text-zinc-300">
+                    <svg className="w-6 h-6 text-[#707a6c]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
+                    </svg>
+                    <span>Judge0</span>
+                  </div>
+                  <div className="flex items-center gap-2 font-semibold text-lg text-zinc-700 dark:text-zinc-300">
+                    <svg className="w-6 h-6 text-[#707a6c]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-12L21 9m0 0l-4.5 4.5M21 9H7.5" />
+                    </svg>
+                    <span>Socket.IO</span>
+                  </div>
+                  <div className="flex items-center gap-2 font-semibold text-lg text-zinc-700 dark:text-zinc-300">
+                    <svg className="w-6 h-6 text-[#707a6c]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 21l-.813-5.096L3 15l5.187-.813L9 9l.813 5.187L15 15l-5.187.813zM18 10.5l-.5-3L14.5 7l3-.5.5-3 .5 3 3 .5-3 .5-.5 3z" />
+                    </svg>
+                    <span>GPT-4</span>
                   </div>
                 </div>
               </div>
@@ -351,17 +354,15 @@ export default function LandingPage() {
           </section>
 
           {/* Testimonial Section */}
-          <section className="py-xl bg-white overflow-hidden relative w-full">
+          <section className="py-xl bg-white overflow-hidden relative w-full border-t border-[#bfcaba]/30">
             <div className="w-full max-w-[1280px] mx-auto px-margin-desktop">
               <div className="flex flex-col lg:flex-row gap-lg items-center">
                 <div className="lg:w-1/3 flex justify-center">
                   <div className="relative w-64 h-64">
                     <div className="absolute inset-0 bg-[#0d631b] rounded-full rotate-6 scale-105"></div>
-                    <img
-                      alt="CTO Headshot"
-                      className="relative z-10 w-full h-full object-cover rounded-full border-4 border-white"
-                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9JgNXQ7kaIa2NQ0Jfn9HHbwxNVuI-a1DKmPjB8XMMCww6EoCANb3yAG7QGQVdyabPMziYj7GkbFzU_74AsxPiCPYNutBAcD5vTDxrc2VtSO_wcRVN510hzTgxnVYVioO3ATQ3h7ukaY_oI_L4Mtzg_zTp6mQZrB9fWW9OMGSdpoCUR56P5cdrA_73o3Pk5zTHlsTYX68ftJ10RKrvNU5C0UUNzXH1u6M_fAl818cUZ9jR6pK5a29i_EA-dIRW7FwU2O-7w5ahIJQ"
-                    />
+                    <div className="relative z-10 w-full h-full flex items-center justify-center bg-[#f2f4f2] rounded-full border-4 border-white">
+                      <span className="material-symbols-outlined text-[#0d631b] text-7xl">person</span>
+                    </div>
                   </div>
                 </div>
                 <div className="lg:w-2/3">
@@ -371,6 +372,7 @@ export default function LandingPage() {
                   </blockquote>
                   <div>
                     <p className="font-title-lg text-title-lg text-[#191c1b] font-bold">Marcus Chen</p>
+                    <span className="text-xs text-[#707a6c] font-medium block mb-1">(Sample testimonial)</span>
                     <p className="font-label-md text-label-md text-[#40493d]">CTO @ NexGen Data Systems</p>
                   </div>
                 </div>
@@ -378,117 +380,120 @@ export default function LandingPage() {
             </div>
           </section>
 
-          {/* Pricing Plans */}
-          <section className="py-xl px-margin-desktop bg-background w-full" id="pricing">
+          {/* Key Features Section */}
+          <section id="key-features" className="py-20 px-margin-desktop bg-[#f2f4f2] w-full border-t border-[#bfcaba]/30">
             <div className="w-full max-w-[1280px] mx-auto">
               <div className="text-center mb-xl">
-                <h2 className="font-headline-lg text-headline-lg text-[#191c1b] mb-sm">Simple, Scalable Pricing</h2>
-                <p className="font-body-md text-body-md text-[#40493d]">Choose the plan that fits your current hiring velocity.</p>
+                <h2 className="font-headline-lg text-headline-lg text-[#191c1b] mb-sm">Key Features</h2>
+                <p className="font-body-md text-body-md text-[#40493d] max-w-xl mx-auto">
+                  A complete environment designed to evaluate candidate skills comprehensively and efficiently.
+                </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter items-stretch">
-                {/* Free Tier */}
-                <div className="bg-white p-lg rounded-xl border border-[#bfcaba] shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-full">
-                  <div>
-                    <h3 className="font-headline-md text-headline-md mb-xs text-[#191c1b]">Free</h3>
-                    <p className="font-label-md text-[#40493d] mb-md">For small startups</p>
-                    <div className="mb-lg">
-                      <span className="text-[48px] font-extrabold text-[#191c1b]">$0</span>
-                      <span className="text-[#40493d]">/mo</span>
-                    </div>
-                    <ul className="space-y-sm mb-xl">
-                      <li className="flex items-center gap-xs font-label-md text-[#191c1b]">
-                        <span className="material-symbols-outlined text-[#0d631b] text-sm">check_circle</span> 3 Interviews / mo
-                      </li>
-                      <li className="flex items-center gap-xs font-label-md text-[#191c1b]">
-                        <span className="material-symbols-outlined text-[#0d631b] text-sm">check_circle</span> Basic Code Editor
-                      </li>
-                      <li className="flex items-center gap-xs font-label-md text-[#191c1b] opacity-50">
-                        <span className="material-symbols-outlined text-[#707a6c] text-sm">cancel</span> AI Insights
-                      </li>
-                    </ul>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
+                {/* Card 1 */}
+                <div className="bg-[#0d2c1f] p-lg rounded-2xl border border-[#bfcaba]/10 flex flex-col gap-sm hover:shadow-lg transition-all">
+                  <div className="w-12 h-12 rounded-lg bg-[#acf4a4]/20 flex items-center justify-center text-[#acf4a4]">
+                    <span className="material-symbols-outlined text-3xl">code</span>
                   </div>
-                  <button
-                    onClick={() => navigate("/register")}
-                    className="w-full py-sm border border-[#0d631b] text-[#0d631b] rounded-lg font-label-md hover:bg-[#f2f4f2] transition-all"
-                  >
-                    Get Started
-                  </button>
+                  <h3 className="font-title-lg text-white font-bold">Collaborative Code Editor</h3>
+                  <p className="font-body-md text-zinc-300">
+                    Real-time code execution with Judge0. Multiple programming languages supported.
+                  </p>
                 </div>
 
-                {/* Pro Tier (Featured) */}
-                <div className="relative bg-white p-lg rounded-xl border-2 border-[#0d631b] shadow-xl z-10 flex flex-col justify-between h-full">
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#0d631b] text-white px-md py-xs rounded-full font-label-sm uppercase tracking-wider">
-                    Most Popular
+                {/* Card 2 */}
+                <div className="bg-[#0d2c1f] p-lg rounded-2xl border border-[#bfcaba]/10 flex flex-col gap-sm hover:shadow-lg transition-all">
+                  <div className="w-12 h-12 rounded-lg bg-[#acf4a4]/20 flex items-center justify-center text-[#acf4a4]">
+                    <span className="material-symbols-outlined text-3xl">psychology</span>
                   </div>
-                  <div>
-                    <h3 className="font-headline-md text-headline-md mb-xs text-[#191c1b]">Pro</h3>
-                    <p className="font-label-md text-[#40493d] mb-md">For growing teams</p>
-                    <div className="mb-lg">
-                      <span className="text-[48px] font-extrabold text-[#191c1b]">$99</span>
-                      <span className="text-[#40493d]">/mo</span>
-                    </div>
-                    <ul className="space-y-sm mb-xl">
-                      <li className="flex items-center gap-xs font-label-md text-[#191c1b] font-bold">
-                        <span className="material-symbols-outlined text-[#0d631b] text-sm">check_circle</span> Unlimited Interviews
-                      </li>
-                      <li className="flex items-center gap-xs font-label-md text-[#191c1b]">
-                        <span className="material-symbols-outlined text-[#0d631b] text-sm">check_circle</span> Professional Sandbox
-                      </li>
-                      <li className="flex items-center gap-xs font-label-md text-[#191c1b]">
-                        <span className="material-symbols-outlined text-[#0d631b] text-sm">check_circle</span> Full AI Insights
-                      </li>
-                      <li className="flex items-center gap-xs font-label-md text-[#191c1b]">
-                        <span className="material-symbols-outlined text-[#0d631b] text-sm">check_circle</span> Interview Recording
-                      </li>
-                    </ul>
-                  </div>
-                  <button
-                    onClick={() => navigate("/register")}
-                    className="w-full py-sm bg-[#0d631b] hover:bg-[#2e7d32] text-white rounded-lg font-label-md transition-all"
-                  >
-                    Upgrade Now
-                  </button>
+                  <h3 className="font-title-lg text-white font-bold">AI-Powered Feedback</h3>
+                  <p className="font-body-md text-zinc-300">
+                    GPT-4 analyzes candidate responses and generates structured review reports.
+                  </p>
                 </div>
 
-                {/* Custom Tier */}
-                <div className="bg-white p-lg rounded-xl border border-[#bfcaba] shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-full">
-                  <div>
-                    <h3 className="font-headline-md text-headline-md mb-xs text-[#191c1b]">Custom</h3>
-                    <p className="font-label-md text-[#40493d] mb-md">For enterprise scale</p>
-                    <div className="mb-lg">
-                      <span className="text-[48px] font-extrabold text-[#191c1b]">Quote</span>
-                    </div>
-                    <ul className="space-y-sm mb-xl">
-                      <li className="flex items-center gap-xs font-label-md text-[#191c1b]">
-                        <span className="material-symbols-outlined text-[#0d631b] text-sm">check_circle</span> SSO Integration
-                      </li>
-                      <li className="flex items-center gap-xs font-label-md text-[#191c1b]">
-                        <span className="material-symbols-outlined text-[#0d631b] text-sm">check_circle</span> Dedicated Success Manager
-                      </li>
-                      <li className="flex items-center gap-xs font-label-md text-[#191c1b]">
-                        <span className="material-symbols-outlined text-[#0d631b] text-sm">check_circle</span> Custom Legal &amp; Security
-                      </li>
-                    </ul>
+                {/* Card 3 */}
+                <div className="bg-[#0d2c1f] p-lg rounded-2xl border border-[#bfcaba]/10 flex flex-col gap-sm hover:shadow-lg transition-all">
+                  <div className="w-12 h-12 rounded-lg bg-[#acf4a4]/20 flex items-center justify-center text-[#acf4a4]">
+                    <span className="material-symbols-outlined text-3xl">videocam</span>
                   </div>
-                  <button
-                    onClick={() => navigate("/register")}
-                    className="w-full py-sm border border-[#0d631b] text-[#0d631b] rounded-lg font-label-md hover:bg-[#f2f4f2] transition-all"
-                  >
-                    Contact Sales
-                  </button>
+                  <h3 className="font-title-lg text-white font-bold">Live Video Interviews</h3>
+                  <p className="font-body-md text-zinc-300">
+                    WebRTC-based video calls with zero plugin requirements.
+                  </p>
+                </div>
+
+                {/* Card 4 */}
+                <div className="bg-[#0d2c1f] p-lg rounded-2xl border border-[#bfcaba]/10 flex flex-col gap-sm hover:shadow-lg transition-all">
+                  <div className="w-12 h-12 rounded-lg bg-[#acf4a4]/20 flex items-center justify-center text-[#acf4a4]">
+                    <span className="material-symbols-outlined text-3xl">fiber_manual_record</span>
+                  </div>
+                  <h3 className="font-title-lg text-white font-bold">Interview Recording</h3>
+                  <p className="font-body-md text-zinc-300">
+                    Sessions are recorded and stored for async review by hiring teams.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* How It Works Section */}
+          <section id="how-it-works" className="py-20 px-margin-desktop bg-background w-full border-t border-[#bfcaba]/30">
+            <div className="w-full max-w-[1280px] mx-auto">
+              <div className="text-center mb-xl">
+                <h2 className="font-headline-lg text-headline-lg text-[#191c1b] mb-sm">How It Works</h2>
+                <p className="font-body-md text-body-md text-[#40493d] max-w-xl mx-auto">
+                  A seamless workflow from room creation to final feedback generation.
+                </p>
+              </div>
+
+              <div className="relative flex flex-col md:flex-row gap-lg md:gap-md justify-between items-start">
+                {/* Connecting Line for Desktop */}
+                <div className="hidden md:block absolute top-10 left-[10%] right-[10%] h-0.5 border-t-2 border-dashed border-[#bfcaba] z-0"></div>
+
+                {/* Step 1 */}
+                <div className="relative flex flex-col items-center text-center flex-1 z-10">
+                  <div className="w-20 h-20 rounded-full bg-white border-4 border-[#0d631b] flex items-center justify-center font-bold text-2xl text-[#0d631b] shadow-md mb-md">
+                    1
+                  </div>
+                  <h3 className="font-title-lg text-[#191c1b] font-bold mb-sm">Create a Room</h3>
+                  <p className="font-body-md text-[#40493d] max-w-xs px-2">
+                    Generate a unique interview session with custom problem sets.
+                  </p>
+                </div>
+
+                {/* Step 2 */}
+                <div className="relative flex flex-col items-center text-center flex-1 z-10">
+                  <div className="w-20 h-20 rounded-full bg-white border-4 border-[#0d631b] flex items-center justify-center font-bold text-2xl text-[#0d631b] shadow-md mb-md">
+                    2
+                  </div>
+                  <h3 className="font-title-lg text-[#191c1b] font-bold mb-sm">Conduct the Interview</h3>
+                  <p className="font-body-md text-[#40493d] max-w-xs px-2">
+                    Candidate joins via link. Code, communicate, and solve live.
+                  </p>
+                </div>
+
+                {/* Step 3 */}
+                <div className="relative flex flex-col items-center text-center flex-1 z-10">
+                  <div className="w-20 h-20 rounded-full bg-white border-4 border-[#0d631b] flex items-center justify-center font-bold text-2xl text-[#0d631b] shadow-md mb-md">
+                    3
+                  </div>
+                  <h3 className="font-title-lg text-[#191c1b] font-bold mb-sm">Review &amp; Decide</h3>
+                  <p className="font-body-md text-[#40493d] max-w-xs px-2">
+                    AI summary + full recording available instantly after session ends.
+                  </p>
                 </div>
               </div>
             </div>
           </section>
 
           {/* Final CTA */}
-          <section className="py-xl px-margin-desktop w-full">
+          <section className="py-xl px-margin-desktop w-full border-t border-[#bfcaba]/30">
             <div className="w-full max-w-[1280px] mx-auto bg-[#0d631b] rounded-2xl p-xl text-center relative overflow-hidden group">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.1),transparent)] group-hover:scale-110 transition-transform duration-700"></div>
               <div className="relative z-10">
-                <h2 className="font-display-lg text-display-lg text-white mb-md leading-tight">Ready to scale your technical hiring?</h2>
-                <p className="font-body-lg text-body-lg text-[#a3f69c] opacity-90 mb-lg max-w-2xl mx-auto">Join 1,000+ engineering teams conducting world-class interviews today.</p>
+                <h2 className="font-display-lg text-display-lg text-white mb-lg leading-tight">Ready to scale your technical hiring?</h2>
                 <button
                   onClick={() => navigate("/register")}
                   className="bg-white hover:bg-[#a3f69c] text-[#0d631b] px-xl py-md rounded-lg font-title-lg transition-all active:scale-95 shadow-xl"
@@ -513,9 +518,9 @@ export default function LandingPage() {
             <div className="md:col-span-2 space-y-4">
               <p className="text-xs uppercase tracking-widest text-[#191c1b] font-bold">Product</p>
               <ul className="space-y-3">
-                <li><a className="text-[#40493d] dark:text-zinc-400 hover:text-[#0d631b] transition-colors" href="#">Features</a></li>
-                <li><a className="text-[#40493d] dark:text-zinc-400 hover:text-[#0d631b] transition-colors" href="#pricing">Pricing</a></li>
-                <li><a className="text-[#40493d] dark:text-zinc-400 hover:text-[#0d631b] transition-colors" href="#">Integrations</a></li>
+                <li><a className="text-[#40493d] dark:text-zinc-400 hover:text-[#0d631b] transition-colors" href="#key-features">Features</a></li>
+                <li><a className="text-[#40493d] dark:text-zinc-400 hover:text-[#0d631b] transition-colors" href="#how-it-works">How It Works</a></li>
+                <li><a className="text-[#40493d] dark:text-zinc-400 hover:text-[#0d631b] transition-colors" href="#features">Integrations</a></li>
                 <li><a className="text-[#40493d] dark:text-zinc-400 hover:text-[#0d631b] transition-colors" href="#">Changelog</a></li>
               </ul>
             </div>
