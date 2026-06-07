@@ -9,7 +9,7 @@
  * converts to a 400 Bad Request response.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.googleAuthSchema = exports.resetPasswordSchema = exports.forgotPasswordSchema = exports.resendVerificationSchema = exports.verifyEmailSchema = exports.loginSchema = exports.registerSchema = void 0;
+exports.onboardSchema = exports.githubAuthSchema = exports.googleAuthSchema = exports.resetPasswordSchema = exports.forgotPasswordSchema = exports.resendVerificationSchema = exports.verifyEmailSchema = exports.loginSchema = exports.registerSchema = void 0;
 const zod_1 = require("zod");
 /** Schema for POST /api/v1/auth/register */
 exports.registerSchema = zod_1.z.object({
@@ -27,6 +27,11 @@ exports.loginSchema = zod_1.z.object({
 /** Schema for POST /api/v1/auth/google */
 exports.googleAuthSchema = zod_1.z.object({
     token: zod_1.z.string(), // Google OAuth2 access token
+    role: zod_1.z.enum(['candidate', 'interviewer', 'admin']).optional(),
+});
+/** Schema for POST /api/v1/auth/github */
+exports.githubAuthSchema = zod_1.z.object({
+    code: zod_1.z.string(), // GitHub OAuth2 authorization code
     role: zod_1.z.enum(['candidate', 'interviewer', 'admin']).optional(),
 });
 /** Schema for POST /api/v1/auth/verify-email */
@@ -47,4 +52,8 @@ exports.resetPasswordSchema = zod_1.z.object({
     email: zod_1.z.string().email(),
     token: zod_1.z.string().min(32),
     newPassword: zod_1.z.string().min(6),
+});
+/** Schema for POST /api/v1/auth/onboard */
+exports.onboardSchema = zod_1.z.object({
+    role: zod_1.z.enum(['candidate', 'interviewer']),
 });

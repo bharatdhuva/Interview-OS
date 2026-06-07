@@ -64,6 +64,8 @@ const userSchema = new mongoose_1.Schema({
     },
     avatar: { type: String },
     googleId: { type: String },
+    githubId: { type: String },
+    isOnboarded: { type: Boolean, default: false },
     isEmailVerified: { type: Boolean, default: true },
     // Email verification token (one-time use, expires)
     emailVerification: {

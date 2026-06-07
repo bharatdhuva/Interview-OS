@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,6 +15,54 @@ const LoginPage = () => {
   const [serverError, setServerError] = useState("");
   const navigate = useNavigate();
   const loginAction = useAuthStore((s) => s.login);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+
+    if (code) {
+      const loginWithGithub = async () => {
+        setServerError("");
+        setLoading(true);
+        try {
+          const res = await api.post("/auth/github", {
+            code,
+          });
+          const d = res.data.data;
+          const user = {
+            id: d.id,
+            name: d.name,
+            email: d.email,
+            role: d.role,
+            avatar: d.avatar || "",
+            isEmailVerified: true,
+            isOnboarded: d.isOnboarded,
+            createdAt: new Date().toISOString(),
+          };
+          loginAction(user, d.accessToken);
+          sessionStorage.setItem("justLoggedIn", "true");
+          window.history.replaceState({}, document.title, window.location.pathname);
+          if (d.isOnboarded === false) {
+            navigate("/onboarding");
+          } else {
+            navigate(user.role === "interviewer" ? "/dashboard/interviewer" : "/dashboard/candidate");
+          }
+        } catch (err) {
+          setServerError(err?.response?.data?.message || "GitHub authentication failed");
+          window.history.replaceState({}, document.title, window.location.pathname);
+        } finally {
+          setLoading(false);
+        }
+      };
+      loginWithGithub();
+    }
+  }, [loginAction, navigate]);
+
+  const handleGithub = () => {
+    const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID || "your_github_client_id_here";
+    const redirectUri = `${window.location.origin}/login`;
+    window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=user:email`;
+  };
 
   const {
     register,
@@ -42,11 +90,16 @@ const LoginPage = () => {
         role: d.role,
         avatar: d.avatar || "",
         isEmailVerified: true,
+        isOnboarded: d.isOnboarded,
         createdAt: new Date().toISOString(),
       };
       loginAction(user, d.accessToken);
       sessionStorage.setItem("justLoggedIn", "true");
-      navigate(user.role === "interviewer" ? "/dashboard/interviewer" : "/dashboard/candidate");
+      if (d.isOnboarded === false) {
+        navigate("/onboarding");
+      } else {
+        navigate(user.role === "interviewer" ? "/dashboard/interviewer" : "/dashboard/candidate");
+      }
     } catch (err) {
       const msg = err?.response?.data?.message || "Invalid email or password";
       setServerError(msg);
@@ -71,11 +124,16 @@ const LoginPage = () => {
           role: d.role,
           avatar: d.avatar || "",
           isEmailVerified: true,
+          isOnboarded: d.isOnboarded,
           createdAt: new Date().toISOString(),
         };
         loginAction(user, d.accessToken);
         sessionStorage.setItem("justLoggedIn", "true");
-        navigate(user.role === "interviewer" ? "/dashboard/interviewer" : "/dashboard/candidate");
+        if (d.isOnboarded === false) {
+          navigate("/onboarding");
+        } else {
+          navigate(user.role === "interviewer" ? "/dashboard/interviewer" : "/dashboard/candidate");
+        }
       } catch (err) {
         setServerError(err?.response?.data?.message || "Google authentication failed");
       } finally {
@@ -436,6 +494,7 @@ const LoginPage = () => {
               </button>
               <button
                 type="button"
+                onClick={handleGithub}
                 disabled={loading}
                 className="flex-1 flex items-center justify-center gap-sm py-sm border border-outline-variant/30 rounded-xl bg-white hover:bg-[#f2f4f2] transition-all font-label-md text-label-md text-on-surface font-semibold shadow-sm hover:shadow active:scale-[0.99]"
               >

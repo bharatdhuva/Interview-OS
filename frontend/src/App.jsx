@@ -17,6 +17,7 @@ import InterviewerDashboard from "./pages/dashboard/InterviewerDashboard";
 import InterviewRoom from "./pages/room/InterviewRoom";
 import FeedbackPage from "./pages/feedback/FeedbackPage";
 import NotFound from "./pages/NotFound";
+import OnboardingPage from "./pages/auth/OnboardingPage";
 import SiteLoader from "./components/SiteLoader";
 import { subscribeToApiActivity } from "./lib/api";
 const queryClient = new QueryClient();
@@ -72,6 +73,7 @@ const AppRoutes = () => {
         <Route path="/dashboard/interviewer" element={<InterviewerDashboard />}/>
         <Route path="/room/:roomId" element={<InterviewRoom />}/>
         <Route path="/feedback/:roomId" element={<FeedbackPage />}/>
+        <Route path="/onboarding" element={<OnboardingPage />}/>
         <Route path="*" element={<NotFound />}/>
       </Routes>
     </>);

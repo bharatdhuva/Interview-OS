@@ -15,7 +15,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.googleSignIn = exports.getMe = exports.logout = exports.login = exports.register = void 0;
+exports.onboardUser = exports.githubSignIn = exports.googleSignIn = exports.getMe = exports.logout = exports.login = exports.register = void 0;
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const axios_1 = __importDefault(require("axios"));
@@ -74,6 +74,7 @@ const register = async (req, res) => {
             email,
             passwordHash,
             role: role || 'candidate',
+            isOnboarded: true,
         });
 
         /* 
@@ -109,6 +110,7 @@ const register = async (req, res) => {
                 role: user.role,
                 accessToken,
                 isEmailVerified: true,
+                isOnboarded: user.isOnboarded,
                 message: 'Account created successfully!'
             },
         });
@@ -152,7 +154,7 @@ const login = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            data: { id: user.id, name: user.name, email: user.email, role: user.role, accessToken },
+            data: { id: user.id, name: user.name, email: user.email, role: user.role, isOnboarded: user.isOnboarded, accessToken },
         });
     }
     catch (error) {
@@ -216,7 +218,7 @@ exports.getMe = getMe;
  */
 const googleSignIn = async (req, res) => {
     try {
-        const { token, role } = auth_validation_1.googleAuthSchema.parse(req.body);
+        const { token } = auth_validation_1.googleAuthSchema.parse(req.body);
         // Verify with Google — this also validates the token hasn't been tampered with
         const googleRes = await axios_1.default.get('https://www.googleapis.com/oauth2/v3/userinfo', {
             headers: { Authorization: `Bearer ${token}` },
@@ -234,7 +236,8 @@ const googleSignIn = async (req, res) => {
                 email,
                 googleId,
                 avatar: picture,
-                role: role || 'candidate',
+                role: 'candidate',
+                isOnboarded: false,
                 isEmailVerified: true, // Google has already verified the email
             });
         }
@@ -260,6 +263,7 @@ const googleSignIn = async (req, res) => {
                 email: user.email,
                 role: user.role,
                 avatar: user.avatar,
+                isOnboarded: user.isOnboarded,
                 accessToken,
             },
         });
@@ -278,6 +282,123 @@ const googleSignIn = async (req, res) => {
     }
 };
 exports.googleSignIn = googleSignIn;
+
+/**
+ * POST /api/v1/auth/github
+ *
+ * Exchanges a GitHub OAuth2 code for platform credentials.
+ */
+const githubSignIn = async (req, res) => {
+    try {
+        const { code } = auth_validation_1.githubAuthSchema.parse(req.body);
+        
+        // Exchange code for access token
+        const tokenRes = await axios_1.default.post('https://github.com/login/oauth/access_token', {
+            client_id: process.env.GITHUB_CLIENT_ID,
+            client_secret: process.env.GITHUB_CLIENT_SECRET,
+            code,
+        }, {
+            headers: { Accept: 'application/json' },
+        });
+        
+        const githubAccessToken = tokenRes.data?.access_token;
+        if (!githubAccessToken) {
+            res.status(400).json({ success: false, message: 'Failed to retrieve GitHub access token' });
+            return;
+        }
+
+        // Fetch user profile
+        const userRes = await axios_1.default.get('https://api.github.com/user', {
+            headers: {
+                Authorization: `token ${githubAccessToken}`,
+                'User-Agent': 'InterviewOS',
+            },
+        });
+
+        // Fetch user email addresses
+        const emailsRes = await axios_1.default.get('https://api.github.com/user/emails', {
+            headers: {
+                Authorization: `token ${githubAccessToken}`,
+                'User-Agent': 'InterviewOS',
+            },
+        });
+
+        const primaryEmailObj = emailsRes.data?.find(email => email.primary && email.verified);
+        const email = primaryEmailObj ? primaryEmailObj.email : (userRes.data?.email || (emailsRes.data?.[0] ? emailsRes.data[0].email : null));
+
+        if (!email) {
+            res.status(400).json({ success: false, message: 'No verified email associated with this GitHub account' });
+            return;
+        }
+
+        const { id: githubId, name, login, avatar_url } = userRes.data;
+        let user = await user_model_1.User.findOne({ email });
+
+        if (!user) {
+            // First time GitHub sign-in — auto-register the user
+            user = await user_model_1.User.create({
+                name: name || login || 'GitHub User',
+                email,
+                githubId: String(githubId),
+                avatar: avatar_url,
+                role: 'candidate',
+                isOnboarded: false,
+                isEmailVerified: true,
+            });
+        }
+        else {
+            // Link GitHub ID if not already linked
+            let updated = false;
+            if (!user.githubId) {
+                user.githubId = String(githubId);
+                updated = true;
+            }
+            if (avatar_url && !user.avatar) {
+                user.avatar = avatar_url;
+                updated = true;
+            }
+            if (!user.isEmailVerified) {
+                user.isEmailVerified = true;
+                updated = true;
+            }
+            if (updated) {
+                await user.save();
+            }
+        }
+
+        const accessToken = (0, jwt_1.generateAccessToken)(user.id, user.role);
+        const refreshToken = (0, jwt_1.generateRefreshToken)(user.id);
+        user.refreshTokens.push(refreshToken);
+        await user.save();
+        setRefreshCookie(res, refreshToken);
+
+        res.status(200).json({
+            success: true,
+            data: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                avatar: user.avatar,
+                isOnboarded: user.isOnboarded,
+                accessToken,
+            },
+        });
+    }
+    catch (error) {
+        if (error.name === 'ZodError') {
+            res.status(400).json({ success: false, message: 'Validation Error', errors: error.errors });
+            return;
+        }
+        logger_1.default.error('GitHub Sign-In error', {
+            message: error.message,
+            stack: error.stack,
+            response: error.response?.data,
+        });
+        res.status(500).json({ success: false, message: 'Server error during GitHub authentication' });
+    }
+};
+exports.githubSignIn = githubSignIn;
 
 /**
  * POST /api/v1/auth/verify-email
@@ -525,3 +646,42 @@ const refresh = async (req, res) => {
     }
 };
 exports.refresh = refresh;
+
+/**
+ * POST /api/v1/auth/onboard
+ *
+ * Saves the selected role and marks the user as onboarded.
+ */
+const onboardUser = async (req, res) => {
+    try {
+        const { role } = auth_validation_1.onboardSchema.parse(req.body);
+        const user = await user_model_1.User.findById(req.user.id);
+        if (!user) {
+            res.status(404).json({ success: false, message: 'User not found' });
+            return;
+        }
+        user.role = role;
+        user.isOnboarded = true;
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            data: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                avatar: user.avatar,
+                isOnboarded: user.isOnboarded,
+            }
+        });
+    } catch (error) {
+        if (error.name === 'ZodError') {
+            res.status(400).json({ success: false, message: 'Validation Error', errors: error.errors });
+            return;
+        }
+        logger_1.default.error('Onboarding error', error);
+        res.status(500).json({ success: false, message: 'Server error during onboarding' });
+    }
+};
+exports.onboardUser = onboardUser;
