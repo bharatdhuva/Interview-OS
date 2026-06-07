@@ -1,305 +1,487 @@
 import React, { useState, useMemo } from "react";
-// ...existing code...
-import { motion } from "framer-motion";
-import { Mail, Lock, Eye, EyeOff, ArrowRight, Check, Loader2, User, } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import AuthLayout from "@/components/AuthLayout";
-import GoogleIcon from "@/components/GoogleIcon";
 import { useAuthStore } from "@/store/authStore";
 import { useToast } from "@/hooks/use-toast";
 import { useGoogleLogin } from "@react-oauth/google";
 import api from "@/lib/api";
+import { Loader2 } from "lucide-react";
+
 /* ─── Password strength ─── */
 const getPasswordStrength = (pw) => {
-    if (!pw)
-        return { level: 0, label: "", color: "" };
-    let score = 0;
-    if (pw.length >= 8)
-        score++;
-    if (/[a-z]/.test(pw) && /[A-Z]/.test(pw))
-        score++;
-    if (/\d/.test(pw))
-        score++;
-    if (/[^a-zA-Z0-9]/.test(pw))
-        score++;
-    const map = {
-        1: { label: "Weak", color: "#ef4444" },
-        2: { label: "Fair", color: "#f97316" },
-        3: { label: "Good", color: "#eab308" },
-        4: { label: "Strong", color: "#22c55e" },
-    };
-    const clamped = Math.max(1, Math.min(4, score));
-    return { level: clamped, ...map[clamped] };
+  if (!pw) return { level: 0, label: "", color: "" };
+  let score = 0;
+  if (pw.length >= 8) score++;
+  if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) score++;
+  if (/\d/.test(pw)) score++;
+  if (/[^a-zA-Z0-9]/.test(pw)) score++;
+  
+  const map = {
+    1: { label: "Weak", color: "#ba1a1a" },
+    2: { label: "Fair", color: "#fbbf24" },
+    3: { label: "Good", color: "#6366f1" },
+    4: { label: "Strong", color: "#2a6b2c" },
+  };
+  const clamped = Math.max(1, Math.min(4, score));
+  return { level: clamped, ...map[clamped] };
 };
+
 const RegisterPage = () => {
-    const [fullName, setFullName] = useState("");
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [showPassword, setShowPassword] = useState(false);
-    const [role, setRole] = useState("candidate");
-    const [termsAccepted, setTermsAccepted] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
-    const navigate = useNavigate();
-    const login = useAuthStore((s) => s.login);
-    const { toast } = useToast();
-    const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    const strength = useMemo(() => getPasswordStrength(password), [password]);
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (!termsAccepted)
-            return;
-        // Client-side validation
-        if (!fullName.trim() || fullName.trim().length < 2) {
-            setError("Please enter your full name");
-            return;
-        }
-        if (!email.trim() || !isEmailValid) {
-            setError("Please enter a valid email address");
-            return;
-        }
-        if (password.length < 8 ||
-            !/[A-Za-z]/.test(password) ||
-            !/[0-9]/.test(password)) {
-            setError("Password needs min 8 chars, 1 letter, 1 number");
-            return;
-        }
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState("candidate");
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+  const login = useAuthStore((s) => s.login);
+  const { toast } = useToast();
+
+  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const strength = useMemo(() => getPasswordStrength(password), [password]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!termsAccepted) return;
+
+    if (!fullName.trim() || fullName.trim().length < 2) {
+      setError("Please enter your full name");
+      return;
+    }
+    if (!email.trim() || !isEmailValid) {
+      setError("Please enter a valid email address");
+      return;
+    }
+    if (password.length < 8 || !/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+      setError("Password needs min 8 chars, 1 letter, 1 number");
+      return;
+    }
+
+    setError("");
+    setLoading(true);
+    try {
+      const res = await api.post("/auth/register", {
+        name: fullName.trim(),
+        email: email.trim(),
+        password,
+        role,
+      });
+      const d = res.data.data;
+      const user = {
+        id: d.id,
+        name: d.name,
+        email: d.email,
+        role: d.role,
+        avatar: d.avatar || "",
+        isEmailVerified: true,
+        createdAt: new Date().toISOString(),
+      };
+
+      login(user, d.accessToken);
+
+      toast({
+        title: "Welcome to InterviewOS!",
+        description: "Your account has been created successfully.",
+      });
+
+      navigate(user.role === "interviewer" ? "/dashboard/interviewer" : "/dashboard/candidate");
+    } catch (err) {
+      const msg = err?.response?.data?.message || "Something went wrong";
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogle = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
         setError("");
         setLoading(true);
-        try {
-            const res = await api.post("/auth/register", {
-                name: fullName.trim(),
-                email: email.trim(),
-                password,
-                role,
-            });
-            const d = res.data.data;
-            const user = {
-                id: d.id,
-                name: d.name,
-                email: d.email,
-                role: d.role,
-                avatar: d.avatar || "",
-                isEmailVerified: true,
-                createdAt: new Date().toISOString(),
-            };
-            
-            // Log in directly
-            login(user, d.accessToken);
-            
-            toast({
-                title: "Welcome to InterviewOS!",
-                description: "Your account has been created successfully.",
-            });
-            
-            navigate(user.role === "interviewer"
-                ? "/dashboard/interviewer"
-                : "/dashboard/candidate");
-        }
-        catch (err) {
-            const msg = err?.response?.data?.message || "Something went wrong";
-            setError(msg);
-        }
-        finally {
-            setLoading(false);
-        }
-    };
-    const handleGoogle = useGoogleLogin({
-        onSuccess: async (tokenResponse) => {
-            try {
-                setError("");
-                setLoading(true);
-                const res = await api.post("/auth/google", {
-                    token: tokenResponse.access_token,
-                    role,
-                });
-                const d = res.data.data;
-                const user = {
-                    id: d.id,
-                    name: d.name,
-                    email: d.email,
-                    role: d.role,
-                    avatar: d.avatar || "",
-                    isEmailVerified: true,
-                    createdAt: new Date().toISOString(),
-                };
-                login(user, d.accessToken);
-                toast({ title: `Welcome, ${user.name}!` });
-                navigate(user.role === "interviewer"
-                    ? "/dashboard/interviewer"
-                    : "/dashboard/candidate");
-            }
-            catch (err) {
-                setError(err?.response?.data?.message ||
-                    "Google authentication failed");
-            }
-            finally {
-                setLoading(false);
-            }
-        },
-        onError: () => setError("Google signup failed. Please try again."),
-    });
-    const stagger = (i) => ({ delay: 0.15 + i * 0.06 });
-    return (<AuthLayout variant="register">
-      <form onSubmit={handleSubmit} className="flex flex-col" style={{ overflow: 'hidden', maxHeight: '100vh' }}>
-        {/* Header */}
-        <motion.div initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={stagger(0)} className="text-center mb-7">
-          <h1 className="text-[22px] font-bold" style={{ color: "#ededf0", letterSpacing: "-0.03em" }}>
-            Create your account 🚀
-          </h1>
-          <p className="text-[13px] mt-1.5" style={{ color: "#888899" }}>
-            Join 10,000+ developers &amp; interviewers
-          </p>
-        </motion.div>
+        const res = await api.post("/auth/google", {
+          token: tokenResponse.access_token,
+          role,
+        });
+        const d = res.data.data;
+        const user = {
+          id: d.id,
+          name: d.name,
+          email: d.email,
+          role: d.role,
+          avatar: d.avatar || "",
+          isEmailVerified: true,
+          createdAt: new Date().toISOString(),
+        };
+        login(user, d.accessToken);
+        toast({ title: `Welcome, ${user.name}!` });
+        navigate(user.role === "interviewer" ? "/dashboard/interviewer" : "/dashboard/candidate");
+      } catch (err) {
+        setError(err?.response?.data?.message || "Google authentication failed");
+      } finally {
+        setLoading(false);
+      }
+    },
+    onError: () => setError("Google signup failed. Please try again."),
+  });
 
-        <div className="flex flex-col gap-3.5">
-          {/* Full Name */}
-          <motion.div initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={stagger(1)}>
-            <label htmlFor="reg-name" className="ios-label">
-              Full Name
-            </label>
-            <div className="relative">
-              <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "#444455" }}/>
-              <input id="reg-name" type="text" className="ios-input" placeholder="Enter your full name" value={fullName} onChange={(e) => {
-            setFullName(e.target.value);
-            if (error)
-                setError("");
-        }} required autoComplete="name"/>
-            </div>
-          </motion.div>
+  return (
+    <div className="signup-container min-h-screen w-full flex flex-col justify-center">
+      <style dangerouslySetInnerHTML={{ __html: `
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
 
-          {/* Email */}
-          <motion.div initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={stagger(2)}>
-            <label htmlFor="reg-email" className="ios-label">
-              Email Address
-            </label>
-            <div className="relative">
-              <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "#444455" }}/>
-              <input id="reg-email" type="email" className="ios-input" placeholder="you@example.com" value={email} onChange={(e) => {
-            setEmail(e.target.value);
-            if (error)
-                setError("");
-        }} required autoComplete="email"/>
-              {isEmailValid && (<motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <Check size={16} style={{ color: "#22c55e" }}/>
-                </motion.div>)}
-            </div>
-          </motion.div>
+        :root {
+          --outline-variant: #bfcaba;
+          --on-secondary-container: #307231;
+          --surface-bright: #f8faf8;
+          --on-surface-variant: #40493d;
+          --tertiary-container: #1d622b;
+          --on-surface: #191c1b;
+          --secondary: #2a6b2c;
+          --surface-container-low: #f2f4f2;
+          --error-container: #ffdad6;
+          --surface-container-high: #e6e9e7;
+          --surface-container-highest: #e1e3e1;
+          --on-primary-fixed-variant: #005312;
+          --background: #f8faf8;
+          --on-tertiary: #ffffff;
+          --surface-variant: #e1e3e1;
+          --secondary-container: #aaf1a2;
+          --surface-container: #eceeec;
+          --surface-tint: #1b6d24;
+          --on-tertiary-fixed-variant: #07521d;
+          --primary-fixed: #a3f69c;
+          --on-primary-container: #8bdd86;
+          --tertiary-fixed: #abf4ad;
+          --surface-container-lowest: #ffffff;
+          --on-error: #ffffff;
+          --surface: #f8faf8;
+          --on-primary-fixed: #002203;
+          --on-tertiary-container: #94dc97;
+          --secondary-fixed-dim: #92d78b;
+          --primary-container: #0d631b;
+          --primary: #00490e;
+          --on-background: #191c1b;
+          --on-secondary-fixed: #002203;
+          --inverse-primary: #88d982;
+          --tertiary-fixed-dim: #90d793;
+          --error: #ba1a1a;
+          --on-primary: #ffffff;
+          --tertiary: #004918;
+          --inverse-on-surface: #eff1ef;
+          --primary-fixed-dim: #88d982;
+          --outline: #707a6c;
+          --surface-dim: #d8dad9;
+          --inverse-surface: #2e3130;
+          --on-secondary: #ffffff;
+          --on-tertiary-fixed: #002107;
+          --on-secondary-fixed-variant: #0d5216;
+          --on-error-container: #93000a;
+          --secondary-fixed: #adf4a5;
+        }
 
-          {/* Password */}
-          <motion.div initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={stagger(3)}>
-            <label htmlFor="reg-password" className="ios-label">
-              Password
-            </label>
-            <div className="relative">
-              <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "#444455" }}/>
-              <input id="reg-password" type={showPassword ? "text" : "password"} className="ios-input !pr-10" placeholder="Password" value={password} onChange={(e) => {
-            setPassword(e.target.value);
-            if (error)
-                setError("");
-        }} required autoComplete="new-password"/>
-              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer" style={{ color: "#444455" }} aria-label={showPassword ? "Hide password" : "Show password"}>
-                {showPassword ? <EyeOff size={16}/> : <Eye size={16}/>}
-              </button>
+        .signup-container {
+          font-family: 'Montserrat', sans-serif;
+          background-color: var(--background);
+          color: var(--on-surface);
+        }
+
+        .active-role {
+          background-color: #acf4a4 !important;
+          border-color: #0d631b !important;
+          color: #191c1b !important;
+        }
+
+        .active-role span {
+          color: #191c1b !important;
+        }
+
+        .glass-panel {
+          background: rgba(255, 255, 255, 0.85);
+          backdrop-filter: blur(12px);
+        }
+
+        /* Custom Spacing Rules */
+        .p-xl { padding: 32px !important; }
+        .p-md { padding: 12px !important; }
+        .py-md { padding-top: 10px !important; padding-bottom: 10px !important; }
+        .py-sm { padding-top: 8px !important; padding-bottom: 8px !important; }
+        .px-md { padding-left: 16px !important; padding-right: 16px !important; }
+        .p-margin-mobile { padding: 16px !important; }
+        .p-margin-desktop { padding: 32px !important; }
+        .gap-base { gap: 8px !important; }
+        .gap-sm { gap: 12px !important; }
+        .gap-md { gap: 16px !important; }
+        .gap-xs { gap: 4px !important; }
+        .mt-xl { margin-top: 24px !important; }
+        .mb-lg { margin-bottom: 20px !important; }
+        .mb-md { margin-bottom: 16px !important; }
+        .mb-sm { margin-bottom: 8px !important; }
+        .mb-xs { margin-bottom: 4px !important; }
+
+        /* Custom Color classes override */
+        .bg-primary { background-color: #0d631b !important; }
+        .text-on-primary { color: #ffffff !important; }
+        .text-primary-fixed { color: #a3f69c !important; }
+        .border-on-primary-fixed-variant { border-color: #005312 !important; }
+        .bg-surface { background-color: #f8faf8 !important; }
+        .text-on-surface { color: #191c1b !important; }
+        .text-on-surface-variant { color: #40493d !important; }
+        .border-outline-variant\/30 { border-color: rgba(191, 202, 186, 0.3) !important; }
+        .bg-surface-container-lowest { background-color: #ffffff !important; }
+        .focus\:border-primary:focus { border-color: #0d631b !important; }
+        .focus\:ring-primary:focus { --tw-ring-color: #0d631b !important; }
+        .text-secondary { color: #307231 !important; }
+        .text-primary { color: #0d631b !important; }
+        .bg-surface-container { background-color: #eceeec !important; }
+        .bg-outline-variant { background-color: #bfcaba !important; }
+        .bg-error { background-color: #ba1a1a !important; }
+        .bg-secondary-fixed-dim { background-color: #92d78b !important; }
+        .bg-secondary { background-color: #2e7d32 !important; }
+        .bg-surface-variant\/10:hover { background-color: rgba(225, 227, 225, 0.1) !important; }
+
+        /* Typography */
+        .text-headline-md {
+          font-size: 24px !important;
+          line-height: 32px !important;
+          font-weight: 600 !important;
+        }
+        .text-headline-lg {
+          font-size: 32px !important;
+          line-height: 40px !important;
+          letter-spacing: -0.01em !important;
+          font-weight: 600 !important;
+        }
+        .text-display-lg {
+          font-size: 48px !important;
+          line-height: 56px !important;
+          letter-spacing: -0.02em !important;
+          font-weight: 700 !important;
+        }
+        .text-body-lg {
+          font-size: 18px !important;
+          line-height: 28px !important;
+          font-weight: 400 !important;
+        }
+        .text-body-md {
+          font-size: 16px !important;
+          line-height: 24px !important;
+          font-weight: 400 !important;
+        }
+        .text-label-md {
+          font-size: 14px !important;
+          line-height: 20px !important;
+          letter-spacing: 0.01em !important;
+          font-weight: 500 !important;
+        }
+        .text-label-sm {
+          font-size: 12px !important;
+          line-height: 16px !important;
+          font-weight: 600 !important;
+        }
+
+        .material-symbols-outlined {
+          font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+      ` }} />
+
+      <main className="flex min-h-screen">
+        {/* Left Section: Visual & Branding */}
+        <section className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-primary items-center justify-center p-xl lg:sticky lg:top-0 lg:h-screen">
+          {/* Background Image with Overlay */}
+          <div className="absolute inset-0 z-0">
+            <img 
+              alt="Code Editor" 
+              className="w-full h-full object-cover opacity-30 mix-blend-luminosity" 
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDS2U0qNSA6eaxJ74rwxtrjghHxoQ63lvGakn49Tw0ouYJWreDz2_8t09oHWpq-V1LJqsa74URKtRBGOeh7JgmnWh9yknMjMwG0t552eIvlPIC2Ea0TS0ue1JKym0WJnqu5hGjX9iQWyhg5ZdJS6e2cis50AQq8rcMCHiVxlrEfEl8rhkH0cDmN0zjmLmA6O8JQvRyj1jYKzcJPX-g0zLIrZRLBtcSKQTIdGD17mpVpeoeRMlIhN_hrIGW1Q-Z5gkCa4kREJd2Y_z0"
+            />
+            <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/80 to-transparent"></div>
+          </div>
+          {/* Content */}
+          <div className="relative z-10 max-w-lg text-on-primary">
+            <div className="mb-12">
+              <span className="font-headline-md text-headline-md font-bold">InterviewOS</span>
             </div>
-            {password.length > 0 && (<motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col mt-2">
-                <div className="w-full h-[8px] rounded-xl bg-[#23233a] overflow-hidden shadow-sm">
-                  <div className="h-full rounded-xl transition-all duration-300" style={{
-                width: `${(strength.level / 4) * 100}%`,
-                background: strength.level === 4
-                    ? '#7c3aed' // Strong: purple
-                    : strength.level === 3
-                        ? '#6366f1' // Good: blue
-                        : strength.level === 2
-                            ? '#f59e42' // Fair: orange
-                            : '#ef4444', // Weak: red
-            }}/>
+            <h1 className="font-display-lg text-display-lg mb-6 leading-tight">
+              Elevate your technical assessment.
+            </h1>
+            <p className="font-body-lg text-body-lg text-primary-fixed opacity-90 mb-12">
+              The precision engineering platform for elite technical hiring. Join 500+ engineering teams scaling with confidence.
+            </p>
+            {/* Trust Markers */}
+            <div className="grid grid-cols-2 gap-8 border-t border-on-primary-fixed-variant pt-8">
+              <div>
+                <div className="font-headline-md text-headline-md mb-2">98%</div>
+                <p className="font-label-md text-label-md text-primary-fixed opacity-70">Interview Success Rate</p>
+              </div>
+              <div>
+                <div className="font-headline-md text-headline-md mb-2">15k+</div>
+                <p className="font-label-md text-label-md text-primary-fixed opacity-70">Assessments Monthly</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Right Section: Onboarding Form */}
+        <section className="w-full lg:w-1/2 flex flex-col items-center bg-surface p-margin-mobile md:p-margin-desktop min-h-screen">
+          <div className="w-full max-w-[480px] my-auto">
+            {/* Header */}
+            <header className="mb-md">
+              <h2 className="font-headline-lg text-headline-lg text-on-surface mb-xs">Create your account</h2>
+              <p className="font-body-md text-body-md text-on-surface-variant">Start building your high-performance engineering team today.</p>
+            </header>
+
+            {/* Role Selection Toggle */}
+            <div className="mb-md">
+              <label className="font-label-md text-label-md text-on-surface-variant mb-sm block">I am signing up as a...</label>
+              <div className="grid grid-cols-2 gap-base">
+                <button 
+                  type="button"
+                  id="role-interviewer" 
+                  onClick={() => setRole("interviewer")} 
+                  className={`flex items-center justify-center gap-sm py-sm px-md border border-outline-variant/30 rounded-xl transition-all hover:border-secondary group ${role === "interviewer" ? "active-role" : "bg-surface-container-lowest text-on-surface-variant"}`}
+                >
+                  <span className="material-symbols-outlined text-[20px]">psychology</span>
+                  <span className="font-label-md text-label-md">Interviewer</span>
+                </button>
+                <button 
+                  type="button"
+                  id="role-candidate" 
+                  onClick={() => setRole("candidate")} 
+                  className={`flex items-center justify-center gap-sm py-sm px-md border border-outline-variant/30 rounded-xl transition-all hover:border-secondary group ${role === "candidate" ? "active-role" : "bg-surface-container-lowest text-on-surface-variant"}`}
+                >
+                  <span className="material-symbols-outlined text-[20px]">terminal</span>
+                  <span className="font-label-md text-label-md">Candidate</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Form */}
+            <form className="space-y-4" onSubmit={handleSubmit}>
+              {/* Name Field */}
+              <div className="flex flex-col">
+                <label className="font-label-md text-label-md text-on-surface-variant mb-1.5" htmlFor="full-name">Full Name</label>
+                <input 
+                  id="full-name" 
+                  type="text"
+                  placeholder="Alex Rivera" 
+                  value={fullName}
+                  onChange={(e) => {
+                    setFullName(e.target.value);
+                    if (error) setError("");
+                  }}
+                  required
+                  autoComplete="name"
+                  className="w-full px-md py-sm rounded-xl border border-outline-variant/30 focus:border-primary focus:ring-1 focus:ring-primary bg-surface-container-lowest transition-all outline-none text-on-surface" 
+                />
+              </div>
+
+              {/* Email Field */}
+              <div className="flex flex-col">
+                <label className="font-label-md text-label-md text-on-surface-variant mb-1.5" htmlFor="email">Work Email</label>
+                <input 
+                  id="email" 
+                  type="email"
+                  placeholder="alex@company.com" 
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (error) setError("");
+                  }}
+                  required
+                  autoComplete="email"
+                  className="w-full px-md py-sm rounded-xl border border-outline-variant/30 focus:border-primary focus:ring-1 focus:ring-primary bg-surface-container-lowest transition-all outline-none text-on-surface" 
+                />
+              </div>
+
+              {/* Password Field */}
+              <div className="flex flex-col">
+                <div className="flex justify-between items-center mb-1.5">
+                  <label className="font-label-md text-label-md text-on-surface-variant" htmlFor="password">Password</label>
+                  <span className="font-label-sm text-label-sm text-on-surface-variant" id="strength-label">
+                    Strength: {strength.label || "-"}
+                  </span>
                 </div>
-                <span className="text-[12px] font-semibold mt-1 tracking-wide" style={{ color: strength.level === 4
-                    ? '#a5b4fc'
-                    : strength.level === 3
-                        ? '#818cf8'
-                        : strength.level === 2
-                            ? '#fbbf24'
-                            : '#f87171' }}>
-                  {strength.label}
-                </span>
-              </motion.div>)}
-          </motion.div>
+                <input 
+                  id="password" 
+                  type="password"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (error) setError("");
+                  }}
+                  required
+                  autoComplete="new-password"
+                  className="w-full px-md py-sm rounded-xl border border-outline-variant/30 focus:border-primary focus:ring-1 focus:ring-primary bg-surface-container-lowest transition-all outline-none text-on-surface" 
+                />
+                {/* Strength Meter Container - layout-stable */}
+                <div className="flex gap-xs mt-1.5 h-1 w-full rounded-full bg-surface-container overflow-hidden">
+                  <div 
+                    id="strength-bar"
+                    className="h-full transition-all duration-300"
+                    style={{
+                      width: password.length > 0 ? `${(strength.level / 4) * 100}%` : "0%",
+                      backgroundColor: password.length > 0 ? (strength.color || "#bfcaba") : "transparent"
+                    }}
+                  />
+                </div>
+              </div>
 
-          {/* Role toggle */}
-          <motion.div initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={stagger(4)}>
-            <label className="ios-label">I Am A</label>
-            <div className="flex gap-2">
-              {["candidate", "interviewer"].map((r) => (<button key={r} type="button" onClick={() => setRole(r)} className="flex-1 h-10 rounded-lg text-[13px] font-medium cursor-pointer transition-all duration-150" style={{
-                background: role === r
-                    ? "rgba(99,102,241,0.12)"
-                    : "rgba(255,255,255,0.03)",
-                border: `1px solid ${role === r ? "rgba(99,102,241,0.35)" : "rgba(255,255,255,0.08)"}`,
-                color: role === r ? "#a5b4fc" : "#888899",
-            }}>
-                  {r === "candidate" ? "👨‍💻 Candidate" : "🎯 Interviewer"}
-                </button>))}
-            </div>
-          </motion.div>
+              {/* TOS Checkbox */}
+              <div className="flex items-center gap-sm py-1">
+                <input 
+                  id="tos" 
+                  type="checkbox"
+                  checked={termsAccepted}
+                  onChange={(e) => {
+                    setTermsAccepted(e.target.checked);
+                    if (error) setError("");
+                  }}
+                  required
+                  className="rounded border-outline text-primary focus:ring-primary h-4 w-4" 
+                />
+                <label className="font-body-md text-body-md text-on-surface-variant cursor-pointer select-none" htmlFor="tos">
+                  I agree to the <a className="text-secondary font-medium hover:underline" href="/terms" target="_blank" rel="noopener noreferrer">Terms of Service</a> and <a className="text-secondary font-medium hover:underline" href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.
+                </label>
+              </div>
 
-          {/* Terms */}
-          <motion.div initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={stagger(5)} className="flex items-start gap-2">
-            <input type="checkbox" id="terms" className="ios-checkbox mt-0.5" checked={termsAccepted} onChange={(e) => {
-            setTermsAccepted(e.target.checked);
-            if (error)
-                setError("");
-        }} required/>
-            <label htmlFor="terms" className="text-xs cursor-pointer leading-relaxed" style={{ color: "#888899" }}>
-              I agree to the{" "}
-              <a href="/terms" target="_blank" rel="noopener noreferrer" className="font-medium" style={{ color: "#6366f1" }}>
-                Terms
-              </a>
-              {" & "}
-              <a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-medium" style={{ color: "#6366f1" }}>
-                Privacy Policy
-              </a>
-            </label>
-          </motion.div>
-        </div>
+              {/* Error Alert */}
+              {error && (
+                <p className="text-xs text-error font-medium" role="alert">
+                  {error}
+                </p>
+              )}
 
-        {/* Error */}
-        {error && (<motion.p initial={{ y: -4, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-[11px] mt-3" style={{ color: "#f87171" }} role="alert">
-            {error}
-          </motion.p>)}
+              {/* Submit Button */}
+              <button 
+                type="submit"
+                disabled={!termsAccepted || loading}
+                className="w-full py-md bg-[#0d631b] hover:bg-[#094713] disabled:opacity-50 text-white rounded-xl font-headline-md text-headline-md shadow-sm hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all duration-200 flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Creating Account...
+                  </>
+                ) : (
+                  "Create Account"
+                )}
+              </button>
+            </form>
 
-        {/* Submit */}
-        <motion.button initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={stagger(6)} type="submit" className="ios-btn-primary mt-5" disabled={!termsAccepted || loading}>
-          {loading ? (<>
-              <Loader2 size={16} className="animate-spin"/>
-              Creating account...
-            </>) : (<>
-              Create Account
-              <ArrowRight size={16}/>
-            </>)}
-        </motion.button>
-
-        {/* Divider */}
-        <motion.div initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={stagger(7)} className="ios-divider my-5">
-          <span className="text-xs" style={{ color: "#444455" }}>
-            or
-          </span>
-        </motion.div>
-
-        {/* Google */}
-        <motion.button initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={stagger(8)} type="button" className="ios-btn-social" onClick={() => handleGoogle()} disabled={loading}>
-          <GoogleIcon size={20}/>
-          Continue with Google
-        </motion.button>
-
-        {/* Footer */}
-        <motion.p initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={stagger(9)} className="text-center text-[13px] mt-5" style={{ color: "#666677" }}>
-          Already have an account?{" "}
-          <Link to="/login" className="font-semibold transition-colors hover:brightness-125" style={{ color: "#6366f1" }}>
-            Sign in
-          </Link>
-        </motion.p>
-      </form>
-    </AuthLayout>);
+            <footer className="mt-8 text-center">
+              <p className="font-body-md text-body-md text-on-surface-variant">
+                Already have an account?{" "}
+                <Link to="/login" className="text-[#0d631b] font-bold hover:underline">
+                  Login
+                </Link>
+              </p>
+            </footer>
+          </div>
+        </section>
+      </main>
+    </div>
+  );
 };
+
 export default RegisterPage;
