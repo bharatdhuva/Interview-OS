@@ -24,7 +24,7 @@ const app_1 = __importDefault(require("./app"));
 const db_1 = require("./config/db");
 const logger_1 = __importDefault(require("./utils/logger"));
 const index_1 = require("./sockets/index");
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8090;
 // Wrap the Express app in a Node.js HTTP server so Socket.IO can share the port
 const server = http_1.default.createServer(app_1.default);
 // Initialise Socket.IO with CORS settings that mirror the REST API
