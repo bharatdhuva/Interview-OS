@@ -74,7 +74,7 @@ const register = async (req, res) => {
             email,
             passwordHash,
             role: role || 'candidate',
-            isOnboarded: true,
+            isOnboarded: false,
         });
 
         /* 
