@@ -1,10 +1,11 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import manVideo from "../assets/man.mp4";
 import womenVideo from "../assets/women.mp4";
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -72,7 +73,6 @@ export default function LandingPage() {
         .px-md { padding-left: 24px !important; padding-right: 24px !important; }
         .px-sm { padding-left: 12px !important; padding-right: 12px !important; }
         .py-xs { padding-top: 4px !important; padding-bottom: 4px !important; }
-        .px-margin-desktop { padding-left: 48px !important; padding-right: 48px !important; }
         .pt-xl { padding-top: 64px !important; }
         .pb-xl { padding-bottom: 64px !important; }
         .p-xl { padding: 64px !important; }
@@ -98,10 +98,22 @@ export default function LandingPage() {
 
         /* Custom Typography mapping from Stitch design specs */
         .font-display-lg, .text-display-lg {
-          font-size: 48px !important;
-          line-height: 56px !important;
+          font-size: 32px !important;
+          line-height: 40px !important;
           letter-spacing: -0.02em !important;
           font-weight: 700 !important;
+        }
+        @media (min-width: 768px) {
+          .font-display-lg, .text-display-lg {
+            font-size: 40px !important;
+            line-height: 48px !important;
+          }
+        }
+        @media (min-width: 1024px) {
+          .font-display-lg, .text-display-lg {
+            font-size: 48px !important;
+            line-height: 56px !important;
+          }
         }
         .font-headline-lg, .text-headline-lg {
           font-size: 32px !important;
@@ -139,6 +151,64 @@ export default function LandingPage() {
           font-size: 12px !important;
           line-height: 16px !important;
           font-weight: 600 !important;
+        }
+
+        /* Responsive Mockup Video Container & Overlap Shifts */
+        .mockup-container {
+          position: relative !important;
+          height: 320px !important;
+        }
+        .mockup-woman {
+          position: absolute !important;
+          top: 0px !important;
+          right: 0px !important;
+          width: 60% !important;
+        }
+        .mockup-man {
+          position: absolute !important;
+          top: 100px !important;
+          left: -10px !important;
+          width: 62% !important;
+        }
+        .mockup-dots {
+          position: absolute !important;
+          z-index: 5 !important;
+          top: 140px !important;
+          right: 20px !important;
+        }
+        @media (min-width: 768px) {
+          .mockup-container {
+            height: 380px !important;
+          }
+          .mockup-woman {
+            top: 20px !important;
+            right: 10px !important;
+          }
+          .mockup-man {
+            top: 130px !important;
+            left: -20px !important;
+          }
+          .mockup-dots {
+            top: 180px !important;
+            right: 40px !important;
+          }
+        }
+        @media (min-width: 1024px) {
+          .mockup-container {
+            height: 480px !important;
+          }
+          .mockup-woman {
+            top: 0px !important;
+            right: 0px !important;
+          }
+          .mockup-man {
+            top: 170px !important;
+            left: -40px !important;
+          }
+          .mockup-dots {
+            top: 220px !important;
+            right: 60px !important;
+          }
         }
 
         /* Color classes override */
@@ -198,8 +268,8 @@ export default function LandingPage() {
 
       <div className="landing-container bg-background text-on-background min-h-screen w-full flex flex-col items-center">
         {/* TopNavBar */}
-        <header className="bg-surface dark:bg-background shadow-sm fixed w-full h-20 transition-all duration-300 top-0 left-0 right-0 z-50">
-          <nav className="flex justify-between items-center w-full px-margin-desktop max-w-[1280px] mx-auto h-full">
+        <header className="bg-surface dark:bg-background shadow-sm fixed top-0 left-0 right-0 h-20 transition-all duration-300 z-50">
+          <nav className="flex justify-between items-center w-full px-12 max-w-[1280px] mx-auto h-full">
             <div className="flex items-center gap-base">
               <span className="text-title-lg font-title-lg font-bold text-[#0d631b]">InterviewOS</span>
             </div>
@@ -224,14 +294,73 @@ export default function LandingPage() {
               >
                 Get Started
               </button>
+              
+              {/* Mobile Menu Toggle Button */}
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="block md:hidden text-[#40493d] hover:text-[#0d631b] transition-all duration-200 ml-2"
+                aria-label="Toggle Menu"
+              >
+                <span className="material-symbols-outlined text-3xl">
+                  {mobileMenuOpen ? "close" : "menu"}
+                </span>
+              </button>
             </div>
           </nav>
+
+          {/* Mobile Menu Drawer */}
+          {mobileMenuOpen && (
+            <div className="md:hidden absolute top-20 left-0 right-0 bg-white/95 backdrop-blur-md shadow-lg border-b border-[#bfcaba]/30 py-6 px-12 z-40 transition-all duration-300 animate-in-up">
+              <div className="flex flex-col gap-6 font-title-lg text-title-lg text-[#40493d]">
+                <a
+                  href="#platform"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="hover:text-[#0d631b] transition-colors"
+                >
+                  Platform
+                </a>
+                <a
+                  href="#features"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="hover:text-[#0d631b] transition-colors"
+                >
+                  Features
+                </a>
+                <a
+                  href="#how-it-works"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="hover:text-[#0d631b] transition-colors"
+                >
+                  How It Works
+                </a>
+                <div className="h-px bg-[#bfcaba]/30 my-2" />
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    navigate("/login");
+                  }}
+                  className="text-left hover:text-[#0d631b] transition-colors"
+                >
+                  Log In
+                </button>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    navigate("/register");
+                  }}
+                  className="bg-[#0d631b] hover:bg-[#2e7d32] text-white py-sm px-md rounded text-center transition-all cursor-pointer font-label-md"
+                >
+                  Get Started
+                </button>
+              </div>
+            </div>
+          )}
         </header>
 
         <main className="pt-20 overflow-x-hidden w-full flex flex-col items-center">
           {/* Hero Section */}
           <section id="platform" className="hero-gradient relative hero-padding w-full">
-            <div className="w-full max-w-[1280px] mx-auto px-margin-desktop grid grid-cols-1 lg:grid-cols-2 gap-lg items-center lg:pt-6">
+            <div className="w-full max-w-[1280px] mx-auto px-12 grid grid-cols-1 lg:grid-cols-2 gap-lg items-center lg:pt-6">
               <div className="flex flex-col gap-5">
                 <h1 className="font-display-lg text-display-lg text-[#191c1b] leading-tight">
                   The Engineering<br />
@@ -256,21 +385,17 @@ export default function LandingPage() {
                   </button>
                 </div>
               </div>
-              <div className="relative w-full max-w-[550px] mx-auto mt-6 lg:mt-0" style={{ height: '480px' }}>
+              <div className="relative w-full max-w-[550px] lg:ml-16 lg:mr-auto mx-auto mt-6 lg:mt-0 mockup-container">
 
                 {/* Dot Grid */}
-                <div className="absolute z-0" style={{ bottom: '30px', right: '0px', display: 'grid', gridTemplateColumns: 'repeat(5, 7px)', gap: '6px' }}>
+                <div className="mockup-dots" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 7px)', gap: '6px' }}>
                   {Array.from({ length: 20 }).map((_, i) => (
                     <div key={i} style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#0d631b', opacity: 0.3 }} />
                   ))}
                 </div>
 
                 {/* TOP-RIGHT Window — Women Video (dark titlebar) */}
-                <div style={{
-                  position: 'absolute',
-                  top: '0px',
-                  right: '0px',
-                  width: '60%',
+                <div className="mockup-woman" style={{
                   borderRadius: '12px',
                   overflow: 'hidden',
                   zIndex: 10,
@@ -290,11 +415,7 @@ export default function LandingPage() {
                 </div>
 
                 {/* BOTTOM-LEFT Window — Man Video (light titlebar) */}
-                <div style={{
-                  position: 'absolute',
-                  top: '110px',
-                  left: '0px',
-                  width: '62%',
+                <div className="mockup-man" style={{
                   borderRadius: '12px',
                   overflow: 'hidden',
                   zIndex: 20,
@@ -320,7 +441,7 @@ export default function LandingPage() {
 
           {/* Integrations & Tech Stack */}
           <section id="features" className="py-20 bg-background w-full border-t border-[#bfcaba]/30">
-            <div className="w-full max-w-[1280px] mx-auto px-margin-desktop grid grid-cols-1 lg:grid-cols-12 gap-y-12 gap-x-8 items-center py-8">
+            <div className="w-full max-w-[1280px] mx-auto px-12 grid grid-cols-1 lg:grid-cols-12 gap-y-12 gap-x-8 items-center py-8">
               <div className="lg:col-span-5 flex flex-col gap-4">
                 <h2 className="text-4xl md:text-5xl font-extrabold text-[#191c1b] leading-tight">Integrations &amp; Tech Stack</h2>
                 <p className="text-body-lg text-[#40493d] max-w-sm leading-relaxed">
@@ -385,36 +506,10 @@ export default function LandingPage() {
             </div>
           </section>
 
-          {/* Testimonial Section */}
-          <section className="py-xl bg-white overflow-hidden relative w-full border-t border-[#bfcaba]/30">
-            <div className="w-full max-w-[1280px] mx-auto px-margin-desktop">
-              <div className="flex flex-col lg:flex-row gap-lg items-center">
-                <div className="lg:w-1/3 flex justify-center">
-                  <div className="relative w-64 h-64">
-                    <div className="absolute inset-0 bg-[#0d631b] rounded-full rotate-6 scale-105"></div>
-                    <div className="relative z-10 w-full h-full flex items-center justify-center bg-[#f2f4f2] rounded-full border-4 border-white">
-                      <span className="material-symbols-outlined text-[#0d631b] text-7xl">person</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="lg:w-2/3">
-                  <span className="material-symbols-outlined text-[#0d631b]/20 text-[80px] leading-none mb-sm">format_quote</span>
-                  <blockquote className="font-display-lg text-headline-lg lg:text-display-lg text-[#191c1b] leading-tight mb-md">
-                    "InterviewOS transformed our hiring pipeline from a black box into a data-driven science. We reduced time-to-hire by 40% while significantly increasing our engineering quality bar."
-                  </blockquote>
-                  <div>
-                    <p className="font-title-lg text-title-lg text-[#191c1b] font-bold">Marcus Chen</p>
-                    <span className="text-xs text-[#707a6c] font-medium block mb-1">(Sample testimonial)</span>
-                    <p className="font-label-md text-label-md text-[#40493d]">CTO @ NexGen Data Systems</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
 
           {/* Key Features Section */}
           <section id="key-features" className="py-20 bg-[#f2f4f2] w-full border-t border-[#bfcaba]/30">
-            <div className="w-full max-w-[1280px] mx-auto px-margin-desktop">
+            <div className="w-full max-w-[1280px] mx-auto px-12">
               <div className="text-center mb-xl">
                 <h2 className="font-headline-lg text-headline-lg text-[#191c1b] mb-sm">Key Features</h2>
                 <p className="font-body-md text-body-md text-[#40493d] max-w-xl mx-auto">
@@ -480,7 +575,7 @@ export default function LandingPage() {
 
           {/* How It Works Section */}
           <section id="how-it-works" className="py-20 bg-background w-full border-t border-[#bfcaba]/30">
-            <div className="w-full max-w-[1280px] mx-auto px-margin-desktop">
+            <div className="w-full max-w-[1280px] mx-auto px-12">
               <div className="text-center mb-xl">
                 <h2 className="font-headline-lg text-headline-lg text-[#191c1b] mb-sm">How It Works</h2>
                 <p className="font-body-md text-body-md text-[#40493d] max-w-xl mx-auto">
@@ -529,8 +624,8 @@ export default function LandingPage() {
           </section>
 
           {/* Final CTA */}
-          <section className="py-xl px-margin-desktop w-full border-t border-[#bfcaba]/30">
-            <div className="w-full max-w-[1280px] mx-auto bg-[#0d631b] rounded-2xl p-xl text-center relative overflow-hidden group">
+          <section className="py-xl px-12 w-full border-t border-[#bfcaba]/30">
+            <div className="w-full max-w-[1280px] mx-auto bg-[#0d631b] rounded-2xl p-8 md:p-12 lg:p-16 text-center relative overflow-hidden group">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.1),transparent)] group-hover:scale-110 transition-transform duration-700"></div>
               <div className="relative z-10">
                 <h2 className="font-display-lg text-display-lg text-white mb-lg leading-tight">Ready to scale your technical hiring?</h2>
@@ -547,7 +642,7 @@ export default function LandingPage() {
 
         {/* Footer */}
         <footer className="bg-[#eceeec] dark:bg-zinc-900 border-t border-[#bfcaba] dark:border-zinc-800 w-full pt-16 pb-12">
-          <div className="w-full max-w-[1280px] mx-auto px-margin-desktop grid grid-cols-1 md:grid-cols-12 gap-y-8 gap-x-8 mb-16 text-label-md font-label-md">
+          <div className="w-full max-w-[1280px] mx-auto px-12 grid grid-cols-1 md:grid-cols-12 gap-y-8 gap-x-8 mb-16 text-label-md font-label-md">
             <div className="md:col-span-5 space-y-4">
               <span className="text-2xl font-bold text-[#0d631b] block">InterviewOS</span>
               <p className="text-[#40493d] dark:text-zinc-400 max-w-[320px] leading-relaxed text-body-md">
@@ -592,7 +687,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="w-full max-w-[1280px] mx-auto px-margin-desktop py-md border-t border-[#bfcaba]/30 flex justify-between items-center text-xs text-[#707a6c] dark:text-zinc-400">
+          <div className="w-full max-w-[1280px] mx-auto px-12 py-md border-t border-[#bfcaba]/30 flex justify-between items-center text-xs text-[#707a6c] dark:text-zinc-400">
             <p>© 2024 InterviewOS. All rights reserved.</p>
             <div className="flex gap-md">
               <a href="#" className="hover:text-[#0d631b] transition-colors">Status</a>
