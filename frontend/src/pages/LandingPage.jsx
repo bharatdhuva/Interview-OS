@@ -230,8 +230,8 @@ export default function LandingPage() {
 
         <main className="pt-20 overflow-x-hidden w-full flex flex-col items-center">
           {/* Hero Section */}
-          <section id="platform" className="hero-gradient relative hero-padding px-margin-desktop w-full">
-            <div className="w-full max-w-[1280px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-lg items-center lg:pt-6">
+          <section id="platform" className="hero-gradient relative hero-padding w-full">
+            <div className="w-full max-w-[1280px] mx-auto px-margin-desktop grid grid-cols-1 lg:grid-cols-2 gap-lg items-center lg:pt-6">
               <div className="flex flex-col gap-5">
                 <h1 className="font-display-lg text-display-lg text-[#191c1b] leading-tight">
                   The Engineering<br />
@@ -319,8 +319,8 @@ export default function LandingPage() {
 
 
           {/* Integrations & Tech Stack */}
-          <section id="features" className="py-20 px-margin-desktop bg-background w-full border-t border-[#bfcaba]/30">
-            <div className="w-full max-w-[1280px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-y-12 gap-x-8 items-center py-8">
+          <section id="features" className="py-20 bg-background w-full border-t border-[#bfcaba]/30">
+            <div className="w-full max-w-[1280px] mx-auto px-margin-desktop grid grid-cols-1 lg:grid-cols-12 gap-y-12 gap-x-8 items-center py-8">
               <div className="lg:col-span-5 flex flex-col gap-4">
                 <h2 className="text-4xl md:text-5xl font-extrabold text-[#191c1b] leading-tight">Integrations &amp; Tech Stack</h2>
                 <p className="text-body-lg text-[#40493d] max-w-sm leading-relaxed">
@@ -413,8 +413,8 @@ export default function LandingPage() {
           </section>
 
           {/* Key Features Section */}
-          <section id="key-features" className="py-20 px-margin-desktop bg-[#f2f4f2] w-full border-t border-[#bfcaba]/30">
-            <div className="w-full max-w-[1280px] mx-auto">
+          <section id="key-features" className="py-20 bg-[#f2f4f2] w-full border-t border-[#bfcaba]/30">
+            <div className="w-full max-w-[1280px] mx-auto px-margin-desktop">
               <div className="text-center mb-xl">
                 <h2 className="font-headline-lg text-headline-lg text-[#191c1b] mb-sm">Key Features</h2>
                 <p className="font-body-md text-body-md text-[#40493d] max-w-xl mx-auto">
@@ -479,8 +479,8 @@ export default function LandingPage() {
           </section>
 
           {/* How It Works Section */}
-          <section id="how-it-works" className="py-20 px-margin-desktop bg-background w-full border-t border-[#bfcaba]/30">
-            <div className="w-full max-w-[1280px] mx-auto">
+          <section id="how-it-works" className="py-20 bg-background w-full border-t border-[#bfcaba]/30">
+            <div className="w-full max-w-[1280px] mx-auto px-margin-desktop">
               <div className="text-center mb-xl">
                 <h2 className="font-headline-lg text-headline-lg text-[#191c1b] mb-sm">How It Works</h2>
                 <p className="font-body-md text-body-md text-[#40493d] max-w-xl mx-auto">
