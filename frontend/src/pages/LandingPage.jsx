@@ -236,7 +236,7 @@ export default function LandingPage() {
                 <h1 className="font-display-lg text-display-lg text-[#191c1b] leading-tight">
                   The Engineering<br />
                   Leader's <span className="text-[#0d631b]">Technical<br />
-                  Interview Platform.</span>
+                    Interview Platform.</span>
                 </h1>
                 <p className="font-body-lg text-body-lg text-[#40493d] max-w-xl">
                   A collaborative environment designed for elite engineering teams. Real-time code execution, persistent whiteboards, and interactive video features that reveal a candidate's true potential.
@@ -256,55 +256,63 @@ export default function LandingPage() {
                   </button>
                 </div>
               </div>
+              <div className="relative w-full max-w-[550px] mx-auto mt-6 lg:mt-0" style={{ height: '480px' }}>
 
-              <div className="relative w-full max-w-[550px] aspect-[1.3] mx-auto mt-6 lg:mt-0">
-                {/* Decorative background circle */}
-                <div className="absolute left-[18%] top-[35%] w-36 h-36 rounded-full border border-dashed border-[#0d631b]/20 bg-blue-50/50 z-0"></div>
-
-                {/* Decorative background dot matrix */}
-                <div className="absolute bottom-[10%] right-[12%] z-0 grid grid-cols-5 gap-x-2 gap-y-2.5">
-                  {Array.from({ length: 35 }).map((_, i) => (
-                    <div key={i} className="w-1.5 h-1.5 rounded-full bg-blue-600/30" />
+                {/* Dot Grid */}
+                <div className="absolute z-0" style={{ bottom: '30px', right: '0px', display: 'grid', gridTemplateColumns: 'repeat(5, 7px)', gap: '6px' }}>
+                  {Array.from({ length: 20 }).map((_, i) => (
+                    <div key={i} style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#0d631b', opacity: 0.3 }} />
                   ))}
                 </div>
 
-                {/* Top-Right Window (Women Video) */}
-                <div className="absolute top-0 right-4 w-[66%] rounded-2xl overflow-hidden bg-[#111c24] border border-slate-700/30 shadow-2xl z-10 transform hover:-translate-y-1 transition-transform duration-300">
-                  {/* Header Bar */}
-                  <div className="bg-[#0b1217] px-4 py-2.5 flex items-center gap-1.5 border-b border-slate-800/50">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#1e3a8a] opacity-90"></span>
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#2563eb] opacity-90"></span>
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#60a5fa] opacity-90"></span>
+                {/* TOP-RIGHT Window — Women Video (dark titlebar) */}
+                <div style={{
+                  position: 'absolute',
+                  top: '0px',
+                  right: '0px',
+                  width: '60%',
+                  borderRadius: '12px',
+                  overflow: 'hidden',
+                  zIndex: 10,
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.20)',
+                  border: '1px solid rgba(0,0,0,0.10)'
+                }}>
+                  <div style={{ background: '#0d1a12', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#1a4d2e', display: 'inline-block' }} />
+                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#2d8653', display: 'inline-block' }} />
+                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#5ec992', display: 'inline-block' }} />
                   </div>
-                  {/* Video */}
                   <video
                     src={womenVideo}
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    className="w-full aspect-[4/3] object-cover"
+                    autoPlay loop muted playsInline
+                    style={{ width: '100%', display: 'block', aspectRatio: '4/3', objectFit: 'cover' }}
                   />
                 </div>
 
-                {/* Bottom-Left Window (Man Video) */}
-                <div className="absolute bottom-4 left-4 w-[56%] rounded-2xl overflow-hidden bg-[#f8fafc] border border-slate-200/80 shadow-2xl z-20 transform hover:translate-y-1 transition-transform duration-300">
-                  {/* Header Bar */}
-                  <div className="bg-[#dbeafe] px-4 py-2.5 flex items-center gap-1.5 border-b border-slate-200/40">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#1e3a8a]"></span>
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#2563eb]"></span>
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#60a5fa]"></span>
+                {/* BOTTOM-LEFT Window — Man Video (light titlebar) */}
+                <div style={{
+                  position: 'absolute',
+                  top: '110px',
+                  left: '0px',
+                  width: '62%',
+                  borderRadius: '12px',
+                  overflow: 'hidden',
+                  zIndex: 20,
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.16)',
+                  border: '1px solid rgba(0,0,0,0.08)'
+                }}>
+                  <div style={{ background: '#d6ede0', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#1a4d2e', display: 'inline-block' }} />
+                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#2d8653', display: 'inline-block' }} />
+                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#5ec992', display: 'inline-block' }} />
                   </div>
-                  {/* Video */}
                   <video
                     src={manVideo}
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    className="w-full aspect-[4/3] object-cover"
+                    autoPlay loop muted playsInline
+                    style={{ width: '100%', display: 'block', aspectRatio: '4/3', objectFit: 'cover' }}
                   />
                 </div>
+
               </div>
             </div>
           </section>
