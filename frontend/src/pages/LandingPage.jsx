@@ -6,6 +6,14 @@ import womenVideo from "../assets/women.mp4";
 export default function LandingPage() {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState("platform");
+
+  useEffect(() => {
+    // Default URL hash to #platform on initial mount if empty
+    if (!window.location.hash || window.location.hash === "#") {
+      window.location.hash = "#platform";
+    }
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -19,8 +27,27 @@ export default function LandingPage() {
           header.classList.add("h-20");
         }
       }
+
+      // Scroll spy logic for active navigation section
+      const sections = ["platform", "features", "how-it-works"];
+      const scrollPosition = window.scrollY + 120; // offset for the header height
+
+      for (const sectionId of sections) {
+        const el = document.getElementById(sectionId);
+        if (el) {
+          const top = el.offsetTop;
+          const height = el.offsetHeight;
+          if (scrollPosition >= top && scrollPosition < top + height) {
+            setActiveSection(sectionId);
+            break;
+          }
+        }
+      }
     };
+
     window.addEventListener("scroll", handleScroll);
+    // Trigger scroll check on mount
+    handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -264,6 +291,83 @@ export default function LandingPage() {
         .material-symbols-outlined {
           font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
         }
+
+        /* Custom Social Links & Popup Tooltip */
+        .social-link {
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 38px;
+          height: 38px;
+          border-radius: 50%;
+          background: rgba(13, 99, 27, 0.06);
+          color: #40493d !important;
+          transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .dark .social-link {
+          background: rgba(136, 217, 130, 0.08);
+          color: #a1a1aa !important;
+        }
+
+        .social-link:hover {
+          color: #ffffff !important;
+          background: #0d631b !important;
+          transform: translateY(-4px);
+          box-shadow: 0 4px 12px rgba(13, 99, 27, 0.3);
+        }
+
+        .dark .social-link:hover {
+          color: #191c1b !important;
+          background: #88d982 !important;
+          box-shadow: 0 4px 12px rgba(136, 217, 130, 0.3);
+        }
+
+        .tooltip {
+          position: absolute;
+          bottom: 100%;
+          left: 50%;
+          transform: translateX(-50%) translateY(10px);
+          background: #191c1b;
+          color: #ffffff;
+          padding: 6px 12px;
+          border-radius: 6px;
+          font-size: 11px;
+          font-weight: 600;
+          white-space: nowrap;
+          opacity: 0;
+          pointer-events: none;
+          transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+          margin-bottom: 8px;
+          z-index: 100;
+        }
+
+        .dark .tooltip {
+          background: #ffffff;
+          color: #191c1b;
+        }
+
+        .tooltip::after {
+          content: "";
+          position: absolute;
+          top: 100%;
+          left: 50%;
+          transform: translateX(-50%);
+          border-width: 5px;
+          border-style: solid;
+          border-color: #191c1b transparent transparent transparent;
+        }
+
+        .dark .tooltip::after {
+          border-color: #ffffff transparent transparent transparent;
+        }
+
+        .social-link:hover .tooltip {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0);
+        }
       ` }} />
 
       <div className="landing-container bg-background text-on-background min-h-screen w-full flex flex-col items-center">
@@ -276,9 +380,36 @@ export default function LandingPage() {
 
             {/* Desktop Nav Links */}
             <div className="hidden md:flex gap-lg items-center text-body-md font-body-md">
-              <a className="text-[#40493d] hover:text-[#0d631b] hover:border-[#0d631b] border-b-2 border-transparent pb-1 transition-all cursor-pointer active:scale-95 duration-200" href="#platform">Platform</a>
-              <a className="text-[#40493d] hover:text-[#0d631b] hover:border-[#0d631b] border-b-2 border-transparent pb-1 transition-all cursor-pointer active:scale-95 duration-200" href="#features">Features</a>
-              <a className="text-[#40493d] hover:text-[#0d631b] hover:border-[#0d631b] border-b-2 border-transparent pb-1 transition-all cursor-pointer active:scale-95 duration-200" href="#how-it-works">How It Works</a>
+              <a
+                className={`hover:text-[#0d631b] hover:border-[#0d631b] border-b-2 pb-1 transition-all cursor-pointer active:scale-95 duration-200 ${
+                  activeSection === "platform"
+                    ? "text-[#0d631b] border-[#0d631b]"
+                    : "text-[#40493d] border-transparent"
+                }`}
+                href="#platform"
+              >
+                Platform
+              </a>
+              <a
+                className={`hover:text-[#0d631b] hover:border-[#0d631b] border-b-2 pb-1 transition-all cursor-pointer active:scale-95 duration-200 ${
+                  activeSection === "features"
+                    ? "text-[#0d631b] border-[#0d631b]"
+                    : "text-[#40493d] border-transparent"
+                }`}
+                href="#features"
+              >
+                Features
+              </a>
+              <a
+                className={`hover:text-[#0d631b] hover:border-[#0d631b] border-b-2 pb-1 transition-all cursor-pointer active:scale-95 duration-200 ${
+                  activeSection === "how-it-works"
+                    ? "text-[#0d631b] border-[#0d631b]"
+                    : "text-[#40493d] border-transparent"
+                }`}
+                href="#how-it-works"
+              >
+                How It Works
+              </a>
             </div>
 
             <div className="flex items-center gap-md">
@@ -315,21 +446,27 @@ export default function LandingPage() {
                 <a
                   href="#platform"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="hover:text-[#0d631b] transition-colors"
+                  className={`transition-colors hover:text-[#0d631b] ${
+                    activeSection === "platform" ? "text-[#0d631b] font-bold" : "text-[#40493d]"
+                  }`}
                 >
                   Platform
                 </a>
                 <a
                   href="#features"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="hover:text-[#0d631b] transition-colors"
+                  className={`transition-colors hover:text-[#0d631b] ${
+                    activeSection === "features" ? "text-[#0d631b] font-bold" : "text-[#40493d]"
+                  }`}
                 >
                   Features
                 </a>
                 <a
                   href="#how-it-works"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="hover:text-[#0d631b] transition-colors"
+                  className={`transition-colors hover:text-[#0d631b] ${
+                    activeSection === "how-it-works" ? "text-[#0d631b] font-bold" : "text-[#40493d]"
+                  }`}
                 >
                   How It Works
                 </a>
@@ -673,22 +810,51 @@ export default function LandingPage() {
             <div className="md:col-span-3 space-y-4">
               <p className="text-xs uppercase tracking-widest text-[#191c1b] font-bold">Social</p>
               <div className="flex gap-4 items-center">
-                <a href="#" className="text-[#40493d] hover:text-[#0d631b] transition-colors" aria-label="Twitter">
-                  <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.986 0-.213 0-.427-.015-.64A9.936 9.936 0 0024 4.59z" />
-                  </svg>
-                </a>
-                <a href="#" className="text-[#40493d] hover:text-[#0d631b] transition-colors" aria-label="LinkedIn">
+                <a
+                  href="https://linkedin.com/in/bharatdhuva27"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="social-link"
+                  aria-label="LinkedIn"
+                >
                   <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.779-1.75-1.75s.784-1.75 1.75-1.75 1.75.779 1.75 1.75-.784 1.75-1.75 1.75zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
                   </svg>
+                  <span className="tooltip">LinkedIn</span>
+                </a>
+                <a
+                  href="https://x.com/mrcrotes"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="social-link"
+                  aria-label="X"
+                >
+                  <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                  </svg>
+                  <span className="tooltip">X (Twitter)</span>
+                </a>
+                <a
+                  href="https://github.com/bharatdhuva"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="social-link"
+                  aria-label="GitHub"
+                >
+                  <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
+                  </svg>
+                  <span className="tooltip">GitHub</span>
                 </a>
               </div>
             </div>
           </div>
 
-          <div className="w-full max-w-[1280px] mx-auto px-12 py-md border-t border-[#bfcaba]/30 flex justify-between items-center text-xs text-[#707a6c] dark:text-zinc-400">
+          <div className="w-full max-w-[1280px] mx-auto px-12 py-md border-t border-[#bfcaba]/30 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-[#707a6c] dark:text-zinc-400">
             <p>© 2024 InterviewOS. All rights reserved.</p>
+            <p className="font-semibold text-center select-none">
+              Made with <span className="text-[#0d631b] dark:text-[#88d982] animate-pulse">❤️</span> by <a href="https://github.com/bharatdhuva" target="_blank" rel="noopener noreferrer" className="hover:text-[#0d631b] dark:hover:text-[#88d982] transition-colors duration-300 underline underline-offset-4 font-bold">Bharat Dhuva</a>
+            </p>
             <div className="flex gap-md">
               <a href="#" className="hover:text-[#0d631b] transition-colors">Status</a>
               <a href="#" className="hover:text-[#0d631b] transition-colors">Cookies</a>
