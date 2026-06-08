@@ -58,6 +58,10 @@ export default function LandingPage() {
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
 
+        html {
+          scroll-behavior: smooth;
+        }
+
         :root {
           --primary: #0d631b;
           --primary-container: #2e7d32;
@@ -374,7 +378,13 @@ export default function LandingPage() {
         {/* TopNavBar */}
         <header className="bg-surface dark:bg-background shadow-sm fixed top-0 left-0 right-0 h-20 transition-all duration-300 z-50">
           <nav className="flex justify-between items-center w-full px-12 max-w-[1280px] mx-auto h-full">
-            <div className="flex items-center gap-base">
+            <div
+              onClick={() => {
+                window.scrollTo({ top: 0, behavior: "smooth" });
+                window.location.hash = "#platform";
+              }}
+              className="flex items-center gap-base cursor-pointer select-none"
+            >
               <span className="text-title-lg font-title-lg font-bold text-[#0d631b]">InterviewOS</span>
             </div>
 
