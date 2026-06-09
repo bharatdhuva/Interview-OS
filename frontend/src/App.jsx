@@ -100,7 +100,7 @@ const AppRoutes = () => {
     }
 
     return (<>
-      <SiteLoader visible={isRouteLoading || isApiLoading}/>
+      <SiteLoader visible={isRouteLoading}/>
             <Routes>
                 <Route path="/" element={<LandingPage />}/>
                 <Route path="/login" element={<LoginPage />}/>

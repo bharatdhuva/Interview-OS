@@ -361,83 +361,110 @@ export default function InterviewerDashboard() {
 
           {/* Room List */}
           <div className="space-y-4">
-            {!isLoadingRooms && rooms.length === 0 && (
-              <div className="flex flex-col items-center justify-center p-12 text-center rounded-2xl border border-dashed border-primary/30 bg-primary/5 max-w-2xl mx-auto my-8">
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-4">
-                  <Plus className="w-8 h-8" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">No Interviews Yet</h3>
-                <p className="text-sm text-muted-foreground max-w-md mb-6 leading-relaxed">
-                  You have not created or scheduled any interviews yet. Get started by scheduling your first technical assessment room.
-                </p>
-                <Button onClick={() => setShowCreate(true)} className="bg-gradient-primary hover:opacity-90 active:scale-95 transition-all">
-                  <Plus className="w-4 h-4 mr-2"/> Create Interview Room
-                </Button>
-              </div>
-            )}
-            {!isLoadingRooms && rooms.length > 0 && filtered.length === 0 && (
-              <div className="rounded-xl border border-dashed border-border bg-card/50 p-8 text-center text-sm text-muted-foreground">
-                No interviews match the selected filter.
-              </div>
-            )}
-            {filtered.map((room, i) => (
-              <motion.div 
-                key={room.id} 
-                initial={{ opacity: 0, y: 10 }} 
-                animate={{ opacity: 1, y: 0 }} 
-                transition={{ delay: i * 0.05 }} 
-                className="rounded-xl overflow-hidden bg-card border border-border hover:border-primary/30 transition-all hover:shadow-md group"
-              >
-                {/* Simulated Tab Bar / Window Header */}
-                <div className="bg-muted/40 px-4 py-2.5 border-b border-border/60 flex items-center justify-between text-xs select-none">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-red-400/80" />
-                    <span className="w-2 h-2 rounded-full bg-yellow-400/80" />
-                    <span className="w-2 h-2 rounded-full bg-green-400/80" />
+            {isLoadingRooms ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map((n) => (
+                  <div key={n} className="rounded-xl overflow-hidden bg-card border border-border p-5 space-y-4 animate-pulse select-none">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="h-6 w-36 bg-secondary rounded" />
+                        <div className="h-5 w-16 bg-secondary rounded" />
+                      </div>
+                      <div className="h-4 w-24 bg-secondary rounded" />
+                    </div>
+                    <div className="flex gap-4">
+                      <div className="h-4 w-20 bg-secondary rounded" />
+                      <div className="h-4 w-20 bg-secondary rounded" />
+                      <div className="h-4 w-12 bg-secondary rounded" />
+                    </div>
+                    <div className="flex gap-2 pt-2">
+                      <div className="h-5 w-16 bg-secondary rounded" />
+                      <div className="h-5 w-12 bg-secondary rounded" />
+                    </div>
                   </div>
-                  <span className="font-mono text-[10px] text-muted-foreground tracking-wider group-hover:text-primary transition-colors">
-                    {room.roomId}.session
-                  </span>
-                </div>
+                ))}
+              </div>
+            ) : (
+              <>
+                {rooms.length === 0 && (
+                  <div className="flex flex-col items-center justify-center p-12 text-center rounded-2xl border border-dashed border-primary/30 bg-primary/5 max-w-2xl mx-auto my-8">
+                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-4">
+                      <Plus className="w-8 h-8" />
+                    </div>
+                    <h3 className="text-xl font-bold mb-2">No Interviews Yet</h3>
+                    <p className="text-sm text-muted-foreground max-w-md mb-6 leading-relaxed">
+                      You have not created or scheduled any interviews yet. Get started by scheduling your first technical assessment room.
+                    </p>
+                    <Button onClick={() => setShowCreate(true)} className="bg-gradient-primary hover:opacity-90 active:scale-95 transition-all">
+                      <Plus className="w-4 h-4 mr-2"/> Create Interview Room
+                    </Button>
+                  </div>
+                )}
+                {rooms.length > 0 && filtered.length === 0 && (
+                  <div className="rounded-xl border border-dashed border-border bg-card/50 p-8 text-center text-sm text-muted-foreground">
+                    No interviews match the selected filter.
+                  </div>
+                )}
+                {filtered.map((room, i) => (
+                  <motion.div 
+                    key={room.id} 
+                    initial={{ opacity: 0, y: 10 }} 
+                    animate={{ opacity: 1, y: 0 }} 
+                    transition={{ delay: i * 0.05 }} 
+                    className="rounded-xl overflow-hidden bg-card border border-border hover:border-primary/30 transition-all hover:shadow-md group"
+                  >
+                    {/* Simulated Tab Bar / Window Header */}
+                    <div className="bg-muted/40 px-4 py-2.5 border-b border-border/60 flex items-center justify-between text-xs select-none">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-red-400/80" />
+                        <span className="w-2 h-2 rounded-full bg-yellow-400/80" />
+                        <span className="w-2 h-2 rounded-full bg-green-400/80" />
+                      </div>
+                      <span className="font-mono text-[10px] text-muted-foreground tracking-wider group-hover:text-primary transition-colors">
+                        {room.roomId}.session
+                      </span>
+                    </div>
 
-                <div className="p-5">
-                  <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">{room.title}</h3>
-                        <Badge variant="outline" className={statusConfig[room.status].className}>
-                          {statusConfig[room.status].label}
-                        </Badge>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground mb-3">
-                        <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5"/>{format(new Date(room.scheduledAt), 'MMM d, yyyy')}</span>
-                        <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5"/>{format(new Date(room.scheduledAt), 'h:mm a')}</span>
-                        <span>{room.durationMinutes}min</span>
-                        <span className="flex items-center gap-1 break-all"><Users className="w-3.5 h-3.5 shrink-0"/>{room.candidateEmail}</span>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {room.techStack.map((t) => (<span key={t} className="px-2 py-0.5 text-[10px] font-medium rounded-md bg-primary/10 text-primary">{t}</span>))}
-                        <span className={`px-2 py-0.5 text-[10px] font-medium rounded-md ${room.difficultyLevel === 'hard' ? 'bg-destructive/10 text-destructive' :
-                  room.difficultyLevel === 'medium' ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success'}`}>
-                          {room.difficultyLevel}
-                        </span>
+                    <div className="p-5">
+                      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">{room.title}</h3>
+                            <Badge variant="outline" className={statusConfig[room.status].className}>
+                              {statusConfig[room.status].label}
+                            </Badge>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground mb-3">
+                            <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5"/>{format(new Date(room.scheduledAt), 'MMM d, yyyy')}</span>
+                            <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5"/>{format(new Date(room.scheduledAt), 'h:mm a')}</span>
+                            <span>{room.durationMinutes}min</span>
+                            <span className="flex items-center gap-1 break-all"><Users className="w-3.5 h-3.5 shrink-0"/>{room.candidateEmail}</span>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {room.techStack.map((t) => (<span key={t} className="px-2 py-0.5 text-[10px] font-medium rounded-md bg-primary/10 text-primary">{t}</span>))}
+                            <span className={`px-2 py-0.5 text-[10px] font-medium rounded-md ${room.difficultyLevel === 'hard' ? 'bg-destructive/10 text-destructive' :
+                      room.difficultyLevel === 'medium' ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success'}`}>
+                              {room.difficultyLevel}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2 lg:ml-4 self-center">
+                          <Button size="sm" variant="outline" className="active:scale-95 transition-all" onClick={() => copyInvite(room.roomId)}>
+                            <Copy className="w-3.5 h-3.5"/>
+                          </Button>
+                          {room.status === 'scheduled' && (<Button size="sm" onClick={() => handleStartRoom(room)} className="bg-gradient-primary hover:opacity-90 active:scale-95 transition-all" disabled={startingRoomId === room.id}>
+                              {startingRoomId === room.id ? 'Starting...' : 'Start'} <ArrowRight className="ml-1 w-3.5 h-3.5"/>
+                            </Button>)}
+                          {room.status === 'completed' && (<Button size="sm" variant="outline" className="active:scale-95 transition-all" onClick={() => navigate(`/feedback/${room.roomId}`)}>
+                              Feedback
+                            </Button>)}
+                        </div>
                       </div>
                     </div>
-                    <div className="flex flex-wrap gap-2 lg:ml-4 self-center">
-                      <Button size="sm" variant="outline" className="active:scale-95 transition-all" onClick={() => copyInvite(room.roomId)}>
-                        <Copy className="w-3.5 h-3.5"/>
-                      </Button>
-                      {room.status === 'scheduled' && (<Button size="sm" onClick={() => handleStartRoom(room)} className="bg-gradient-primary hover:opacity-90 active:scale-95 transition-all" disabled={startingRoomId === room.id}>
-                          {startingRoomId === room.id ? 'Starting...' : 'Start'} <ArrowRight className="ml-1 w-3.5 h-3.5"/>
-                        </Button>)}
-                      {room.status === 'completed' && (<Button size="sm" variant="outline" className="active:scale-95 transition-all" onClick={() => navigate(`/feedback/${room.roomId}`)}>
-                          Feedback
-                        </Button>)}
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+                  </motion.div>
+                ))}
+              </>
+            )}
           </div>
         </div>
 

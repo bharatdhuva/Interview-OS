@@ -319,8 +319,26 @@ export default function CandidateDashboard() {
         </motion.div>
 
         {isLoadingRooms ? (
-          <div className="py-20 text-center">
-            <span className="text-sm text-muted-foreground">Loading your interviews...</span>
+          <div className="space-y-4">
+            {[1, 2].map((n) => (
+              <div key={n} className="rounded-xl overflow-hidden bg-card border border-border p-5 space-y-4 animate-pulse select-none">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-6 w-36 bg-secondary rounded" />
+                    <div className="h-5 w-16 bg-secondary rounded" />
+                  </div>
+                  <div className="h-4 w-24 bg-secondary rounded" />
+                </div>
+                <div className="flex gap-4">
+                  <div className="h-4 w-20 bg-secondary rounded" />
+                  <div className="h-4 w-20 bg-secondary rounded" />
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <div className="h-5 w-16 bg-secondary rounded" />
+                  <div className="h-5 w-12 bg-secondary rounded" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : rooms.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-12 text-center rounded-2xl border border-dashed border-primary/30 bg-primary/5 max-w-2xl mx-auto my-8">
