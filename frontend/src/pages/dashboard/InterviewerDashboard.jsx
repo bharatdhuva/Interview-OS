@@ -314,10 +314,6 @@ export default function InterviewerDashboard() {
                   )}
                 </AnimatePresence>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => navigate('/pricing')}>
-                <CreditCard className="w-4 h-4"/>
-                <span className="hidden sm:inline ml-1">Pricing</span>
-              </Button>
               <Button variant="ghost" size="sm" onClick={handleLogout}>
                 <LogOut className="w-4 h-4"/>
               </Button>
