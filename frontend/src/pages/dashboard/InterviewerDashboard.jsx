@@ -381,76 +381,83 @@ function CreateRoomModal({ onClose, onCreateRoom }) {
           <AlertCircle className="w-3 h-3"/> {message}
         </motion.p>) : null;
     return (<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
-        <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} onClick={(e) => e.stopPropagation()} className="w-full max-w-lg rounded-xl bg-card border border-border p-6 max-h-[90vh] overflow-y-auto">
+        <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} onClick={(e) => e.stopPropagation()} className="w-full max-w-3xl rounded-xl bg-card border border-border p-6 max-h-[95vh] md:max-h-none overflow-y-auto md:overflow-visible shadow-xl">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-display font-bold">Create Interview Room</h2>
             <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
               <X className="w-5 h-5"/>
             </button>
           </div>
-          <form className="space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
-            <div>
-              <Label>Title <span className="text-destructive">*</span></Label>
-              <Input placeholder="Frontend Engineer — React Assessment" className={`mt-1.5 bg-secondary border-border ${errors.title ? "!border-destructive" : ""}`} {...register("title")}/>
-              <FieldError message={errors.title?.message}/>
-            </div>
-            <div>
-              <Label>Candidate Email <span className="text-destructive">*</span></Label>
-              <Input type="email" placeholder="candidate@example.com" className={`mt-1.5 bg-secondary border-border ${errors.candidateEmail ? "!border-destructive" : ""}`} {...register("candidateEmail")}/>
-              <FieldError message={errors.candidateEmail?.message}/>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <Label>Date & Time <span className="text-destructive">*</span></Label>
-                <Input type="datetime-local" className={`mt-1.5 bg-secondary border-border ${errors.dateTime ? "!border-destructive" : ""}`} {...register("dateTime")}/>
-                <FieldError message={errors.dateTime?.message}/>
+          <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Left Column: Basic Details */}
+              <div className="space-y-4">
+                <div>
+                  <Label>Title <span className="text-destructive">*</span></Label>
+                  <Input placeholder="Frontend Engineer — React Assessment" className={`mt-1.5 bg-secondary border-border ${errors.title ? "!border-destructive" : ""}`} {...register("title")}/>
+                  <FieldError message={errors.title?.message}/>
+                </div>
+                <div>
+                  <Label>Candidate Email <span className="text-destructive">*</span></Label>
+                  <Input type="email" placeholder="candidate@example.com" className={`mt-1.5 bg-secondary border-border ${errors.candidateEmail ? "!border-destructive" : ""}`} {...register("candidateEmail")}/>
+                  <FieldError message={errors.candidateEmail?.message}/>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Date & Time <span className="text-destructive">*</span></Label>
+                    <Input type="datetime-local" className={`mt-1.5 bg-secondary border-border ${errors.dateTime ? "!border-destructive" : ""}`} {...register("dateTime")}/>
+                    <FieldError message={errors.dateTime?.message}/>
+                  </div>
+                  <div>
+                    <Label>Duration (min) <span className="text-destructive">*</span></Label>
+                    <Controller name="duration" control={control} render={({ field }) => (<Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger className={`mt-1.5 bg-secondary border-border ${errors.duration ? "!border-destructive" : ""}`}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="30">30 min</SelectItem>
+                            <SelectItem value="45">45 min</SelectItem>
+                            <SelectItem value="60">60 min</SelectItem>
+                            <SelectItem value="90">90 min</SelectItem>
+                          </SelectContent>
+                        </Select>)}/>
+                    <FieldError message={errors.duration?.message}/>
+                  </div>
+                </div>
               </div>
-              <div>
-                <Label>Duration (min) <span className="text-destructive">*</span></Label>
-                <Controller name="duration" control={control} render={({ field }) => (<Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger className={`mt-1.5 bg-secondary border-border ${errors.duration ? "!border-destructive" : ""}`}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="30">30 min</SelectItem>
-                        <SelectItem value="45">45 min</SelectItem>
-                        <SelectItem value="60">60 min</SelectItem>
-                        <SelectItem value="90">90 min</SelectItem>
-                      </SelectContent>
-                    </Select>)}/>
-                <FieldError message={errors.duration?.message}/>
+
+              {/* Right Column: Assessment Details */}
+              <div className="space-y-4">
+                <div>
+                  <Label>Tech Stack <span className="text-destructive">*</span></Label>
+                  <Input placeholder="React, TypeScript, Node.js" className={`mt-1.5 bg-secondary border-border ${errors.techStack ? "!border-destructive" : ""}`} {...register("techStack")}/>
+                  <FieldError message={errors.techStack?.message}/>
+                </div>
+                <div>
+                  <Label>Difficulty <span className="text-destructive">*</span></Label>
+                  <Controller name="difficulty" control={control} render={({ field }) => (<Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger className={`mt-1.5 bg-secondary border-border ${errors.difficulty ? "!border-destructive" : ""}`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="easy">Easy</SelectItem>
+                          <SelectItem value="medium">Medium</SelectItem>
+                          <SelectItem value="hard">Hard</SelectItem>
+                        </SelectContent>
+                      </Select>)}/>
+                  <FieldError message={errors.difficulty?.message}/>
+                </div>
+                <div>
+                  <Label>Problem Statement <span className="text-destructive">*</span></Label>
+                  <Textarea placeholder="Describe the coding problem (min 10 characters)..." className={`mt-1.5 bg-secondary border-border min-h-[92px] ${errors.problemStatement ? "!border-destructive" : ""}`} {...register("problemStatement")}/>
+                  <FieldError message={errors.problemStatement?.message}/>
+                </div>
               </div>
             </div>
-            <div>
-              <Label>Tech Stack <span className="text-destructive">*</span></Label>
-              <Input placeholder="React, TypeScript, Node.js" className={`mt-1.5 bg-secondary border-border ${errors.techStack ? "!border-destructive" : ""}`} {...register("techStack")}/>
-              <FieldError message={errors.techStack?.message}/>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <Label>Difficulty <span className="text-destructive">*</span></Label>
-                <Controller name="difficulty" control={control} render={({ field }) => (<Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger className={`mt-1.5 bg-secondary border-border ${errors.difficulty ? "!border-destructive" : ""}`}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="easy">Easy</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="hard">Hard</SelectItem>
-                      </SelectContent>
-                    </Select>)}/>
-                <FieldError message={errors.difficulty?.message}/>
-              </div>
-              <div />
-            </div>
-            <div>
-              <Label>Problem Statement <span className="text-destructive">*</span></Label>
-              <Textarea placeholder="Describe the coding problem (min 10 characters)..." className={`mt-1.5 bg-secondary border-border min-h-[80px] ${errors.problemStatement ? "!border-destructive" : ""}`} {...register("problemStatement")}/>
-              <FieldError message={errors.problemStatement?.message}/>
-            </div>
-            <div className="flex gap-3 pt-2">
-              <Button type="button" variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
-              <Button type="submit" className="flex-1 bg-gradient-primary hover:opacity-90">Create Room</Button>
+
+            <div className="flex justify-end gap-3 border-t border-border pt-4 mt-2">
+              <Button type="button" variant="outline" onClick={onClose} className="px-6">Cancel</Button>
+              <Button type="submit" className="px-8 bg-gradient-primary hover:opacity-90">Create Room</Button>
             </div>
           </form>
         </motion.div>
