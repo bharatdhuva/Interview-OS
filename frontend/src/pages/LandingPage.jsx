@@ -8,12 +8,7 @@ export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("platform");
 
-  useEffect(() => {
-    // Default URL hash to #platform on initial mount if empty
-    if (!window.location.hash || window.location.hash === "#") {
-      window.location.hash = "#platform";
-    }
-  }, []);
+
 
   useEffect(() => {
     const handleScroll = () => {
