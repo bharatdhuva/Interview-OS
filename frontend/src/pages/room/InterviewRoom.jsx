@@ -697,15 +697,136 @@ export default function InterviewRoom() {
       });
         setChatInput("");
     };
-    return (<div className="h-[100dvh] flex flex-col bg-background overflow-hidden selection:bg-primary/30">
+    return (
+      <div className="room-container h-[100dvh] flex flex-col bg-background overflow-hidden selection:bg-primary/30">
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
+            @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
+
+            .room-container {
+              font-family: 'Montserrat', sans-serif !important;
+              --primary: 130 77% 22% !important; /* #0d631b */
+              --primary-foreground: 0 0% 100% !important;
+              --background: 120 10% 98% !important; /* #f8faf8 */
+              --foreground: 160 5% 10% !important; /* #191c1b */
+              --card: 120 10% 98% !important; /* #f8faf8 */
+              --card-foreground: 160 5% 10% !important;
+              --popover: 120 10% 98% !important;
+              --popover-foreground: 160 5% 10% !important;
+              --secondary: 120 5% 93% !important; /* #eceeec */
+              --secondary-foreground: 121 40% 32% !important; /* #307231 */
+              --muted: 120 5% 95% !important; /* #f2f4f2 */
+              --muted-foreground: 110 9% 26% !important; /* #40493d */
+              --accent: 130 77% 22% !important;
+              --accent-foreground: 0 0% 100% !important;
+              --border: 101 14% 76% !important; /* #bfcaba */
+              --input: 101 14% 76% !important;
+              --ring: 130 77% 22% !important;
+            }
+
+            .dark .room-container, .room-container.dark {
+              --primary: 116 53% 68% !important; /* #88d982 */
+              --primary-foreground: 131 100% 11% !important; /* #00390a */
+              --background: 130 15% 5% !important; /* #0c0f0d */
+              --foreground: 120 10% 95% !important; /* #eff2ef */
+              --card: 130 12% 8% !important; /* #111612 */
+              --card-foreground: 120 10% 95% !important;
+              --popover: 130 12% 8% !important;
+              --popover-foreground: 120 10% 95% !important;
+              --secondary: 128 17% 11% !important; /* #182219 */
+              --secondary-foreground: 115 88% 79% !important; /* #a3f69c */
+              --muted: 128 12% 12% !important; /* #1b221c */
+              --muted-foreground: 127 6% 56% !important; /* #8a948b */
+              --accent: 116 53% 68% !important;
+              --accent-foreground: 131 100% 11% !important;
+              --border: 131 8% 19% !important; /* #2d362f */
+              --input: 131 8% 19% !important;
+              --ring: 116 53% 68% !important;
+            }
+
+            .room-container button,
+            .room-container input,
+            .room-container select,
+            .room-container textarea,
+            .room-container span,
+            .room-container div,
+            .room-container a {
+              font-family: 'Montserrat', sans-serif !important;
+            }
+
+            /* Custom dot grid background */
+            .bg-room-dot-pattern {
+              background-image: radial-gradient(circle, rgba(13, 99, 27, 0.06) 1px, transparent 1px);
+              background-size: 20px 20px;
+            }
+            .dark .bg-room-dot-pattern {
+              background-image: radial-gradient(circle, rgba(136, 217, 130, 0.05) 1px, transparent 1px);
+              background-size: 20px 20px;
+            }
+
+            /* Pulse glow for messaging online badge */
+            @keyframes pulse-green {
+              0%, 100% {
+                box-shadow: 0 0 0 0 rgba(13, 99, 27, 0.4);
+                transform: scale(1);
+              }
+              50% {
+                box-shadow: 0 0 0 6px rgba(13, 99, 27, 0);
+                transform: scale(1.1);
+              }
+            }
+            @keyframes pulse-green-dark {
+              0%, 100% {
+                box-shadow: 0 0 0 0 rgba(136, 217, 130, 0.4);
+                transform: scale(1);
+              }
+              50% {
+                box-shadow: 0 0 0 6px rgba(136, 217, 130, 0);
+                transform: scale(1.1);
+              }
+            }
+            .room-pulse-green {
+              animation: pulse-green 2s infinite;
+              background-color: #0d631b !important;
+            }
+            .dark .room-pulse-green {
+              animation: pulse-green-dark 2s infinite;
+              background-color: #88d982 !important;
+            }
+            
+            /* Custom Scrollbar for messaging and console */
+            .room-container ::-webkit-scrollbar {
+              width: 6px;
+              height: 6px;
+            }
+            .room-container ::-webkit-scrollbar-track {
+              background: transparent;
+            }
+            .room-container ::-webkit-scrollbar-thumb {
+              background: rgba(13, 99, 27, 0.2);
+              border-radius: 3px;
+            }
+            .dark .room-container ::-webkit-scrollbar-thumb {
+              background: rgba(136, 217, 130, 0.15);
+            }
+            .room-container ::-webkit-scrollbar-thumb:hover {
+              background: rgba(13, 99, 27, 0.3);
+            }
+            .dark .room-container ::-webkit-scrollbar-thumb:hover {
+              background: rgba(136, 217, 130, 0.25);
+            }
+          `
+        }} />
+
       {/* Header */}
       <header className="sticky top-0 border-b border-border bg-card/80 backdrop-blur-md flex flex-col lg:flex-row lg:items-center lg:justify-between px-3 sm:px-4 lg:px-6 py-2 lg:h-16 shrink-0 z-30 gap-2">
         <div className="flex items-center gap-2 sm:gap-4 min-w-0 w-full lg:w-auto">
-          <Link to="/" className="group flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
-              <Terminal className="w-4 h-4 text-primary-foreground"/>
+          <Link to="/" className="group flex items-center gap-2 cursor-pointer select-none">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#0d631b] to-[#2e7d32] dark:from-[#88d982] dark:to-[#307231] flex items-center justify-center shadow-md shadow-primary/20 group-hover:scale-105 transition-transform">
+              <Terminal className="w-4 h-4 text-white dark:text-[#00390a]"/>
             </div>
-            <span className="font-display font-bold tracking-tight text-base sm:text-lg">
+            <span className="font-bold tracking-tight text-base sm:text-lg text-primary">
               InterviewOS
             </span>
           </Link>
@@ -729,7 +850,7 @@ export default function InterviewRoom() {
           {/* Proctoring Status */}
           <div className={`flex items-center gap-2 px-2.5 sm:px-3 py-1 rounded-full border text-[11px] sm:text-xs font-medium transition-colors ${violationCount > 0
             ? "bg-destructive/10 border-destructive/20 text-destructive"
-            : "bg-success/10 border-success/20 text-success"}`}>
+            : "bg-primary/10 border-primary/20 text-primary"}`}>
             {violationCount > 0 ? (<ShieldAlert className="w-3.5 h-3.5"/>) : (<ShieldCheck className="w-3.5 h-3.5"/>)}
             <span className="hidden sm:inline">Proctoring:</span>{" "}
             {violationCount > 0 ? `${violationCount} Violations` : "Secure"}
@@ -752,12 +873,12 @@ export default function InterviewRoom() {
 
           <ThemeToggle isDark={isDark} onToggle={toggleTheme} size="sm"/>
 
-          <Button variant="ghost" size="sm" className="text-xs h-8 gap-1.5 border border-border/50 hover:bg-secondary" onClick={enterFullscreen}>
+          <Button variant="ghost" size="sm" className="text-xs h-8 gap-1.5 border border-border/50 hover:bg-secondary active:scale-95 transition-all duration-200" onClick={enterFullscreen}>
             <Maximize2 className="w-3.5 h-3.5"/>
             <span className="hidden sm:inline">Fullscreen</span>
           </Button>
 
-          <Button size="sm" variant="destructive" className="h-8 text-xs font-semibold px-4 shadow-lg shadow-destructive/20" aria-label="End interview session" onClick={handleEndCall}>
+          <Button size="sm" variant="destructive" className="h-8 text-xs font-semibold px-4 shadow-lg shadow-destructive/20 active:scale-95 transition-all duration-200" aria-label="End interview session" onClick={handleEndCall}>
             <span className="hidden sm:inline">End Session</span>
             <span className="sm:hidden">End</span>
           </Button>
@@ -767,62 +888,82 @@ export default function InterviewRoom() {
       {/* Main Layout */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-auto lg:overflow-hidden">
         {/* Left: Video & Controls (15%) */}
-        <aside className="w-full lg:w-72 border-b lg:border-b-0 lg:border-r border-border bg-card/30 flex flex-col p-3 sm:p-4 gap-3 sm:gap-4 shrink-0">
+        <aside className="w-full lg:w-72 border-b lg:border-b-0 lg:border-r border-border bg-card/10 bg-room-dot-pattern flex flex-col p-3 sm:p-4 gap-3 sm:gap-4 shrink-0">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3 sm:gap-4">
             {/* Interviewer Video */}
-            <div className="aspect-video rounded-xl bg-secondary/80 border border-border relative overflow-hidden shadow-inner flex flex-col items-center justify-center group">
-              <video ref={remoteVideoRef} autoPlay playsInline className="absolute inset-0 w-full h-full object-cover"/>
-              {!rtcConnected && (<>
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2 z-10">
-                    <Users className="w-6 h-6 text-primary/60"/>
-                  </div>
-                  <span className="text-[10px] font-medium text-muted-foreground uppercase z-10">
-                    Waiting for peer...
-                  </span>
-                </>)}
-              <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-black/60 backdrop-blur-sm text-[10px] text-white">
-                {remoteUserName}
+            <div className="aspect-video rounded-xl bg-secondary/80 border border-border relative overflow-hidden shadow-md flex flex-col hover:shadow-lg transition-all duration-300 group">
+              <div className="bg-secondary/40 border-b border-border/30 px-3 py-2 flex items-center gap-1.5 shrink-0 z-10">
+                <span className="w-2.5 h-2.5 rounded-full bg-red-400/80 inline-block" />
+                <span className="w-2.5 h-2.5 rounded-full bg-yellow-400/80 inline-block" />
+                <span className="w-2.5 h-2.5 rounded-full bg-green-400/80 inline-block" />
+                <span className="text-[10px] font-semibold text-muted-foreground/80 ml-2 truncate">
+                  {remoteUserName}'s Stream
+                </span>
+              </div>
+              <div className="flex-1 relative flex flex-col items-center justify-center min-h-0">
+                <video ref={remoteVideoRef} autoPlay playsInline className="absolute inset-0 w-full h-full object-cover"/>
+                {!rtcConnected && (<>
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2 z-10">
+                      <Users className="w-6 h-6 text-primary/60"/>
+                    </div>
+                    <span className="text-[10px] font-medium text-muted-foreground uppercase z-10">
+                      Waiting for peer...
+                    </span>
+                  </>)}
+                <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-black/60 backdrop-blur-sm text-[10px] text-white">
+                  {remoteUserName}
+                </div>
               </div>
             </div>
 
             {/* Candidate Video */}
-            <div className="aspect-video rounded-xl bg-secondary/80 border border-border relative overflow-hidden shadow-inner flex flex-col items-center justify-center">
-              <video ref={localVideoRef} autoPlay muted playsInline className={`absolute inset-0 w-full h-full object-cover ${camOn ? "opacity-100" : "opacity-0"}`}/>
-              {!camOn ? (<div className="flex flex-col items-center">
-                  <VideoOff className="w-8 h-8 text-muted-foreground/40 mb-2"/>
-                  <span className="text-[10px] font-medium text-muted-foreground uppercase">
-                    Camera Off
-                  </span>
-                </div>) : (<div className="w-full h-full bg-gradient-to-t from-black/20 to-transparent flex items-center justify-center">
-                  <span className="sr-only">Local camera preview active</span>
-                </div>)}
-              <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-primary/80 backdrop-blur-sm text-[10px] text-white font-medium">
-                You ({identity.role})
+            <div className="aspect-video rounded-xl bg-secondary/80 border border-border relative overflow-hidden shadow-md flex flex-col hover:shadow-lg transition-all duration-300">
+              <div className="bg-secondary/40 border-b border-border/30 px-3 py-2 flex items-center gap-1.5 shrink-0 z-10">
+                <span className="w-2.5 h-2.5 rounded-full bg-red-400/80 inline-block" />
+                <span className="w-2.5 h-2.5 rounded-full bg-yellow-400/80 inline-block" />
+                <span className="w-2.5 h-2.5 rounded-full bg-green-400/80 inline-block" />
+                <span className="text-[10px] font-semibold text-muted-foreground/80 ml-2 truncate">
+                  Your Stream ({identity.role})
+                </span>
+              </div>
+              <div className="flex-1 relative flex flex-col items-center justify-center min-h-0">
+                <video ref={localVideoRef} autoPlay muted playsInline className={`absolute inset-0 w-full h-full object-cover ${camOn ? "opacity-100" : "opacity-0"}`}/>
+                {!camOn ? (<div className="flex flex-col items-center z-10">
+                    <VideoOff className="w-8 h-8 text-muted-foreground/40 mb-2"/>
+                    <span className="text-[10px] font-medium text-muted-foreground uppercase">
+                      Camera Off
+                    </span>
+                  </div>) : (<div className="w-full h-full bg-gradient-to-t from-black/20 to-transparent flex items-center justify-center">
+                    <span className="sr-only">Local camera preview active</span>
+                  </div>)}
+                <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-primary/80 backdrop-blur-sm text-[10px] text-white font-medium">
+                  You ({identity.role})
+                </div>
               </div>
             </div>
           </div>
 
           {/* Media Controls */}
           <div className="flex justify-between items-center bg-secondary/30 p-2 rounded-2xl border border-border/50">
-            <button onClick={handleToggleMic} aria-label={micOn ? "Mute microphone" : "Unmute microphone"} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${micOn
-            ? "bg-background hover:bg-secondary text-foreground"
-            : "bg-destructive text-destructive-foreground rotate-12"}`}>
+            <button onClick={handleToggleMic} aria-label={micOn ? "Mute microphone" : "Unmute microphone"} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 active:scale-90 hover:scale-105 ${micOn
+            ? "bg-background hover:bg-secondary text-foreground hover:shadow-sm"
+            : "bg-destructive text-destructive-foreground rotate-12 hover:rotate-0"}`}>
               {micOn ? (<Mic className="w-4.5 h-4.5"/>) : (<MicOff className="w-4.5 h-4.5"/>)}
             </button>
-            <button onClick={handleToggleCam} aria-label={camOn ? "Turn camera off" : "Turn camera on"} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${camOn
-            ? "bg-background hover:bg-secondary text-foreground"
-            : "bg-destructive text-destructive-foreground rotate-12"}`}>
+            <button onClick={handleToggleCam} aria-label={camOn ? "Turn camera off" : "Turn camera on"} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 active:scale-90 hover:scale-105 ${camOn
+            ? "bg-background hover:bg-secondary text-foreground hover:shadow-sm"
+            : "bg-destructive text-destructive-foreground rotate-12 hover:rotate-0"}`}>
               {camOn ? (<VideoIcon className="w-4.5 h-4.5"/>) : (<VideoOff className="w-4.5 h-4.5"/>)}
             </button>
-            <button aria-label="Share screen" className="w-10 h-10 rounded-xl bg-background hover:bg-secondary text-foreground flex items-center justify-center transition-all">
+            <button aria-label="Share screen" className="w-10 h-10 rounded-xl bg-background hover:bg-secondary text-foreground flex items-center justify-center transition-all duration-200 active:scale-90 hover:scale-105 hover:shadow-sm">
               <Monitor className="w-4.5 h-4.5"/>
             </button>
-            <button onClick={handleEndCall} aria-label="Leave call" className="w-10 h-10 rounded-xl bg-destructive/10 hover:bg-destructive text-destructive hover:text-white flex items-center justify-center transition-all group">
+            <button onClick={handleEndCall} aria-label="Leave call" className="w-10 h-10 rounded-xl bg-destructive/10 hover:bg-destructive text-destructive hover:text-white flex items-center justify-center transition-all duration-200 active:scale-90 hover:scale-105 group">
               <PhoneOff className="w-4.5 h-4.5 group-hover:scale-110"/>
             </button>
           </div>
 
-          <div className="rounded-2xl border border-border bg-background/60 p-3 space-y-2">
+          <div className="rounded-2xl border border-primary/20 bg-primary/5 p-3 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold tracking-wide">Session Health</span>
               <span className="text-[10px] text-muted-foreground tabular-nums">{formatTime(timer)} left</span>
@@ -838,9 +979,9 @@ export default function InterviewRoom() {
         </aside>
 
         {/* Center: Editor/Whiteboard (60%) */}
-        <main className="flex-1 flex flex-col min-w-0 bg-card/20 relative min-h-[360px] lg:min-h-0">
+        <main className="flex-1 flex flex-col min-w-0 bg-card/10 relative min-h-[360px] lg:min-h-0">
           {/* Toolbar */}
-          <div className="border-b border-border flex flex-col sm:flex-row sm:items-center sm:justify-between px-2 sm:px-4 py-2 sm:py-2 gap-2 shrink-0 bg-background/40 backdrop-blur-sm lg:h-12 lg:py-0">
+          <div className="border-b border-border flex flex-col sm:flex-row sm:items-center sm:justify-between px-2 sm:px-4 py-2 sm:py-2 gap-2 shrink-0 bg-background/60 backdrop-blur-md lg:h-12 lg:py-0">
             <div className="flex items-center gap-1 bg-secondary/50 p-1 rounded-lg border border-border">
               <button onClick={() => setActiveTab("editor")} className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-all ${activeTab === "editor"
             ? "bg-background text-primary shadow-sm"
@@ -869,17 +1010,17 @@ export default function InterviewRoom() {
                 </Select>)}
 
               <div className="flex items-center flex-wrap gap-1.5">
-                <Button size="sm" variant="ghost" className="h-8 text-[11px] gap-1.5 hover:bg-secondary" onClick={handleManualSave} disabled={isSaving}>
+                <Button size="sm" variant="ghost" className="h-8 text-[11px] gap-1.5 hover:bg-secondary active:scale-95 transition-all duration-200" onClick={handleManualSave} disabled={isSaving}>
                   <Save className="w-3.5 h-3.5"/>
                   {isSaving ? "Saving..." : "Save"}
                 </Button>
-                <Button size="sm" variant="ghost" className="h-8 text-[11px] gap-1.5 hover:bg-primary/10 hover:text-primary">
+                <Button size="sm" variant="ghost" className="h-8 text-[11px] gap-1.5 hover:bg-primary/10 hover:text-primary active:scale-95 transition-all duration-200">
                   <Brain className="w-3.5 h-3.5"/> AI Review
                 </Button>
                 {activeTab === "editor" && (<span className="hidden md:inline text-[10px] text-muted-foreground">
                     {lastSavedAt ? `Saved ${lastSavedAt}` : "Not saved yet"}
                   </span>)}
-                {activeTab === "editor" && (<Button size="sm" className="h-8 text-[11px] gap-1.5 bg-primary hover:bg-primary/90 shadow-md shadow-primary/20" onClick={handleRun} disabled={isRunning}>
+                {activeTab === "editor" && (<Button size="sm" className="h-8 text-[11px] gap-1.5 bg-primary hover:bg-primary/90 hover:scale-[1.03] active:scale-95 transition-all duration-200 shadow-md shadow-primary/20" onClick={handleRun} disabled={isRunning}>
                     <Play className="w-3.5 h-3.5"/>
                     {isRunning ? "Running..." : "Run Code"}
                   </Button>)}
@@ -909,20 +1050,20 @@ export default function InterviewRoom() {
             }}/>
                   </div>
                   {/* Console */}
-                  <div className="h-40 border-t border-border bg-card/40 flex flex-col">
-                    <div className="h-8 px-4 flex items-center justify-between border-b border-border bg-background/20">
+                  <div className="h-40 border-t border-border bg-card/50 flex flex-col">
+                    <div className="h-8 px-4 flex items-center justify-between border-b border-border bg-background/30">
                       <div className="flex items-center gap-2">
-                        <Terminal className="w-3.5 h-3.5 text-muted-foreground"/>
-                        <span className="text-[10px] uppercase font-bold tracking-tighter text-muted-foreground">
+                        <Terminal className="w-3.5 h-3.5 text-primary"/>
+                        <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
                           Output Console
                         </span>
                       </div>
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setOutput("")}>
-                        <span className="text-[10px]">Clear</span>
+                      <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] hover:bg-secondary active:scale-95 transition-all" onClick={() => setOutput("")}>
+                        Clear
                       </Button>
                     </div>
-                    <pre className="flex-1 p-4 font-mono text-xs overflow-auto text-foreground/80 leading-relaxed">
-                      {output || (<span className="text-muted-foreground/50 italic">
+                    <pre className="flex-1 p-4 font-mono text-xs overflow-auto bg-black/[0.03] dark:bg-black/30 text-foreground/95 leading-relaxed">
+                      {output || (<span className="text-muted-foreground/40 italic">
                           Execute code to see results...
                         </span>)}
                     </pre>
@@ -935,14 +1076,14 @@ export default function InterviewRoom() {
         </main>
 
         {/* Right: Chat (25%) */}
-        <section className="w-full lg:w-80 border-t lg:border-t-0 lg:border-l border-border bg-card/30 flex flex-col shrink-0 max-h-[45vh] lg:max-h-none" aria-label="Interview chat panel">
+        <section className="w-full lg:w-80 border-t lg:border-t-0 lg:border-l border-border bg-card/10 bg-room-dot-pattern flex flex-col shrink-0 max-h-[45vh] lg:max-h-none" aria-label="Interview chat panel">
           <div className="h-14 flex items-center justify-between px-4 border-b border-border shrink-0">
             <span className="text-sm font-bold tracking-tight">Messaging</span>
-            <div className="w-2 h-2 rounded-full bg-success animate-pulse"/>
+            <div className="w-2 h-2 rounded-full room-pulse-green"/>
           </div>
 
           <div className="px-4 pt-3">
-            <div className="rounded-lg border border-border bg-background/60 px-3 py-2 text-[11px] text-muted-foreground">
+            <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-[11px] text-muted-foreground">
               Messages are time-stamped and retained for room history.
             </div>
           </div>

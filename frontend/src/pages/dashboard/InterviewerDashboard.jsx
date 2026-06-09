@@ -168,7 +168,70 @@ export default function InterviewerDashboard() {
         navigator.clipboard.writeText(`${window.location.origin}/room/${roomId}`);
         toast({ title: 'Invite link copied!' });
     };
-    return (<div className="min-h-screen bg-background">
+    return (<div className="dashboard-container min-h-screen bg-background pb-12">
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
+            @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
+
+            .dashboard-container {
+              font-family: 'Montserrat', sans-serif !important;
+              --primary: 130 77% 22% !important; /* #0d631b */
+              --primary-foreground: 0 0% 100% !important;
+              --background: 120 10% 98% !important; /* #f8faf8 */
+              --foreground: 160 5% 10% !important; /* #191c1b */
+              --card: 0 0% 100% !important; /* #ffffff */
+              --card-foreground: 160 5% 10% !important;
+              --popover: 120 10% 98% !important;
+              --popover-foreground: 160 5% 10% !important;
+              --secondary: 120 5% 93% !important; /* #eceeec */
+              --secondary-foreground: 121 40% 32% !important; /* #307231 */
+              --muted: 120 5% 95% !important; /* #f2f4f2 */
+              --muted-foreground: 110 9% 26% !important; /* #40493d */
+              --accent: 130 77% 22% !important;
+              --accent-foreground: 0 0% 100% !important;
+              --border: 101 14% 76% !important; /* #bfcaba */
+              --input: 101 14% 76% !important;
+              --ring: 130 77% 22% !important;
+              --gradient-primary: linear-gradient(135deg, hsl(130, 77%, 22%), hsl(120, 45%, 34%)) !important;
+            }
+
+            .dark .dashboard-container, .dashboard-container.dark {
+              --primary: 116 53% 68% !important; /* #88d982 */
+              --primary-foreground: 131 100% 11% !important; /* #00390a */
+              --background: 130 15% 5% !important; /* #0c0f0d */
+              --foreground: 120 10% 95% !important; /* #eff2ef */
+              --card: 130 12% 8% !important; /* #111612 */
+              --card-foreground: 120 10% 95% !important;
+              --popover: 130 12% 8% !important;
+              --popover-foreground: 120 10% 95% !important;
+              --secondary: 128 17% 11% !important; /* #182219 */
+              --secondary-foreground: 115 88% 79% !important; /* #a3f69c */
+              --muted: 128 12% 12% !important; /* #1b221c */
+              --muted-foreground: 127 6% 56% !important; /* #8a948b */
+              --accent: 116 53% 68% !important;
+              --accent-foreground: 131 100% 11% !important;
+              --border: 131 8% 19% !important; /* #2d362f */
+              --input: 131 8% 19% !important;
+              --ring: 116 53% 68% !important;
+              --gradient-primary: linear-gradient(135deg, hsl(116, 53%, 68%), hsl(128, 17% , 15%)) !important;
+            }
+
+            .dashboard-container button,
+            .dashboard-container input,
+            .dashboard-container select,
+            .dashboard-container textarea,
+            .dashboard-container span,
+            .dashboard-container div,
+            .dashboard-container h1,
+            .dashboard-container h2,
+            .dashboard-container h3,
+            .dashboard-container h4,
+            .dashboard-container a {
+              font-family: 'Montserrat', sans-serif !important;
+            }
+          `
+        }} />
         <WelcomePopup />
         <header className="border-b border-border">
           <div className="container flex items-center justify-between h-16">
@@ -176,7 +239,7 @@ export default function InterviewerDashboard() {
               <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-primary">
                 <Terminal className="w-4 h-4 text-primary-foreground"/>
               </div>
-              <span className="font-display font-bold">InterviewOS</span>
+              <span className="font-bold text-primary">InterviewOS</span>
             </Link>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
@@ -199,10 +262,10 @@ export default function InterviewerDashboard() {
         <div className="container py-6 sm:py-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-              <h1 className="text-3xl font-display font-bold mb-1">Interviewer Dashboard</h1>
+              <h1 className="text-3xl font-bold mb-1">Interviewer Dashboard</h1>
               <p className="text-muted-foreground">Manage your interviews and candidates.</p>
             </motion.div>
-            <Button onClick={() => setShowCreate(true)} className="bg-gradient-primary hover:opacity-90 w-full sm:w-auto">
+            <Button onClick={() => setShowCreate(true)} className="bg-gradient-primary hover:opacity-90 w-full sm:w-auto active:scale-95 transition-all">
               <Plus className="w-4 h-4 mr-2"/> Create Room
             </Button>
           </div>
@@ -216,15 +279,15 @@ export default function InterviewerDashboard() {
             { icon: BarChart3, label: 'Avg Rating', value: '4.2' },
         ].map((stat) => (<div key={stat.label} className="p-4 rounded-xl bg-card border border-border">
                 <stat.icon className="w-5 h-5 text-primary mb-2"/>
-                <div className="text-2xl font-display font-bold">{stat.value}</div>
+                <div className="text-2xl font-bold">{stat.value}</div>
                 <div className="text-xs text-muted-foreground">{stat.label}</div>
               </div>))}
           </div>
 
           {/* Filters */}
           <div className="flex gap-2 mb-6 flex-wrap">
-            {['all', 'scheduled', 'active', 'completed', 'cancelled'].map((status) => (<button key={status} onClick={() => setFilter(status)} className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${filter === status
-                ? 'bg-primary text-primary-foreground'
+            {['all', 'scheduled', 'active', 'completed', 'cancelled'].map((status) => (<button key={status} onClick={() => setFilter(status)} className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all active:scale-95 ${filter === status
+                ? 'bg-primary text-primary-foreground shadow-sm'
                 : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>
                 {status === 'all' ? 'All' : status.charAt(0).toUpperCase() + status.slice(1)}
               </button>))}
@@ -232,14 +295,30 @@ export default function InterviewerDashboard() {
 
           {/* Room List */}
           <div className="space-y-3">
-            {!isLoadingRooms && filtered.length === 0 && (<div className="rounded-xl border border-dashed border-border bg-card/50 p-8 text-center text-sm text-muted-foreground">
-                No rooms found. Create a room to start an interview session.
-              </div>)}
+            {!isLoadingRooms && rooms.length === 0 && (
+              <div className="flex flex-col items-center justify-center p-12 text-center rounded-2xl border border-dashed border-primary/30 bg-primary/5 max-w-2xl mx-auto my-8">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-4">
+                  <Plus className="w-8 h-8" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">No Interviews Yet</h3>
+                <p className="text-sm text-muted-foreground max-w-md mb-6 leading-relaxed">
+                  You have not created or scheduled any interviews yet. Get started by scheduling your first technical assessment room.
+                </p>
+                <Button onClick={() => setShowCreate(true)} className="bg-gradient-primary hover:opacity-90 active:scale-95 transition-all">
+                  <Plus className="w-4 h-4 mr-2"/> Create Interview Room
+                </Button>
+              </div>
+            )}
+            {!isLoadingRooms && rooms.length > 0 && filtered.length === 0 && (
+              <div className="rounded-xl border border-dashed border-border bg-card/50 p-8 text-center text-sm text-muted-foreground">
+                No interviews match the selected filter.
+              </div>
+            )}
             {filtered.map((room, i) => (<motion.div key={room.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="p-5 rounded-xl bg-card border border-border hover:border-primary/20 transition-all">
                 <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-display font-semibold">{room.title}</h3>
+                      <h3 className="font-semibold">{room.title}</h3>
                       <Badge variant="outline" className={statusConfig[room.status].className}>
                         {statusConfig[room.status].label}
                       </Badge>
@@ -259,13 +338,13 @@ export default function InterviewerDashboard() {
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2 lg:ml-4">
-                    <Button size="sm" variant="outline" onClick={() => copyInvite(room.roomId)}>
+                    <Button size="sm" variant="outline" className="active:scale-95 transition-all" onClick={() => copyInvite(room.roomId)}>
                       <Copy className="w-3.5 h-3.5"/>
                     </Button>
-                    {room.status === 'scheduled' && (<Button size="sm" onClick={() => handleStartRoom(room)} className="bg-gradient-primary hover:opacity-90" disabled={startingRoomId === room.id}>
+                    {room.status === 'scheduled' && (<Button size="sm" onClick={() => handleStartRoom(room)} className="bg-gradient-primary hover:opacity-90 active:scale-95 transition-all" disabled={startingRoomId === room.id}>
                         {startingRoomId === room.id ? 'Starting...' : 'Start'} <ArrowRight className="ml-1 w-3.5 h-3.5"/>
                       </Button>)}
-                    {room.status === 'completed' && (<Button size="sm" variant="outline" onClick={() => navigate(`/feedback/${room.roomId}`)}>
+                    {room.status === 'completed' && (<Button size="sm" variant="outline" className="active:scale-95 transition-all" onClick={() => navigate(`/feedback/${room.roomId}`)}>
                         Feedback
                       </Button>)}
                   </div>
