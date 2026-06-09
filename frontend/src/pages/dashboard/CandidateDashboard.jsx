@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { format, isFuture, differenceInMinutes } from 'date-fns';
 import { Calendar, Clock, ArrowRight, Video, Code2, MessageSquare, History, User, LogOut, Terminal, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/store/authStore';
-import WelcomePopup from '@/components/WelcomePopup';
+import { useToast } from '@/hooks/use-toast';
 import api from '@/lib/api';
 
 const normalizeUser = (value, fallbackRole) => {
@@ -126,8 +126,22 @@ export default function CandidateDashboard() {
     const user = useAuthStore((s) => s.user);
     const logout = useAuthStore((s) => s.logout);
     const navigate = useNavigate();
+    const { toast } = useToast();
     const [rooms, setRooms] = useState([]);
     const [isLoadingRooms, setIsLoadingRooms] = useState(true);
+    const [showProfileTip, setShowProfileTip] = useState(false);
+
+    useEffect(() => {
+        const justLoggedIn = sessionStorage.getItem("justLoggedIn");
+        if (justLoggedIn === "true") {
+            toast({
+                title: `Welcome back, ${user?.name?.split(" ")[0] || "there"}! 👋`,
+                description: "Great to see you again on InterviewOS.",
+            });
+            setShowProfileTip(true);
+            sessionStorage.removeItem("justLoggedIn");
+        }
+    }, [user, toast]);
 
     useEffect(() => {
         const loadRooms = async () => {
@@ -229,7 +243,6 @@ export default function CandidateDashboard() {
             }
           `
         }} />
-      <WelcomePopup />
       {/* Header */}
       <header className="border-b border-border bg-card/60 backdrop-blur-md sticky top-0 z-40">
         <div className="container flex items-center justify-between h-16">
@@ -240,11 +253,57 @@ export default function CandidateDashboard() {
             <span className="font-bold text-primary">InterviewOS</span>
           </Link>
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                <User className="w-4 h-4 text-primary"/>
+            <div className="relative">
+              <div 
+                className="flex items-center gap-2 cursor-pointer hover:opacity-85 select-none"
+                onClick={() => setShowProfileTip(prev => !prev)}
+              >
+                <div className="relative w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                  <User className="w-4 h-4 text-primary"/>
+                  <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-background animate-pulse" />
+                </div>
+                <span className="text-sm font-medium hidden sm:inline">{user?.name}</span>
               </div>
-              <span className="text-sm font-medium hidden sm:inline">{user?.name}</span>
+
+              <AnimatePresence>
+                {showProfileTip && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute top-11 right-0 z-50 w-64 p-4 rounded-xl bg-card border border-border shadow-xl text-left"
+                  >
+                    <div className="flex items-center gap-1.5 mb-2.5 select-none">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-400/80" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-yellow-400/80" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-400/80" />
+                      <span className="font-mono text-[9px] text-muted-foreground ml-1">profile_helper.sh</span>
+                    </div>
+                    <p className="text-xs text-foreground font-semibold mb-1">Set up your profile</p>
+                    <p className="text-[11px] text-muted-foreground mb-3 leading-normal">
+                      Add your details to customize your interview experience.
+                    </p>
+                    <div className="flex gap-2 justify-end">
+                      <Button 
+                        variant="ghost" 
+                        className="text-[10px] h-7 px-2"
+                        onClick={() => setShowProfileTip(false)}
+                      >
+                        Later
+                      </Button>
+                      <Button 
+                        className="text-[10px] h-7 px-3 bg-gradient-primary hover:opacity-90 text-primary-foreground"
+                        onClick={() => {
+                          setShowProfileTip(false);
+                          navigate("/onboarding");
+                        }}
+                      >
+                        Complete Now
+                      </Button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
             <Button variant="ghost" size="sm" onClick={() => navigate('/pricing')}>
               <CreditCard className="w-4 h-4"/>

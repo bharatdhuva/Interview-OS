@@ -7,6 +7,8 @@ import { useAuthStore } from "@/store/authStore";
 import { useGoogleLogin } from "@react-oauth/google";
 import api from "@/lib/api";
 import { loginSchema } from "@/lib/validations";
+import AuthNavbar from "@/components/AuthNavbar";
+
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -144,7 +146,7 @@ const LoginPage = () => {
   });
 
   return (
-    <div className="login-container min-h-screen w-full flex flex-col justify-center">
+    <div className="login-container min-h-screen w-full flex flex-col justify-center relative">
       <style dangerouslySetInnerHTML={{
         __html: `
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
@@ -295,9 +297,11 @@ const LoginPage = () => {
         }
       ` }} />
 
-      <main className="flex min-h-screen">
+      <AuthNavbar pageType="login" />
+
+      <main className="flex flex-1 flex-col lg:flex-row min-h-0">
         {/* Left Section: Brand & Visuals (Desktop) */}
-        <section className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-primary items-center justify-center p-xl lg:sticky lg:top-0 lg:h-screen">
+        <section className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-primary items-center justify-center p-xl lg:h-auto">
           {/* Abstract Tech Background Overlay */}
           <div className="absolute inset-0 opacity-20 pointer-events-none">
             <div className="absolute top-0 left-0 w-full h-full" style={{ backgroundImage: "radial-gradient(circle at 2px 2px, rgba(163, 246, 156, 0.15) 1px, transparent 0)", backgroundSize: "40px 40px" }}></div>
@@ -351,20 +355,15 @@ const LoginPage = () => {
         </section>
 
         {/* Right Section: Onboarding Form */}
-        <section className="w-full lg:w-1/2 flex flex-col items-center bg-surface p-margin-mobile md:p-margin-desktop min-h-screen relative">
+        <section className="w-full lg:w-1/2 flex flex-col items-center bg-surface p-margin-mobile md:p-margin-desktop min-h-0 relative justify-center py-8">
           {/* Background Decor */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-[#e8f5e9]/30 rounded-full blur-3xl pointer-events-none"></div>
           <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#0d631b]/5 rounded-full blur-3xl pointer-events-none"></div>
 
           <div className="w-full max-w-[480px] my-auto relative z-10">
-            {/* Mobile Header (Visible only on small screens) */}
-            <div className="lg:hidden mb-lg text-center">
-              <h1 className="font-headline-lg text-headline-lg text-primary mb-xs">InterviewOS</h1>
-              <p className="font-body-md text-body-md text-on-surface-variant">Elite Technical Assessment</p>
-            </div>
-
             {/* Header */}
             <header className="mb-md">
+
               <h2 className="font-headline-lg text-headline-lg text-on-surface mb-xs">Welcome back</h2>
               <p className="font-body-md text-body-md text-on-surface-variant">Enter your credentials to access your dashboard.</p>
             </header>

@@ -5,6 +5,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useGoogleLogin } from "@react-oauth/google";
 import api from "@/lib/api";
 import { Loader2 } from "lucide-react";
+import AuthNavbar from "@/components/AuthNavbar";
+
 
 /* ─── Password strength ─── */
 const getPasswordStrength = (pw) => {
@@ -181,7 +183,7 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="signup-container min-h-screen w-full flex flex-col justify-center">
+    <div className="signup-container min-h-screen w-full flex flex-col justify-center relative">
       <style dangerouslySetInnerHTML={{ __html: `
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
@@ -341,9 +343,11 @@ const RegisterPage = () => {
         }
       ` }} />
 
-      <main className="flex min-h-screen">
+      <AuthNavbar pageType="register" />
+
+      <main className="flex flex-1 flex-col lg:flex-row min-h-0">
         {/* Left Section: Visual & Branding */}
-        <section className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-primary items-center justify-center p-xl lg:sticky lg:top-0 lg:h-screen">
+        <section className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-primary items-center justify-center p-xl lg:h-auto">
           {/* Background Image with Overlay */}
           <div className="absolute inset-0 z-0">
             <img 
@@ -379,7 +383,7 @@ const RegisterPage = () => {
         </section>
 
         {/* Right Section: Onboarding Form */}
-        <section className="w-full lg:w-1/2 flex flex-col items-center bg-surface p-margin-mobile md:p-margin-desktop min-h-screen">
+        <section className="w-full lg:w-1/2 flex flex-col items-center bg-surface p-margin-mobile md:p-margin-desktop min-h-0 relative justify-center py-8">
           <div className="w-full max-w-[480px] my-auto">
             {/* Header */}
             <header className="mb-md">
