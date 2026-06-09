@@ -59,7 +59,7 @@ function initSocket(io) {
   io.on("connection", (socket) => {
     logger.info(`Socket connected: ${socket.id}`);
 
-    socket.on("room:join", ({ roomId, userId, role, userName }) => {
+    socket.on("room:join", ({ roomId, userId, role, userName, micOn, camOn }) => {
       if (!roomId || !userId) return;
       socket.join(roomId);
       socketRoomMap.set(socket.id, { roomId, userId });
@@ -70,9 +70,11 @@ function initSocket(io) {
         userId,
         role,
         userName,
+        micOn: micOn !== false,
+        camOn: camOn !== false,
       });
 
-      socket.to(roomId).emit("room:user-joined", { roomId, userId, role, userName });
+      socket.to(roomId).emit("room:user-joined", { roomId, userId, role, userName, micOn, camOn });
       broadcastUserList(io, roomId);
     });
 
@@ -207,6 +209,23 @@ function initSocket(io) {
     socket.on("webrtc:call-end", ({ roomId, fromUserId }) => {
       if (!roomId) return;
       io.to(roomId).emit("webrtc:call-end", { roomId, fromUserId });
+    });
+
+    socket.on("room:media-toggle", ({ roomId, userId, micOn, camOn }) => {
+      if (!roomId) return;
+      const users = getOrCreateRoomUsers(roomId);
+      const userEntry = users.get(socket.id);
+      if (userEntry) {
+        if (micOn !== undefined) userEntry.micOn = micOn;
+        if (camOn !== undefined) userEntry.camOn = camOn;
+      }
+      socket.to(roomId).emit("room:media-toggle", { userId, micOn, camOn });
+      broadcastUserList(io, roomId);
+    });
+
+    socket.on("room:control", ({ roomId, action, targetUserId, value }) => {
+      if (!roomId) return;
+      io.to(roomId).emit("room:control", { action, targetUserId, value });
     });
 
     socket.on("proctor:violation", async ({ roomId, userId, type, timestamp, strikeCount }) => {
