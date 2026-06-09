@@ -168,12 +168,12 @@ export default function InterviewerDashboard() {
         navigator.clipboard.writeText(`${window.location.origin}/room/${roomId}`);
         toast({ title: 'Invite link copied!' });
     };
-    return (<div className="dashboard-container min-h-screen bg-background pb-12">
+    return (<div className="dashboard-container min-h-screen bg-background bg-dashboard-dot-pattern pb-12">
         <style dangerouslySetInnerHTML={{
           __html: `
             @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
             @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
-
+ 
             .dashboard-container {
               font-family: 'Montserrat', sans-serif !important;
               --primary: 130 77% 22% !important; /* #0d631b */
@@ -195,7 +195,7 @@ export default function InterviewerDashboard() {
               --ring: 130 77% 22% !important;
               --gradient-primary: linear-gradient(135deg, hsl(130, 77%, 22%), hsl(120, 45%, 34%)) !important;
             }
-
+ 
             .dark .dashboard-container, .dashboard-container.dark {
               --primary: 116 53% 68% !important; /* #88d982 */
               --primary-foreground: 131 100% 11% !important; /* #00390a */
@@ -216,7 +216,7 @@ export default function InterviewerDashboard() {
               --ring: 116 53% 68% !important;
               --gradient-primary: linear-gradient(135deg, hsl(116, 53%, 68%), hsl(128, 17% , 15%)) !important;
             }
-
+ 
             .dashboard-container button,
             .dashboard-container input,
             .dashboard-container select,
@@ -230,10 +230,19 @@ export default function InterviewerDashboard() {
             .dashboard-container a {
               font-family: 'Montserrat', sans-serif !important;
             }
+
+            .bg-dashboard-dot-pattern {
+              background-image: radial-gradient(circle, rgba(13, 99, 27, 0.05) 1px, transparent 1px);
+              background-size: 24px 24px;
+            }
+            .dark .bg-dashboard-dot-pattern, .dashboard-container.dark .bg-dashboard-dot-pattern {
+              background-image: radial-gradient(circle, rgba(136, 217, 130, 0.04) 1px, transparent 1px);
+              background-size: 24px 24px;
+            }
           `
         }} />
         <WelcomePopup />
-        <header className="border-b border-border">
+        <header className="border-b border-border bg-card/60 backdrop-blur-md sticky top-0 z-40">
           <div className="container flex items-center justify-between h-16">
             <Link to="/" className="flex items-center gap-2">
               <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-primary">
@@ -259,7 +268,7 @@ export default function InterviewerDashboard() {
           </div>
         </header>
 
-        <div className="container py-6 sm:py-8">
+        <div className="container py-6 sm:py-8 relative z-10">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
               <h1 className="text-3xl font-bold mb-1">Interviewer Dashboard</h1>
@@ -273,15 +282,19 @@ export default function InterviewerDashboard() {
           {/* Stats */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-10">
             {[
-            { icon: Calendar, label: 'Total Interviews', value: rooms.length },
-            { icon: CheckCircle2, label: 'Completed', value: completedCount },
-            { icon: Users, label: 'Candidates', value: candidateCount },
-            { icon: BarChart3, label: 'Avg Rating', value: '4.2' },
-        ].map((stat) => (<div key={stat.label} className="p-4 rounded-xl bg-card border border-border">
-                <stat.icon className="w-5 h-5 text-primary mb-2"/>
-                <div className="text-2xl font-bold">{stat.value}</div>
-                <div className="text-xs text-muted-foreground">{stat.label}</div>
-              </div>))}
+              { icon: Calendar, label: 'Total Interviews', value: rooms.length },
+              { icon: CheckCircle2, label: 'Completed', value: completedCount },
+              { icon: Users, label: 'Candidates', value: candidateCount },
+              { icon: BarChart3, label: 'Avg Rating', value: '4.2' },
+            ].map((stat) => (
+              <div key={stat.label} className="relative overflow-hidden p-5 rounded-xl bg-card border border-border hover:border-primary/30 transition-all hover:shadow-md group">
+                <div className="absolute top-0 right-0 p-3 text-primary/10 group-hover:text-primary/20 transition-colors">
+                  <stat.icon className="w-12 h-12 stroke-[1]"/>
+                </div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">{stat.label}</div>
+                <div className="text-3xl font-bold tracking-tight text-foreground">{stat.value}</div>
+              </div>
+            ))}
           </div>
 
           {/* Filters */}
@@ -294,7 +307,7 @@ export default function InterviewerDashboard() {
           </div>
 
           {/* Room List */}
-          <div className="space-y-3">
+          <div className="space-y-4">
             {!isLoadingRooms && rooms.length === 0 && (
               <div className="flex flex-col items-center justify-center p-12 text-center rounded-2xl border border-dashed border-primary/30 bg-primary/5 max-w-2xl mx-auto my-8">
                 <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-4">
@@ -314,43 +327,71 @@ export default function InterviewerDashboard() {
                 No interviews match the selected filter.
               </div>
             )}
-            {filtered.map((room, i) => (<motion.div key={room.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="p-5 rounded-xl bg-card border border-border hover:border-primary/20 transition-all">
-                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-semibold">{room.title}</h3>
-                      <Badge variant="outline" className={statusConfig[room.status].className}>
-                        {statusConfig[room.status].label}
-                      </Badge>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground mb-3">
-                      <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5"/>{format(new Date(room.scheduledAt), 'MMM d, yyyy')}</span>
-                      <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5"/>{format(new Date(room.scheduledAt), 'h:mm a')}</span>
-                      <span>{room.durationMinutes}min</span>
-                      <span className="flex items-center gap-1 break-all"><Users className="w-3.5 h-3.5 shrink-0"/>{room.candidateEmail}</span>
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {room.techStack.map((t) => (<span key={t} className="px-2 py-0.5 text-[10px] font-medium rounded-md bg-primary/10 text-primary">{t}</span>))}
-                      <span className={`px-2 py-0.5 text-[10px] font-medium rounded-md ${room.difficultyLevel === 'hard' ? 'bg-destructive/10 text-destructive' :
-                room.difficultyLevel === 'medium' ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success'}`}>
-                        {room.difficultyLevel}
-                      </span>
-                    </div>
+            {filtered.map((room, i) => (
+              <motion.div 
+                key={room.id} 
+                initial={{ opacity: 0, y: 10 }} 
+                animate={{ opacity: 1, y: 0 }} 
+                transition={{ delay: i * 0.05 }} 
+                className="rounded-xl overflow-hidden bg-card border border-border hover:border-primary/30 transition-all hover:shadow-md group"
+              >
+                {/* Simulated Tab Bar / Window Header */}
+                <div className="bg-muted/40 px-4 py-2.5 border-b border-border/60 flex items-center justify-between text-xs select-none">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-red-400/80" />
+                    <span className="w-2 h-2 rounded-full bg-yellow-400/80" />
+                    <span className="w-2 h-2 rounded-full bg-green-400/80" />
                   </div>
-                  <div className="flex flex-wrap gap-2 lg:ml-4">
-                    <Button size="sm" variant="outline" className="active:scale-95 transition-all" onClick={() => copyInvite(room.roomId)}>
-                      <Copy className="w-3.5 h-3.5"/>
-                    </Button>
-                    {room.status === 'scheduled' && (<Button size="sm" onClick={() => handleStartRoom(room)} className="bg-gradient-primary hover:opacity-90 active:scale-95 transition-all" disabled={startingRoomId === room.id}>
-                        {startingRoomId === room.id ? 'Starting...' : 'Start'} <ArrowRight className="ml-1 w-3.5 h-3.5"/>
-                      </Button>)}
-                    {room.status === 'completed' && (<Button size="sm" variant="outline" className="active:scale-95 transition-all" onClick={() => navigate(`/feedback/${room.roomId}`)}>
-                        Feedback
-                      </Button>)}
+                  <span className="font-mono text-[10px] text-muted-foreground tracking-wider group-hover:text-primary transition-colors">
+                    {room.roomId}.session
+                  </span>
+                </div>
+
+                <div className="p-5">
+                  <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">{room.title}</h3>
+                        <Badge variant="outline" className={statusConfig[room.status].className}>
+                          {statusConfig[room.status].label}
+                        </Badge>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground mb-3">
+                        <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5"/>{format(new Date(room.scheduledAt), 'MMM d, yyyy')}</span>
+                        <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5"/>{format(new Date(room.scheduledAt), 'h:mm a')}</span>
+                        <span>{room.durationMinutes}min</span>
+                        <span className="flex items-center gap-1 break-all"><Users className="w-3.5 h-3.5 shrink-0"/>{room.candidateEmail}</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {room.techStack.map((t) => (<span key={t} className="px-2 py-0.5 text-[10px] font-medium rounded-md bg-primary/10 text-primary">{t}</span>))}
+                        <span className={`px-2 py-0.5 text-[10px] font-medium rounded-md ${room.difficultyLevel === 'hard' ? 'bg-destructive/10 text-destructive' :
+                  room.difficultyLevel === 'medium' ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success'}`}>
+                          {room.difficultyLevel}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2 lg:ml-4 self-center">
+                      <Button size="sm" variant="outline" className="active:scale-95 transition-all" onClick={() => copyInvite(room.roomId)}>
+                        <Copy className="w-3.5 h-3.5"/>
+                      </Button>
+                      {room.status === 'scheduled' && (<Button size="sm" onClick={() => handleStartRoom(room)} className="bg-gradient-primary hover:opacity-90 active:scale-95 transition-all" disabled={startingRoomId === room.id}>
+                          {startingRoomId === room.id ? 'Starting...' : 'Start'} <ArrowRight className="ml-1 w-3.5 h-3.5"/>
+                        </Button>)}
+                      {room.status === 'completed' && (<Button size="sm" variant="outline" className="active:scale-95 transition-all" onClick={() => navigate(`/feedback/${room.roomId}`)}>
+                          Feedback
+                        </Button>)}
+                    </div>
                   </div>
                 </div>
-              </motion.div>))}
+              </motion.div>
+            ))}
           </div>
+        </div>
+
+        {/* System Status Indicator */}
+        <div className="fixed bottom-4 right-4 z-40 bg-background/80 backdrop-blur-sm border border-border px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm opacity-80 hover:opacity-100 transition-opacity">
+          <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+          <span className="font-mono text-[10px] text-muted-foreground">InterviewOS Core v4.2 Online</span>
         </div>
 
         {/* Create Room Modal */}

@@ -73,37 +73,51 @@ function RoomCard({ room }) {
     const scheduledDate = new Date(room.scheduledAt);
     const minutesUntil = differenceInMinutes(scheduledDate, new Date());
     const canJoin = minutesUntil <= 10 && minutesUntil >= -room.durationMinutes;
-    return (<motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-5 rounded-xl bg-card border border-border hover:border-primary/20 transition-all group">
-      <div className="flex flex-wrap items-start justify-between gap-2 mb-3">
-        <div className="flex-1">
-          <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">{room.title}</h3>
-          {room.description && <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{room.description}</p>}
+    return (<motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl overflow-hidden bg-card border border-border hover:border-primary/30 transition-all hover:shadow-md group">
+      {/* Simulated Tab Bar / Window Header */}
+      <div className="bg-muted/40 px-4 py-2.5 border-b border-border/60 flex items-center justify-between text-xs select-none">
+        <div className="flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-red-400/80" />
+          <span className="w-2 h-2 rounded-full bg-yellow-400/80" />
+          <span className="w-2 h-2 rounded-full bg-green-400/80" />
         </div>
-        <Badge variant="outline" className={statusConfig[room.status].className}>
-          {statusConfig[room.status].label}
-        </Badge>
+        <span className="font-mono text-[10px] text-muted-foreground tracking-wider group-hover:text-primary transition-colors">
+          {room.roomId}.session
+        </span>
       </div>
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground mb-4">
-        <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5"/>{format(scheduledDate, 'MMM d, yyyy')}</span>
-        <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5"/>{format(scheduledDate, 'h:mm a')}</span>
-        <span>{room.durationMinutes}min</span>
-      </div>
-      <div className="flex flex-wrap gap-1.5 mb-4">
-        {room.techStack.map((t) => (<span key={t} className="px-2 py-0.5 text-[10px] font-medium rounded-md bg-primary/10 text-primary">{t}</span>))}
-      </div>
-      <div className="flex flex-wrap items-center gap-2">
-        {room.status === 'active' && (<Button size="sm" onClick={() => navigate(`/room/${room.roomId}`)} className="bg-gradient-primary hover:opacity-90 active:scale-95 transition-all">
-            Join Now <ArrowRight className="ml-1 w-3.5 h-3.5"/>
-          </Button>)}
-        {room.status === 'scheduled' && canJoin && (<Button size="sm" onClick={() => navigate(`/room/${room.roomId}`)} className="bg-gradient-primary hover:opacity-90 active:scale-95 transition-all">
-            Join Now <ArrowRight className="ml-1 w-3.5 h-3.5"/>
-          </Button>)}
-        {room.status === 'completed' && (<Button size="sm" variant="outline" className="active:scale-95 transition-all" onClick={() => navigate(`/feedback/${room.roomId}`)}>
-            View Feedback
-          </Button>)}
-        {room.status === 'scheduled' && !canJoin && (<span className="text-xs text-muted-foreground">
-            {isFuture(scheduledDate) ? `Starts in ${minutesUntil}min` : 'Session ended'}
-          </span>)}
+
+      <div className="p-5">
+        <div className="flex flex-wrap items-start justify-between gap-2 mb-3">
+          <div className="flex-1">
+            <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">{room.title}</h3>
+            {room.description && <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{room.description}</p>}
+          </div>
+          <Badge variant="outline" className={statusConfig[room.status].className}>
+            {statusConfig[room.status].label}
+          </Badge>
+        </div>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground mb-4">
+          <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5"/>{format(scheduledDate, 'MMM d, yyyy')}</span>
+          <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5"/>{format(scheduledDate, 'h:mm a')}</span>
+          <span>{room.durationMinutes}min</span>
+        </div>
+        <div className="flex flex-wrap gap-1.5 mb-4">
+          {room.techStack.map((t) => (<span key={t} className="px-2 py-0.5 text-[10px] font-medium rounded-md bg-primary/10 text-primary">{t}</span>))}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {room.status === 'active' && (<Button size="sm" onClick={() => navigate(`/room/${room.roomId}`)} className="bg-gradient-primary hover:opacity-90 active:scale-95 transition-all">
+              Join Now <ArrowRight className="ml-1 w-3.5 h-3.5"/>
+            </Button>)}
+          {room.status === 'scheduled' && canJoin && (<Button size="sm" onClick={() => navigate(`/room/${room.roomId}`)} className="bg-gradient-primary hover:opacity-90 active:scale-95 transition-all">
+              Join Now <ArrowRight className="ml-1 w-3.5 h-3.5"/>
+            </Button>)}
+          {room.status === 'completed' && (<Button size="sm" variant="outline" className="active:scale-95 transition-all" onClick={() => navigate(`/feedback/${room.roomId}`)}>
+              View Feedback
+            </Button>)}
+          {room.status === 'scheduled' && !canJoin && (<span className="text-xs text-muted-foreground">
+              {isFuture(scheduledDate) ? `Starts in ${minutesUntil}min` : 'Session ended'}
+            </span>)}
+        </div>
       </div>
     </motion.div>);
 }
@@ -142,7 +156,7 @@ export default function CandidateDashboard() {
         navigate('/');
     };
 
-    return (<div className="dashboard-container min-h-screen bg-background pb-12">
+    return (<div className="dashboard-container min-h-screen bg-background bg-dashboard-dot-pattern pb-12">
         <style dangerouslySetInnerHTML={{
           __html: `
             @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
@@ -204,11 +218,20 @@ export default function CandidateDashboard() {
             .dashboard-container a {
               font-family: 'Montserrat', sans-serif !important;
             }
+
+            .bg-dashboard-dot-pattern {
+              background-image: radial-gradient(circle, rgba(13, 99, 27, 0.05) 1px, transparent 1px);
+              background-size: 24px 24px;
+            }
+            .dark .bg-dashboard-dot-pattern, .dashboard-container.dark .bg-dashboard-dot-pattern {
+              background-image: radial-gradient(circle, rgba(136, 217, 130, 0.04) 1px, transparent 1px);
+              background-size: 24px 24px;
+            }
           `
         }} />
       <WelcomePopup />
       {/* Header */}
-      <header className="border-b border-border">
+      <header className="border-b border-border bg-card/60 backdrop-blur-md sticky top-0 z-40">
         <div className="container flex items-center justify-between h-16">
           <Link to="/" className="flex items-center gap-2">
             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-primary">
@@ -234,7 +257,7 @@ export default function CandidateDashboard() {
         </div>
       </header>
 
-      <div className="container py-6 sm:py-8">
+      <div className="container py-6 sm:py-8 relative z-10">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="text-3xl font-bold mb-1">Dashboard</h1>
           <p className="text-muted-foreground mb-8">Welcome back, {user?.name}. Here are your interviews.</p>
@@ -259,20 +282,24 @@ export default function CandidateDashboard() {
             {/* Stats */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-10">
               {[
-                { icon: Calendar, label: 'Upcoming', value: upcoming.length, color: 'text-info' },
-                { icon: Video, label: 'Completed', value: past.length, color: 'text-success' },
-                { icon: Code2, label: 'Code Sessions', value: completedCount, color: 'text-primary' },
-                { icon: MessageSquare, label: 'Feedback', value: completedCount, color: 'text-warning' },
-              ].map((stat) => (<div key={stat.label} className="p-4 rounded-xl bg-card border border-border">
-                  <stat.icon className={`w-5 h-5 ${stat.color} mb-2`}/>
-                  <div className="text-2xl font-bold">{stat.value}</div>
-                  <div className="text-xs text-muted-foreground">{stat.label}</div>
-                </div>))}
+                { icon: Calendar, label: 'Upcoming', value: upcoming.length },
+                { icon: Video, label: 'Completed', value: past.length },
+                { icon: Code2, label: 'Code Sessions', value: completedCount },
+                { icon: MessageSquare, label: 'Feedback', value: completedCount },
+              ].map((stat) => (
+                <div key={stat.label} className="relative overflow-hidden p-5 rounded-xl bg-card border border-border hover:border-primary/30 transition-all hover:shadow-md group">
+                  <div className="absolute top-0 right-0 p-3 text-primary/10 group-hover:text-primary/20 transition-colors">
+                    <stat.icon className="w-12 h-12 stroke-[1]"/>
+                  </div>
+                  <div className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">{stat.label}</div>
+                  <div className="text-3xl font-bold tracking-tight text-foreground">{stat.value}</div>
+                </div>
+              ))}
             </div>
 
             {/* Upcoming */}
             <div className="mb-10">
-              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 select-none">
                 <Calendar className="w-5 h-5 text-primary"/> Upcoming Interviews
               </h2>
               {upcoming.length > 0 ? (<div className="grid md:grid-cols-2 gap-4">
@@ -284,7 +311,7 @@ export default function CandidateDashboard() {
 
             {/* Past */}
             <div>
-              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 select-none">
                 <History className="w-5 h-5 text-muted-foreground"/> Past Interviews
               </h2>
               {past.length > 0 ? (<div className="grid md:grid-cols-2 gap-4">
@@ -295,6 +322,12 @@ export default function CandidateDashboard() {
             </div>
           </>
         )}
+      </div>
+
+      {/* System Status Indicator */}
+      <div className="fixed bottom-4 right-4 z-40 bg-background/80 backdrop-blur-sm border border-border px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm opacity-80 hover:opacity-100 transition-opacity">
+        <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+        <span className="font-mono text-[10px] text-muted-foreground">InterviewOS Core v4.2 Online</span>
       </div>
     </div>);
 }
