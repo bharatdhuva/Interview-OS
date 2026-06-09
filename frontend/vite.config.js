@@ -18,5 +18,24 @@ export default defineConfig({
     },
     define: {
         'process.env.IS_PREACT': JSON.stringify('true')
+    },
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks(id) {
+                    if (id.includes("node_modules")) {
+                        if (id.includes("@monaco-editor") || id.includes("monaco-editor")) {
+                            return "monaco-editor";
+                        }
+                        if (id.includes("react-markdown") || id.includes("markdown")) {
+                            return "react-markdown";
+                        }
+                        if (id.includes("excalidraw") || id.includes("@excalidraw")) {
+                            return "excalidraw";
+                        }
+                    }
+                }
+            }
+        }
     }
 });

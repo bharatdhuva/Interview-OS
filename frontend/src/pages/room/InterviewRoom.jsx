@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import Editor from "@monaco-editor/react";
 import {
   Mic,
   MicOff,
@@ -9,6 +8,7 @@ import {
   Video as VideoIcon,
   VideoOff,
   Monitor,
+  PhoneOff,
   Play,
   Save,
   Send,
@@ -29,7 +29,12 @@ import {
   VolumeX,
   Lock,
   Unlock,
-  MessageSquare
+  MessageSquare,
+  FileText,
+  ClipboardList,
+  Settings,
+  Share2,
+  Mail
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,9 +50,13 @@ import {
 import { useAuthStore } from "@/store/authStore";
 import { useToast } from "@/hooks/use-toast";
 import { useProctor } from "@/hooks/useProctor";
-import WhiteboardPanel from "@/components/room/WhiteboardPanel";
 import api from "@/lib/api";
 import { io } from "socket.io-client";
+
+// Lazy-loaded components for code-splitting
+const EditorTabPanel = React.lazy(() => import("@/components/room/EditorTabPanel"));
+const WhiteboardPanel = React.lazy(() => import("@/components/room/WhiteboardPanel"));
+const ProblemTabPanel = React.lazy(() => import("@/components/room/ProblemTabPanel"));
 
 const languages = [
   { value: "javascript", label: "JavaScript" },
@@ -59,21 +68,163 @@ const languages = [
   { value: "rust", label: "Rust" },
 ];
 
-const defaultCode = {
-  javascript: `// Two Sum Problem\nfunction twoSum(nums, target) {\n  const map = new Map();\n  for (let i = 0; i < nums.length; i++) {\n    const complement = target - nums[i];\n    if (map.has(complement)) {\n      return [map.get(complement), i];\n    }\n    map.set(nums[i], i);\n  }\n  return [];\n}\n\n// Test\nconsole.log(twoSum([2, 7, 11, 15], 9));`,
-  typescript: `// Two Sum Problem\nfunction twoSum(nums: number[], target: number): number[] {\n  const map = new Map<number, number>();\n  for (let i = 0; i < nums.length; i++) {\n    const complement = target - nums[i];\n    if (map.has(complement)) {\n      return [map.get(complement)!, i];\n    }\n    map.set(nums[i], i);\n  }\n  return [];\n}\n\nconsole.log(twoSum([2, 7, 11, 15], 9));`,
-  python: `# Two Sum Problem\ndef two_sum(nums, target):\n    seen = {}\n    for i, num in enumerate(nums):\n        complement = target - num\n        if complement in seen:\n            return [seen[complement], i]\n        seen[num] = i\n    return []\n\nprint(two_sum([2, 7, 11, 15], 9))`,
-  java: `class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        Map<Integer, Integer> map = new HashMap<>();\n        for (int i = 0; i < nums.length; i++) {\n            int complement = target - nums[i];\n            if (map.containsKey(complement)) {\n                return new int[]{map.get(complement), i};\n            }\n            map.put(nums[i], i);\n        }\n        return new int[]{};\n    }\n}`,
-  cpp: `#include <vector>\n#include <unordered_map>\nusing namespace std;\n\nclass Solution {\npublic:\n    vector<int> twoSum(vector<int>& nums, int target) {\n        unordered_map<int, int> map;\n        for (int i = 0; i < nums.size(); i++) {\n            int complement = target - nums[i];\n            if (map.count(complement)) {\n                return {map[complement], i};\n            }\n            map[nums[i]] = i;\n        }\n        return {};\n    }\n};`,
-  go: `package main\n\nimport "fmt"\n\nfunc twoSum(nums []int, target int) []int {\n    m := make(map[int]int)\n    for i, num := range nums {\n        complement := target - num\n        if j, ok := m[complement]; ok {\n            return []int{j, i}\n        }\n        m[num] = i\n    }\n    return nil\n}\n\nfunc main() {\n    fmt.Println(twoSum([]int{2, 7, 11, 15}, 9))\n}`,
-  rust: `use std::collections::HashMap;\n\nfn two_sum(nums: Vec<i32>, target: i32) -> Vec<i32> {\n    let mut map = HashMap::new();\n    for (i, &num) in nums.iter().enumerate() {\n        let complement = target - num;\n        if let Some(&j) = map.get(&complement) {\n            return vec![j as i32, i as i32];\n        }\n        map.insert(num, i);\n    }\n    vec![]\n}\n\nfn main() {\n    println!("{:?}", two_sum(vec![2, 7, 11, 15], 9));\n}`,
-};
+const questionTemplates = [
+  {
+    title: "Two Sum",
+    markdown: `# Two Sum
+
+Given an array of integers \`nums\` and an integer \`target\`, return *indices of the two numbers such that they add up to \`target\`*.
+
+You may assume that each input would have ***exactly* one solution**, and you may not use the *same* element twice.
+
+You can return the answer in any order.
+
+### Example 1:
+**Input:** nums = [2,7,11,15], target = 9
+**Output:** [0,1]
+**Explanation:** Because nums[0] + nums[1] == 9, we return [0, 1].
+
+### Example 2:
+**Input:** nums = [3,2,4], target = 6
+**Output:** [1,2]
+
+### Constraints:
+- 2 <= nums.length <= 10^4
+- -10^9 <= nums[i] <= 10^9
+- -10^9 <= target <= 10^9
+`
+  },
+  {
+    title: "Valid Parentheses",
+    markdown: `# Valid Parentheses
+
+Given a string \`s\` containing just the characters \`'\('\`, \`'\)'\`, \`'\{'\`, \`'\}'\`, \`'\['\` and \`'\]'\`, determine if the input string is valid.
+
+An input string is valid if:
+1. Open brackets must be closed by the same type of brackets.
+2. Open brackets must be closed in the correct order.
+3. Every close bracket has a corresponding open bracket of the same type.
+
+### Example 1:
+**Input:** s = "()"
+**Output:** true
+
+### Example 2:
+**Input:** s = "()[]{}"
+**Output:** true
+
+### Constraints:
+- 1 <= s.length <= 10^4
+- \`s\` consists of parentheses only \`'()[]{}'\`.
+`
+  },
+  {
+    title: "Merge Intervals",
+    markdown: `# Merge Intervals
+
+Given an array of \`intervals\` where \`intervals[i] = [start_i, end_i]\`, merge all overlapping intervals, and return *an array of the non-overlapping intervals that cover all the intervals in the input*.
+
+### Example 1:
+**Input:** intervals = [[1,3],[2,6],[8,10],[15,18]]
+**Output:** [[1,6],[8,10],[15,18]]
+**Explanation:** Since intervals [1,3] and [2,6] overlap, merge them into [1,6].
+
+### Example 2:
+**Input:** intervals = [[1,4],[4,5]]
+**Output:** [[1,5]]
+**Explanation:** Intervals [1,4] and [4,5] are considered overlapping.
+`
+  }
+];
 
 const getInitials = (name) => {
   if (!name) return "?";
   const parts = name.split(" ");
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
+};
+
+const formatTime = (seconds) => {
+  if (seconds === null || seconds === undefined || isNaN(seconds)) return "00:00";
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+};
+
+
+// Hook for Active Speaker detection
+const useSpeechDetector = (stream, onSpeechToggle) => {
+  useEffect(() => {
+    if (!stream) {
+      onSpeechToggle(false);
+      return;
+    }
+    const audioTracks = stream.getAudioTracks();
+    if (audioTracks.length === 0) {
+      onSpeechToggle(false);
+      return;
+    }
+
+    let audioCtx;
+    let source;
+    let analyser;
+    let rafId;
+
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const cleanStream = new MediaStream([audioTracks[0]]);
+      source = audioCtx.createMediaStreamSource(cleanStream);
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 256;
+      source.connect(analyser);
+
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+
+      let isSpeaking = false;
+      let consecutiveFrames = 0;
+
+      const checkVolume = () => {
+        analyser.getByteFrequencyData(dataArray);
+        let sum = 0;
+        for (let i = 0; i < bufferLength; i++) {
+          sum += dataArray[i];
+        }
+        const average = sum / bufferLength;
+        const speaking = average > 12; // volume threshold
+        
+        if (speaking) {
+          consecutiveFrames = Math.min(10, consecutiveFrames + 1);
+        } else {
+          consecutiveFrames = Math.max(0, consecutiveFrames - 1);
+        }
+
+        const speakDetected = consecutiveFrames > 3;
+
+        if (speakDetected !== isSpeaking) {
+          isSpeaking = speakDetected;
+          onSpeechToggle(speakDetected);
+        }
+        rafId = requestAnimationFrame(checkVolume);
+      };
+      rafId = requestAnimationFrame(checkVolume);
+    } catch (e) {
+      // Browser autoplay/gesture policy warning bypass
+    }
+
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      if (source) {
+        try { source.disconnect(); } catch (e) {}
+      }
+      if (analyser) {
+        try { analyser.disconnect(); } catch (e) {}
+      }
+      if (audioCtx) {
+        try { audioCtx.close(); } catch (e) {}
+      }
+    };
+  }, [stream, onSpeechToggle]);
 };
 
 const RemoteVideo = ({ stream, camOn }) => {
@@ -94,7 +245,10 @@ const RemoteVideo = ({ stream, camOn }) => {
   );
 };
 
-const VideoTile = ({ participant, isLocal, localVideoRef }) => {
+const VideoTile = ({ participant, isLocal, localVideoRef, hasHand }) => {
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  useSpeechDetector(participant.stream, setIsSpeaking);
+
   return (
     <motion.div
       layout
@@ -102,20 +256,31 @@ const VideoTile = ({ participant, isLocal, localVideoRef }) => {
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.85 }}
       transition={{ duration: 0.2 }}
-      className="relative rounded-2xl bg-[#eceeec] dark:bg-[#182219] border border-border/80 overflow-hidden flex flex-col shadow-md hover:shadow-lg transition-all duration-300 w-full h-full min-h-[160px] aspect-[4/3]"
+      className={`relative rounded-2xl bg-[#eceeec] dark:bg-[#182219] border overflow-hidden flex flex-col shadow-md hover:shadow-lg transition-all duration-300 w-full h-full min-h-[160px] aspect-[4/3] ${
+        isSpeaking
+          ? "border-primary shadow-[0_0_15px_rgba(13,99,27,0.4)] dark:shadow-[0_0_15px_rgba(136,217,130,0.5)] scale-[1.01]"
+          : "border-border/85"
+      }`}
     >
       {/* Top bar indicators inside tile */}
       <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/40 to-transparent p-3 flex items-center justify-between z-10">
-        <div className="flex gap-1">
+        <div className="flex gap-1 select-none">
           <span className="w-2 h-2 rounded-full bg-red-400/80 inline-block" />
           <span className="w-2 h-2 rounded-full bg-yellow-400/80 inline-block" />
           <span className="w-2 h-2 rounded-full bg-green-400/80 inline-block" />
         </div>
-        {!participant.micOn && (
-          <div className="w-6 h-6 rounded-full bg-destructive flex items-center justify-center text-white shadow-md">
-            <MicOff className="w-3.5 h-3.5" />
-          </div>
-        )}
+        <div className="flex items-center gap-1.5">
+          {hasHand && (
+            <div className="w-7 h-7 rounded-full bg-amber-500 flex items-center justify-center text-white shadow-md animate-bounce-short">
+              <span className="text-xs">✋</span>
+            </div>
+          )}
+          {!participant.micOn && (
+            <div className="w-7 h-7 rounded-full bg-destructive flex items-center justify-center text-white shadow-md">
+              <MicOff className="w-3.5 h-3.5" />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Video or Initials Avatar */}
@@ -133,7 +298,7 @@ const VideoTile = ({ participant, isLocal, localVideoRef }) => {
         )}
 
         {!participant.camOn && (
-          <div className="flex flex-col items-center justify-center z-10">
+          <div className="flex flex-col items-center justify-center z-10 select-none">
             <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-[#0d631b] to-[#2e7d32] dark:from-[#88d982] dark:to-[#307231] flex items-center justify-center text-white dark:text-[#00390a] text-lg sm:text-xl font-bold shadow-md">
               {getInitials(participant.userName)}
             </div>
@@ -145,7 +310,7 @@ const VideoTile = ({ participant, isLocal, localVideoRef }) => {
       </div>
 
       {/* Participant Name Pill */}
-      <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-sm text-[9px] sm:text-[10px] text-white font-medium flex items-center gap-1.5 z-10">
+      <div className="absolute bottom-3 left-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-sm text-[9px] sm:text-[10px] text-white font-medium flex items-center gap-1.5 z-10 select-none">
         <span className="truncate max-w-[90px] sm:max-w-[120px]">{participant.userName}</span>
         <Badge variant="secondary" className="text-[8px] sm:text-[9px] px-1 py-0 h-4 bg-white/20 text-white border-0 hover:bg-white/20 select-none">
           {participant.role}
@@ -209,8 +374,8 @@ export default function InterviewRoom() {
   const editorStorageKey = `interviewos:room:${roomId || "default"}:editor`;
   const roomSessionKey = `interviewos:room-session:${roomId || "default"}`;
 
-  // Mode: 'editor' or 'whiteboard'
-  const [activeTab, setActiveTab] = useState("editor");
+  // Tab mode: 'video' | 'editor' | 'whiteboard' | 'problem' | 'notes' | 'settings'
+  const [activeTab, setActiveTab] = useState("video");
   const [isDark, setIsDark] = useState(document.documentElement.classList.contains("dark"));
 
   useEffect(() => {
@@ -228,26 +393,45 @@ export default function InterviewRoom() {
     roomId,
   });
 
-  const [language, setLanguage] = useState("typescript");
-  const [codeByLanguage, setCodeByLanguage] = useState(() => {
+  // Collaborative multi-file state
+  const [files, setFiles] = useState({
+    "main.js": `// Two Sum Problem\nfunction twoSum(nums, target) {\n  const map = new Map();\n  for (let i = 0; i < nums.length; i++) {\n    const complement = target - nums[i];\n    if (map.has(complement)) {\n      return [map.get(complement), i];\n    }\n    map.set(nums[i], i);\n  }\n  return [];\n}\n\nconsole.log(twoSum([2, 7, 11, 15], 9));`,
+    "solution.py": `# Python Solution\ndef two_sum(nums, target):\n    seen = {}\n    for i, num in enumerate(nums):\n        if target - num in seen:\n            return [seen[target - num], i]\n        seen[num] = i\n    return []\n\nprint(two_sum([2, 7, 11, 15], 9))`
+  });
+  const [activeFile, setActiveFile] = useState("main.js");
+  const [newFileName, setNewFileName] = useState("");
+  const [showFileExplorer, setShowFileExplorer] = useState(true);
+
+  // Problem statement state
+  const [problemText, setProblemText] = useState(questionTemplates[0].markdown);
+
+  // Interviewer Private Notes state
+  const notesStorageKey = `interviewos:room:${roomId || "default"}:private-notes`;
+  const [privateNotes, setPrivateNotes] = useState(() => {
     try {
-      const saved = localStorage.getItem(editorStorageKey);
-      if (!saved) return { ...defaultCode };
-      const parsed = JSON.parse(saved);
-      return {
-        ...defaultCode,
-        ...(parsed.codeByLanguage || {}),
-      };
+      const saved = localStorage.getItem(notesStorageKey);
+      return saved ? JSON.parse(saved) : { text: "", score: 3, checklist: { communication: false, solving: false, coding: false } };
     } catch {
-      return { ...defaultCode };
+      return { text: "", score: 3, checklist: { communication: false, solving: false, coding: false } };
     }
   });
 
-  const [code, setCode] = useState(defaultCode.typescript);
+  const savePrivateNotes = (updated) => {
+    setPrivateNotes(updated);
+    try {
+      localStorage.setItem(notesStorageKey, JSON.stringify(updated));
+    } catch {
+      // ignore
+    }
+  };
+
+  const [language, setLanguage] = useState("typescript");
   const [lastSavedAt, setLastSavedAt] = useState(null);
   const [output, setOutput] = useState("");
   const [isRunning, setIsRunning] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Media controls state
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
   const [chatInput, setChatInput] = useState("");
@@ -257,6 +441,7 @@ export default function InterviewRoom() {
   const [roomTitle, setRoomTitle] = useState("Interview Room");
   const [messages, setMessages] = useState([]);
   const [connectedUsers, setConnectedUsers] = useState([]);
+  
   const chatEndRef = useRef(null);
   const autosaveTimeoutRef = useRef(null);
   
@@ -270,11 +455,13 @@ export default function InterviewRoom() {
 
   const [remoteStreams, setRemoteStreams] = useState({}); // userId -> MediaStream
   const [isSharingScreen, setIsSharingScreen] = useState(false);
-  const [showChat, setShowChat] = useState(false);
   const [roomLocked, setRoomLocked] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [statsData, setStatsData] = useState({});
   const [showStatsModal, setShowStatsModal] = useState(false);
+
+  // Raise hand state map
+  const [raisedHands, setRaisedHands] = useState({});
 
   const [identity, setIdentity] = useState(() => {
     const fallbackName = user?.name || "Candidate";
@@ -537,10 +724,6 @@ export default function InterviewRoom() {
   }, [identity.userId, roleOverride, roomId, user?.id, user?._id]);
 
   useEffect(() => {
-    setCode(codeByLanguage[language] ?? defaultCode[language] ?? "");
-  }, [language, codeByLanguage]);
-
-  useEffect(() => {
     if (!roomId) return;
 
     const socket = io(getSocketServerUrl(), {
@@ -688,7 +871,7 @@ export default function InterviewRoom() {
       );
     };
 
-    const onRoomControl = ({ action, targetUserId }) => {
+    const onRoomControl = ({ action, targetUserId, value }) => {
       if (action === "mute-all") {
         if (identity.role === "candidate") {
           const stream = localStreamRef.current;
@@ -738,6 +921,60 @@ export default function InterviewRoom() {
             navigate("/");
           }, 2000);
         }
+      } else if (action === "raise-hand") {
+        setRaisedHands(prev => ({ ...prev, [targetUserId]: value }));
+        
+        // Interviewer audio & visual buzzer alert
+        if (identity.role === "interviewer" && value && String(targetUserId) !== String(identity.userId)) {
+          const u = list => (list.find(e => String(e.userId) === String(targetUserId)));
+          toast({
+            title: "Hand Raised ✋",
+            description: "A candidate is requesting attention.",
+          });
+
+          // Web Audio API beep
+          try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(440, audioCtx.currentTime); 
+            gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.18);
+          } catch (e) {
+            // ignore audio block
+          }
+        }
+      } else if (action === "problem-update") {
+        setProblemText(value);
+      } else if (action === "code-update") {
+        const { filePath, code } = value;
+        setFiles(prev => ({
+          ...prev,
+          [filePath]: code
+        }));
+      } else if (action === "file-create") {
+        const { filePath } = value;
+        setFiles(prev => ({
+          ...prev,
+          [filePath]: `// New file ${filePath}\n`
+        }));
+      } else if (action === "file-delete") {
+        const { filePath } = value;
+        setFiles(prev => {
+          const next = { ...prev };
+          delete next[filePath];
+          return next;
+        });
+        setActiveFile(prev => {
+          if (prev === filePath) {
+            return "main.js";
+          }
+          return prev;
+        });
       }
     };
 
@@ -792,12 +1029,6 @@ export default function InterviewRoom() {
     toast,
   ]);
 
-  const formatTime = (s) => {
-    const m = Math.floor(s / 60);
-    const sec = s % 60;
-    return `${m.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
-  };
-
   const elapsedSeconds = Math.max(0, totalDurationSeconds - timer);
   const sessionProgress =
     totalDurationSeconds > 0
@@ -812,7 +1043,7 @@ export default function InterviewRoom() {
           JSON.stringify({
             roomId,
             language,
-            codeByLanguage,
+            codeByLanguage: files,
             updatedAt: new Date().toISOString(),
             triggeredBy,
           })
@@ -836,7 +1067,7 @@ export default function InterviewRoom() {
         }
       }
     },
-    [codeByLanguage, editorStorageKey, language, roomId, toast]
+    [files, editorStorageKey, language, roomId, toast]
   );
 
   useEffect(() => {
@@ -871,18 +1102,19 @@ export default function InterviewRoom() {
   }, [handleManualSave]);
 
   const handleRun = async () => {
-    if (!code.trim()) {
+    const activeCode = files[activeFile] || "";
+    if (!activeCode.trim()) {
       setOutput("Please write some code before running.\n");
       return;
     }
     setIsRunning(true);
-    setOutput(`Running ${language} code...\n`);
+    setOutput(`Running ${activeFile} code...\n`);
     try {
       const sessionId = sessionStorage.getItem(roomSessionKey) || undefined;
       const response = await api.post(`/rooms/${roomId}/code/execute`, {
         roomId,
         language,
-        code,
+        code: activeCode,
         ...(sessionId ? { sessionId } : {}),
       });
       if (!response.data.success || !response.data.data) {
@@ -909,8 +1141,67 @@ export default function InterviewRoom() {
 
   const handleCodeChange = (value) => {
     const nextCode = value || "";
-    setCode(nextCode);
-    setCodeByLanguage((prev) => (prev[language] === nextCode ? prev : { ...prev, [language]: nextCode }));
+    setFiles(prev => ({
+      ...prev,
+      [activeFile]: nextCode
+    }));
+    
+    // Synchronize content
+    socketRef.current?.emit("room:control", {
+      roomId,
+      action: "code-update",
+      value: { filePath: activeFile, code: nextCode }
+    });
+  };
+
+  const handleCreateFile = () => {
+    const name = newFileName.trim();
+    if (!name) return;
+    if (files[name] !== undefined) {
+      toast({ title: "File exists", description: "A file with this name already exists.", variant: "destructive" });
+      return;
+    }
+    setFiles(prev => ({ ...prev, [name]: `// New file ${name}\n` }));
+    setActiveFile(name);
+    setNewFileName("");
+
+    const ext = name.split(".").pop();
+    let lang = "javascript";
+    if (ext === "py") lang = "python";
+    else if (ext === "java") lang = "java";
+    else if (ext === "cpp" || ext === "cc") lang = "cpp";
+    else if (ext === "go") lang = "go";
+    else if (ext === "rs") lang = "rust";
+    else if (ext === "ts") lang = "typescript";
+    setLanguage(lang);
+
+    socketRef.current?.emit("room:control", {
+      roomId,
+      action: "file-create",
+      value: { filePath: name }
+    });
+  };
+
+  const handleDeleteFile = (filePath) => {
+    if (Object.keys(files).length <= 1) {
+      toast({ title: "Cannot delete", description: "You must keep at least one file.", variant: "destructive" });
+      return;
+    }
+    setFiles(prev => {
+      const next = { ...prev };
+      delete next[filePath];
+      return next;
+    });
+    if (activeFile === filePath) {
+      const remaining = Object.keys(files).filter(f => f !== filePath);
+      setActiveFile(remaining[0]);
+    }
+    
+    socketRef.current?.emit("room:control", {
+      roomId,
+      action: "file-delete",
+      value: { filePath }
+    });
   };
 
   const handleToggleMic = () => {
@@ -1090,17 +1381,6 @@ export default function InterviewRoom() {
     setStatsData(statsObj);
   };
 
-  useEffect(() => {
-    let interval;
-    if (showStatsModal) {
-      fetchConnectionStats();
-      interval = setInterval(fetchConnectionStats, 2000);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [showStatsModal]);
-
   const handleSendMessage = (e) => {
     e.preventDefault();
     const trimmed = chatInput.trim();
@@ -1140,36 +1420,45 @@ export default function InterviewRoom() {
       })),
   ];
 
+  const handleProblemChange = (val) => {
+    setProblemText(val);
+    socketRef.current?.emit("room:control", {
+      roomId,
+      action: "problem-update",
+      value: val
+    });
+  };
+
   const renderVideoGrid = () => {
     const len = participants.length;
     if (len === 1) {
       return (
-        <div className="flex-1 flex items-center justify-center min-h-0 w-full h-full p-2">
-          <div className="w-full max-w-sm sm:max-w-md aspect-[4/3]">
-            <VideoTile participant={participants[0]} isLocal={true} localVideoRef={localVideoRef} />
+        <div className="flex-1 flex items-center justify-center min-h-0 w-full h-full p-4">
+          <div className="w-full max-w-sm sm:max-w-xl aspect-[4/3]">
+            <VideoTile participant={participants[0]} isLocal={true} localVideoRef={localVideoRef} hasHand={raisedHands[participants[0].userId]} />
           </div>
         </div>
       );
     }
     if (len === 2) {
       return (
-        <div className="flex-1 grid grid-cols-1 gap-4 items-center justify-center min-h-0 w-full h-full p-2">
+        <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 items-center justify-center min-h-0 w-full h-full p-4">
           {participants.map((p) => (
-            <VideoTile key={p.userId} participant={p} isLocal={p.isLocal} localVideoRef={localVideoRef} />
+            <VideoTile key={p.userId} participant={p} isLocal={p.isLocal} localVideoRef={localVideoRef} hasHand={raisedHands[p.userId]} />
           ))}
         </div>
       );
     }
     if (len === 3) {
       return (
-        <div className="flex-1 flex flex-col gap-4 justify-center min-h-0 w-full h-full p-2">
+        <div className="flex-1 flex flex-col gap-4 justify-center min-h-0 w-full h-full p-4">
           <div className="grid grid-cols-2 gap-4 flex-1 min-h-0">
-            <VideoTile participant={participants[0]} isLocal={participants[0].isLocal} localVideoRef={localVideoRef} />
-            <VideoTile participant={participants[1]} isLocal={participants[1].isLocal} localVideoRef={localVideoRef} />
+            <VideoTile participant={participants[0]} isLocal={participants[0].isLocal} localVideoRef={localVideoRef} hasHand={raisedHands[participants[0].userId]} />
+            <VideoTile participant={participants[1]} isLocal={participants[1].isLocal} localVideoRef={localVideoRef} hasHand={raisedHands[participants[1].userId]} />
           </div>
           <div className="flex justify-center flex-1 min-h-0">
-            <div className="w-1/2 min-w-[160px]">
-              <VideoTile participant={participants[2]} isLocal={participants[2].isLocal} localVideoRef={localVideoRef} />
+            <div className="w-1/2 min-w-[200px]">
+              <VideoTile participant={participants[2]} isLocal={participants[2].isLocal} localVideoRef={localVideoRef} hasHand={raisedHands[participants[2].userId]} />
             </div>
           </div>
         </div>
@@ -1177,13 +1466,22 @@ export default function InterviewRoom() {
     }
     // 4 or more participants
     return (
-      <div className="flex-1 grid grid-cols-2 grid-rows-2 gap-4 min-h-0 w-full h-full p-2">
+      <div className="flex-1 grid grid-cols-2 grid-rows-2 gap-4 min-h-0 w-full h-full p-4">
         {participants.slice(0, 4).map((p) => (
-          <VideoTile key={p.userId} participant={p} isLocal={p.isLocal} localVideoRef={localVideoRef} />
+          <VideoTile key={p.userId} participant={p} isLocal={p.isLocal} localVideoRef={localVideoRef} hasHand={raisedHands[p.userId]} />
         ))}
       </div>
     );
   };
+
+  const tabs = [
+    { id: "video", label: "Video Call", icon: VideoIcon },
+    { id: "editor", label: "Code Editor", icon: Code2 },
+    { id: "whiteboard", label: "Whiteboard", icon: PenTool },
+    { id: "problem", label: "Problem Statement", icon: FileText },
+    { id: "notes", label: "Private Notes", icon: ClipboardList, interviewerOnly: true },
+    { id: "settings", label: "Room Settings", icon: Settings },
+  ];
 
   return (
     <div className="room-container h-[100dvh] flex flex-col bg-background overflow-hidden selection:bg-primary/30">
@@ -1310,7 +1608,7 @@ export default function InterviewRoom() {
       />
 
       {/* Header */}
-      <header className="sticky top-0 border-b border-border bg-card/80 backdrop-blur-md flex flex-col lg:flex-row lg:items-center lg:justify-between px-3 sm:px-4 lg:px-6 py-2 lg:h-16 shrink-0 z-30 gap-2 select-none">
+      <header className="sticky top-0 border-b border-border bg-card/85 backdrop-blur-md flex flex-col lg:flex-row lg:items-center lg:justify-between px-3 sm:px-4 lg:px-6 py-2 lg:h-16 shrink-0 z-30 gap-2 select-none">
         <div className="flex items-center gap-2 sm:gap-4 min-w-0 w-full lg:w-auto">
           <Link to="/" className="group flex items-center gap-2 cursor-pointer select-none">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#0d631b] to-[#2e7d32] dark:from-[#88d982] dark:to-[#307231] flex items-center justify-center shadow-md shadow-primary/20 group-hover:scale-105 transition-transform">
@@ -1345,9 +1643,9 @@ export default function InterviewRoom() {
             {isOnline ? "Connected" : "Offline"}
           </Badge>
 
-          {/* Proctoring Status Pill */}
+          {/* Proctoring badge in header */}
           <div
-            className={`flex items-center gap-2 px-2.5 sm:px-3 py-1 rounded-full border text-[11px] sm:text-xs font-medium transition-colors ${
+            className={`flex items-center gap-2 px-2.5 sm:px-3 py-1 rounded-full border text-[11px] sm:text-xs font-semibold transition-colors ${
               violationCount > 0
                 ? "bg-destructive/10 border-destructive/20 text-destructive animate-pulse"
                 : "bg-primary/10 border-primary/20 text-primary"
@@ -1369,12 +1667,38 @@ export default function InterviewRoom() {
             </span>
           </div>
 
-          <div className="hidden xl:flex items-center gap-2 min-w-40">
-            <Gauge className="w-4 h-4 text-muted-foreground" />
-            <Progress value={sessionProgress} className="h-2" aria-label="Session progress" />
-            <span className="text-[11px] text-muted-foreground tabular-nums w-9 text-right">
-              {sessionProgress}%
-            </span>
+          <div className="flex items-center gap-1 bg-secondary/30 p-0.5 rounded-lg border border-border/50">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-7 h-7 rounded hover:bg-primary/10 hover:text-primary active:scale-95 transition-all duration-200"
+              onClick={handleCopyLink}
+              title="Copy Room Link"
+            >
+              <Copy className="w-3.5 h-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-7 h-7 rounded hover:bg-primary/10 hover:text-primary active:scale-95 transition-all duration-200"
+              onClick={() => {
+                const subject = encodeURIComponent(`Join my InterviewOS Room: ${roomTitle}`);
+                const body = encodeURIComponent(`Please join the interview session here: ${window.location.href}`);
+                window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
+              }}
+              title="Invite via Email"
+            >
+              <Mail className="w-3.5 h-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-7 h-7 rounded hover:bg-primary/10 hover:text-primary active:scale-95 transition-all duration-200"
+              onClick={handleCopyLink}
+              title="Share Room"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+            </Button>
           </div>
 
           <Button
@@ -1389,279 +1713,347 @@ export default function InterviewRoom() {
         </div>
       </header>
 
-      {/* Main Layout Area */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+      {/* Main layout frame (3 panels) */}
+      <div className="flex-1 flex overflow-hidden relative">
         
-        {/* Left Section: Monaco Editor / Whiteboard & Console */}
-        <main className="flex-1 flex flex-col min-w-0 bg-card/10 relative min-h-[360px] lg:min-h-0">
-          {/* Toolbar */}
-          <div className="border-b border-border flex flex-col sm:flex-row sm:items-center sm:justify-between px-2 sm:px-4 py-2 sm:py-2 gap-2 shrink-0 bg-background/60 backdrop-blur-md lg:h-12 lg:py-0 select-none">
-            <div className="flex items-center gap-1 bg-secondary/50 p-1 rounded-lg border border-border">
-              <button
-                onClick={() => setActiveTab("editor")}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-all ${
-                  activeTab === "editor"
-                    ? "bg-background text-primary shadow-sm font-semibold"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <Code2 className="w-3.5 h-3.5" />
-                Editor
-              </button>
-              <button
-                onClick={() => setActiveTab("whiteboard")}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-all ${
-                  activeTab === "whiteboard"
-                    ? "bg-background text-primary shadow-sm font-semibold"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <PenTool className="w-3.5 h-3.5" />
-                Whiteboard
-              </button>
+        {/* PANEL 1: Left Sidebar Icon navigation (Dribbble UI) */}
+        <nav className="w-16 border-r border-border bg-card/65 flex flex-col items-center py-4 gap-4 shrink-0 select-none">
+          {tabs
+            .filter(tab => !tab.interviewerOnly || identity.role === "interviewer")
+            .map(tab => {
+              const IconComp = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-200 active:scale-90 relative ${
+                    isActive
+                      ? "bg-primary text-primary-foreground shadow-md shadow-primary/20 scale-105"
+                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  }`}
+                  title={tab.label}
+                >
+                  <IconComp className="w-5 h-5" />
+                  {isActive && (
+                    <span className="absolute left-0 top-1/4 bottom-1/4 w-0.5 bg-primary-foreground rounded-r" />
+                  )}
+                </button>
+              );
+            })}
+        </nav>
+
+        {/* PANEL 2: Center Main Content area */}
+        <main className="flex-1 flex flex-col min-w-0 bg-background relative overflow-hidden">
+          
+          {/* TAB: Video Call view */}
+          {activeTab === "video" && (
+            <div className="flex-1 flex flex-col min-h-0 bg-card/5 relative pb-20 overflow-y-auto">
+              {renderVideoGrid()}
             </div>
+          )}
 
-            <div className="flex items-center flex-wrap gap-2 sm:gap-3">
-              {activeTab === "editor" && (
-                <Select value={language} onValueChange={setLanguage}>
-                  <SelectTrigger className="h-8 w-28 sm:w-32 bg-secondary/50 border-border text-[11px] font-semibold">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {languages.map((l) => (
-                      <SelectItem key={l.value} value={l.value} className="text-xs">
-                        {l.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
+          {/* TAB: Code Editor view (multi-file IDE layout) */}
+          {activeTab === "editor" && (
+            <React.Suspense fallback={
+              <div className="flex-1 flex items-center justify-center select-none text-xs text-muted-foreground pb-20">
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                  <span>Loading Editor...</span>
+                </div>
+              </div>
+            }>
+              <EditorTabPanel
+                files={files}
+                activeFile={activeFile}
+                setActiveFile={setActiveFile}
+                newFileName={newFileName}
+                setNewFileName={setNewFileName}
+                showFileExplorer={showFileExplorer}
+                setShowFileExplorer={setShowFileExplorer}
+                language={language}
+                setLanguage={setLanguage}
+                handleManualSave={handleManualSave}
+                isSaving={isSaving}
+                handleRun={handleRun}
+                isRunning={isRunning}
+                output={output}
+                setOutput={setOutput}
+                isDark={isDark}
+                handleCodeChange={handleCodeChange}
+                handleDeleteFile={handleDeleteFile}
+                handleCreateFile={handleCreateFile}
+                lastSavedAt={lastSavedAt}
+              />
+            </React.Suspense>
+          )}
 
-              <div className="flex items-center flex-wrap gap-1.5">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-8 text-[11px] gap-1.5 hover:bg-secondary active:scale-95 transition-all duration-200"
-                  onClick={handleManualSave}
-                  disabled={isSaving}
-                >
-                  <Save className="w-3.5 h-3.5" />
-                  {isSaving ? "Saving..." : "Save"}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-8 text-[11px] gap-1.5 hover:bg-primary/10 hover:text-primary active:scale-95 transition-all duration-200"
-                >
-                  <Brain className="w-3.5 h-3.5" /> AI Review
-                </Button>
-                {activeTab === "editor" && (
-                  <span className="hidden md:inline text-[10px] text-muted-foreground">
-                    {lastSavedAt ? `Saved ${lastSavedAt}` : "Not saved yet"}
+          {/* TAB: Whiteboard view */}
+          {activeTab === "whiteboard" && (
+            <div className="flex-1 bg-background pb-20 relative overflow-hidden">
+              <React.Suspense fallback={
+                <div className="flex-1 flex items-center justify-center select-none text-xs text-muted-foreground">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                    <span>Loading Whiteboard...</span>
+                  </div>
+                </div>
+              }>
+                <WhiteboardPanel isDark={isDark} />
+              </React.Suspense>
+            </div>
+          )}
+
+          {/* TAB: Problem Statement view */}
+          {activeTab === "problem" && (
+            <React.Suspense fallback={
+              <div className="flex-1 flex items-center justify-center select-none text-xs text-muted-foreground pb-20">
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                  <span>Loading Problem Statement...</span>
+                </div>
+              </div>
+            }>
+              <ProblemTabPanel
+                identity={identity}
+                problemText={problemText}
+                handleProblemChange={handleProblemChange}
+                questionTemplates={questionTemplates}
+              />
+            </React.Suspense>
+          )}
+
+          {/* TAB: Private Notes view (Interviewer only) */}
+          {activeTab === "notes" && identity.role === "interviewer" && (
+            <div className="flex-1 p-6 space-y-6 overflow-y-auto pb-24 max-w-2xl select-none">
+              <h2 className="text-lg font-bold text-primary flex items-center gap-2 border-b border-border/50 pb-2">
+                <ClipboardList className="w-5 h-5" /> Private Interviewer Notes
+              </h2>
+
+              <div className="p-4 rounded-xl border border-border/80 bg-secondary/10 space-y-3">
+                <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Candidate Score Assessment</div>
+                <div className="flex items-center gap-4">
+                  <input
+                    type="range"
+                    min="1"
+                    max="5"
+                    value={privateNotes.score}
+                    onChange={(e) => savePrivateNotes({ ...privateNotes, score: Number(e.target.value) })}
+                    className="flex-1 accent-primary h-2 rounded bg-border cursor-pointer"
+                  />
+                  <span className="w-8 text-center text-sm font-bold text-primary px-2 py-0.5 rounded bg-primary/10 border border-primary/20">
+                    {privateNotes.score} / 5
                   </span>
-                )}
-                {activeTab === "editor" && (
-                  <Button
-                    size="sm"
-                    className="h-8 text-[11px] gap-1.5 bg-primary hover:bg-primary/90 hover:scale-[1.03] active:scale-95 transition-all duration-200 shadow-md shadow-primary/20"
-                    onClick={handleRun}
-                    disabled={isRunning}
-                  >
-                    <Play className="w-3.5 h-3.5" />
-                    {isRunning ? "Running..." : "Run Code"}
-                  </Button>
-                )}
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl border border-border/80 bg-secondary/10 space-y-3">
+                <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Evaluation Checklist</div>
+                <div className="space-y-2.5">
+                  {[
+                    { id: "solving", label: "Structured Problem Solving" },
+                    { id: "communication", label: "Clear & Concise Communication" },
+                    { id: "coding", label: "Clean Code Quality & Standard Practices" }
+                  ].map((item) => (
+                    <label key={item.id} className="flex items-center gap-2.5 text-xs font-semibold cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={privateNotes.checklist[item.id] || false}
+                        onChange={(e) => {
+                          const checklist = { ...privateNotes.checklist, [item.id]: e.target.checked };
+                          savePrivateNotes({ ...privateNotes, checklist });
+                        }}
+                        className="rounded border-border text-primary focus:ring-primary w-4 h-4"
+                      />
+                      {item.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl border border-border/80 bg-secondary/10 space-y-3">
+                <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Remarks & Feedback</div>
+                <textarea
+                  value={privateNotes.text}
+                  onChange={(e) => savePrivateNotes({ ...privateNotes, text: e.target.value })}
+                  placeholder="Enter interviewer details, summary comments, candidate observation metrics..."
+                  className="w-full h-32 p-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-1 focus:ring-primary text-xs font-medium leading-relaxed resize-none"
+                />
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Content Area */}
-          <div className="flex-1 relative overflow-hidden">
-            <AnimatePresence mode="wait">
-              {activeTab === "editor" ? (
-                <motion.div
-                  key="editor"
-                  initial={{ opacity: 0, scale: 0.98 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="h-full flex flex-col"
-                >
-                  <div className="flex-1">
-                    <Editor
-                      height="100%"
-                      language={language}
-                      theme={isDark ? "vs-dark" : "light"}
-                      value={code}
-                      onChange={handleCodeChange}
-                      options={{
-                        fontSize: 14,
-                        fontFamily: '"JetBrains Mono", monospace',
-                        minimap: { enabled: false },
-                        padding: { top: 16 },
-                        scrollBeyondLastLine: false,
-                        automaticLayout: true,
-                        cursorBlinking: "smooth",
-                        lineNumbers: "on",
-                        renderLineHighlight: "all",
-                        overviewRulerBorder: false,
-                        hideCursorInOverviewRuler: true,
-                        bracketPairColorization: { enabled: true },
-                        smoothScrolling: true,
-                      }}
-                    />
+          {/* TAB: Room Settings view */}
+          {activeTab === "settings" && (
+            <div className="flex-1 p-6 space-y-6 overflow-y-auto pb-24 max-w-2xl select-none">
+              <h2 className="text-lg font-bold text-primary flex items-center gap-2 border-b border-border/50 pb-2">
+                <Settings className="w-5 h-5" /> Room Settings & Statistics
+              </h2>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 rounded-xl border border-border/80 bg-secondary/20">
+                  <div className="text-xs font-semibold text-muted-foreground mb-1">Room ID</div>
+                  <div className="font-mono text-xs sm:text-sm font-bold truncate">{roomId}</div>
+                </div>
+                
+                <div className="p-4 rounded-xl border border-border/80 bg-secondary/20">
+                  <div className="text-xs font-semibold text-muted-foreground mb-1">Session Title</div>
+                  <div className="text-sm font-bold truncate">{roomTitle}</div>
+                </div>
+
+                <div className="p-4 rounded-xl border border-border/80 bg-secondary/20">
+                  <div className="text-xs font-semibold text-muted-foreground mb-1">Your Identity</div>
+                  <div className="text-sm font-bold truncate flex items-center gap-2">
+                    {identity.userName}
+                    <Badge className="bg-primary/25 text-primary border-0 text-[9px] font-bold py-0 h-4">
+                      {identity.role}
+                    </Badge>
                   </div>
-                  {/* Console */}
-                  <div className="h-40 border-t border-border bg-card/50 flex flex-col select-none">
-                    <div className="h-8 px-4 flex items-center justify-between border-b border-border bg-background/30">
-                      <div className="flex items-center gap-2">
-                        <Terminal className="w-3.5 h-3.5 text-primary" />
-                        <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
-                          Output Console
-                        </span>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 px-2 text-[10px] hover:bg-secondary active:scale-95 transition-all"
-                        onClick={() => setOutput("")}
-                      >
-                        Clear
+                </div>
+
+                <div className="p-4 rounded-xl border border-border/80 bg-secondary/20">
+                  <div className="text-xs font-semibold text-muted-foreground mb-1">Session Timer</div>
+                  <div className="text-sm font-bold truncate">{formatTime(timer)} left / {formatTime(totalDurationSeconds)}</div>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl border border-border/80 bg-secondary/20 space-y-3">
+                <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Quick Action Controls</div>
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" size="sm" className="rounded-lg text-xs" onClick={handleCopyLink}>
+                    <Copy className="mr-1.5 w-3.5 h-3.5" /> Copy Meeting Link
+                  </Button>
+                  <Button variant="outline" size="sm" className="rounded-lg text-xs" onClick={enterFullscreen}>
+                    <Maximize2 className="mr-1.5 w-3.5 h-3.5" /> Toggle Fullscreen
+                  </Button>
+                  {identity.role === "interviewer" && (
+                    <>
+                      <Button variant="outline" size="sm" className="rounded-lg text-xs text-destructive hover:bg-destructive/10" onClick={handleMuteAll}>
+                        <VolumeX className="mr-1.5 w-3.5 h-3.5" /> Mute All
                       </Button>
-                    </div>
-                    <pre className="flex-1 p-4 pb-24 font-mono text-xs overflow-auto bg-black/[0.03] dark:bg-black/30 text-foreground/95 leading-relaxed selection:bg-primary/20">
-                      {output || (
-                        <span className="text-muted-foreground/40 italic">
-                          Execute code to see results...
-                        </span>
-                      )}
-                    </pre>
+                      <Button variant="outline" size="sm" className="rounded-lg text-xs" onClick={handleToggleLock}>
+                        {roomLocked ? <Unlock className="mr-1.5 w-3.5 h-3.5" /> : <Lock className="mr-1.5 w-3.5 h-3.5" />}
+                        {roomLocked ? "Unlock Room" : "Lock Room"}
+                      </Button>
+                      <Button variant="outline" size="sm" className="rounded-lg text-xs" onClick={() => { fetchConnectionStats(); setShowStatsModal(true); }}>
+                        <Gauge className="mr-1.5 w-3.5 h-3.5" /> View Network Stats
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {violationCount > 0 && (
+                <div className="p-4 rounded-xl border border-destructive/20 bg-destructive/5 space-y-2">
+                  <div className="text-xs font-bold text-destructive flex items-center gap-1.5">
+                    <ShieldAlert className="w-4.5 h-4.5 animate-bounce-short" /> Integrity Flagged
                   </div>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="whiteboard"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="h-full bg-background"
-                >
-                  <WhiteboardPanel isDark={isDark} />
-                </motion.div>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed font-medium">
+                    This room has recorded {violationCount} integrity violations (e.g. browser tab switches, exit fullscreen). Review candidate logs with caution.
+                  </p>
+                </div>
               )}
-            </AnimatePresence>
-          </div>
+            </div>
+          )}
         </main>
 
-        {/* Right Section: Video Call Grid */}
-        <aside className="w-full lg:w-[450px] border-t lg:border-t-0 lg:border-l border-border bg-card/10 bg-room-dot-pattern flex flex-col p-4 gap-4 shrink-0 overflow-y-auto relative pb-28">
-          <div className="flex items-center justify-between border-b border-border pb-2 select-none">
-            <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-              Video Call Grid
-            </span>
-            <div className="flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground bg-secondary/60 px-2 py-0.5 rounded-full">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block" />
-              {participants.length} {participants.length === 1 ? "User" : "Users"}
+        {/* PANEL 3: Right Sidebar Panel (Always visible Participants + Chat) */}
+        <section className="w-80 border-l border-border bg-card/15 flex flex-col shrink-0 h-full overflow-hidden select-none" aria-label="Room details panel">
+          {/* Top Half: Participants */}
+          <div className="flex-1 flex flex-col min-h-0 border-b border-border/80">
+            <div className="h-12 flex items-center justify-between px-4 border-b border-border bg-background/40 shrink-0">
+              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Participants</span>
+              <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">
+                {participants.length}
+              </span>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+              {participants.map((p) => {
+                const hasHand = raisedHands[p.userId];
+                return (
+                  <div
+                    key={p.userId}
+                    className="flex items-center justify-between p-2 rounded-xl bg-secondary/30 border border-border/40 hover:bg-secondary/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#0d631b] to-[#2e7d32] dark:from-[#88d982] dark:to-[#307231] flex items-center justify-center text-white dark:text-[#00390a] text-xs font-bold shadow-sm shrink-0">
+                        {getInitials(p.userName)}
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-xs font-semibold truncate flex items-center gap-1.5">
+                          {p.userName}
+                          {hasHand && <span className="animate-bounce text-xs" title="Hand Raised">✋</span>}
+                        </span>
+                        <span className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider">{p.role}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {p.micOn ? <Mic className="w-3.5 h-3.5 text-primary" /> : <MicOff className="w-3.5 h-3.5 text-destructive" />}
+                      {p.camOn ? <VideoIcon className="w-3.5 h-3.5 text-primary" /> : <VideoOff className="w-3.5 h-3.5 text-destructive" />}
+                      
+                      {/* Interviewer moderate buttons for other participants */}
+                      {identity.role === "interviewer" && !p.isLocal && (
+                        <div className="flex gap-1 ml-1.5">
+                          <button
+                            onClick={() => handleToggleParticipantCamera(p.userId)}
+                            className="w-5 h-5 rounded hover:bg-secondary flex items-center justify-center border border-border"
+                            title="Toggle Camera Off"
+                          >
+                            <VideoOff className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
+                          </button>
+                          <button
+                            onClick={() => handleRemoveParticipant(p.userId)}
+                            className="w-5 h-5 rounded hover:bg-destructive/10 flex items-center justify-center border border-destructive/20"
+                            title="Kick Participant"
+                          >
+                            <X className="w-3 h-3 text-destructive" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
-          {/* Dynamic Grid Layout container */}
-          <AnimatePresence mode="wait">
-            {renderVideoGrid()}
-          </AnimatePresence>
-        </aside>
+          {/* Bottom Half: Chat */}
+          <div className="flex-1 flex flex-col min-h-0">
+            <div className="h-12 flex items-center justify-between px-4 border-b border-border bg-background/40 shrink-0">
+              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Chat Room</span>
+              <div className="w-1.5 h-1.5 rounded-full room-pulse-green" />
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {messages.map((msg) => (
+                <MessageBubble key={msg.id} msg={msg} currentUserName={identity.userName} currentUserId={identity.userId} />
+              ))}
+              <div ref={chatEndRef} />
+            </div>
 
-        {/* Slide-in Chat panel */}
-        <AnimatePresence>
-          {showChat && (
-            <motion.section
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "tween", duration: 0.25 }}
-              className="absolute right-0 top-0 bottom-0 w-80 border-l border-border bg-background/95 backdrop-blur-md shadow-2xl flex flex-col z-40"
-              aria-label="Interview chat panel"
-            >
-              <div className="h-14 flex items-center justify-between px-4 border-b border-border shrink-0 select-none">
-                <span className="text-sm font-bold tracking-tight">Messaging</span>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full room-pulse-green" />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 rounded-lg hover:bg-secondary"
-                    onClick={() => setShowChat(false)}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
+            <form onSubmit={handleSendMessage} className="p-3 border-t border-border bg-background/50">
+              <div className="relative group">
+                <Input
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value.slice(0, 500))}
+                  placeholder="Type message..."
+                  className="pr-10 bg-secondary/50 border-border focus-visible:ring-primary h-9 rounded-lg text-xs"
+                  maxLength={500}
+                />
+                <button
+                  type="submit"
+                  disabled={!chatInput.trim()}
+                  className="absolute right-1 top-1 h-7 w-7 rounded-md bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 disabled:opacity-50 transition-all shadow"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                </button>
               </div>
-
-              <div className="px-4 pt-3 select-none">
-                <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-[11px] text-muted-foreground leading-relaxed">
-                  Messages are time-stamped and retained for room history.
-                </div>
-              </div>
-
-              <div
-                className="flex-1 overflow-y-auto p-4 space-y-4"
-                aria-live="polite"
-                aria-relevant="additions text"
-              >
-                {messages.map((msg) => (
-                  <MessageBubble
-                    key={msg.id}
-                    msg={msg}
-                    currentUserName={identity.userName}
-                    currentUserId={identity.userId}
-                  />
-                ))}
-                <div ref={chatEndRef} />
-              </div>
-
-              <form
-                onSubmit={handleSendMessage}
-                className="p-4 border-t border-border bg-background/50 backdrop-blur-sm select-none"
-              >
-                <div className="relative group">
-                  <Input
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value.slice(0, 500))}
-                    placeholder="Message..."
-                    aria-label="Type your message"
-                    className={`pr-12 bg-secondary/50 border-border focus-visible:ring-primary h-11 rounded-xl transition-all ${
-                      chatInput.length >= 500 ? "!border-destructive" : ""
-                    }`}
-                    maxLength={500}
-                  />
-                  <button
-                    type="submit"
-                    disabled={!chatInput.trim() || chatInput.trim().length > 500}
-                    className="absolute right-2 top-1.5 h-8 w-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 disabled:opacity-50 disabled:hover:scale-100 transition-all active:scale-95 shadow-lg shadow-primary/20"
-                  >
-                    <Send className="w-4 h-4" />
-                  </button>
-                </div>
-                <div className="mt-2 flex items-center justify-between gap-2">
-                  <span className="text-[10px] text-muted-foreground/60">Press Enter to send</span>
-                  <span
-                    className={`text-[10px] ${
-                      chatInput.length >= 450
-                        ? chatInput.length >= 500
-                          ? "text-destructive font-semibold"
-                          : "text-amber-500 font-medium"
-                        : "text-muted-foreground/60"
-                    }`}
-                  >
-                    {chatInput.length}/500
-                  </span>
-                </div>
-              </form>
-            </motion.section>
-          )}
-        </AnimatePresence>
+            </form>
+          </div>
+        </section>
       </div>
 
-      {/* Floating Centered Bottom Control Bar */}
+      {/* Centered Floating Control Bar overlay */}
       <div className="absolute bottom-4 left-4 right-4 md:left-1/2 md:right-auto md:-translate-x-1/2 z-30 flex items-center justify-between gap-6 bg-card/95 backdrop-blur-md px-4 sm:px-6 py-3 rounded-2xl border border-border shadow-xl w-auto md:w-[600px] select-none">
         
         {/* Controls block (Centered on the bar) */}
@@ -1671,9 +2063,7 @@ export default function InterviewRoom() {
             onClick={handleToggleMic}
             variant={micOn ? "secondary" : "destructive"}
             size="icon"
-            className={`w-10 h-10 rounded-xl transition-all duration-200 active:scale-90 ${
-              micOn ? "bg-secondary text-foreground hover:bg-secondary/80" : "animate-pulse-slow"
-            }`}
+            className="w-10 h-10 rounded-xl transition-all duration-200 active:scale-90"
             title={micOn ? "Mute Microphone" : "Unmute Microphone"}
           >
             {micOn ? <Mic className="w-4.5 h-4.5" /> : <MicOff className="w-4.5 h-4.5" />}
@@ -1684,9 +2074,7 @@ export default function InterviewRoom() {
             onClick={handleToggleCam}
             variant={camOn ? "secondary" : "destructive"}
             size="icon"
-            className={`w-10 h-10 rounded-xl transition-all duration-200 active:scale-90 ${
-              camOn ? "bg-secondary text-foreground hover:bg-secondary/80" : "animate-pulse-slow"
-            }`}
+            className="w-10 h-10 rounded-xl transition-all duration-200 active:scale-90"
             title={camOn ? "Turn Camera Off" : "Turn Camera On"}
           >
             {camOn ? <VideoIcon className="w-4.5 h-4.5" /> : <VideoOff className="w-4.5 h-4.5" />}
@@ -1698,151 +2086,72 @@ export default function InterviewRoom() {
             variant={isSharingScreen ? "default" : "secondary"}
             size="icon"
             className={`w-10 h-10 rounded-xl transition-all duration-200 active:scale-90 ${
-              isSharingScreen ? "bg-primary text-primary-foreground hover:bg-primary/95" : "bg-secondary text-foreground hover:bg-secondary/80"
+              isSharingScreen ? "bg-primary text-primary-foreground hover:bg-primary/95" : ""
             }`}
-            title={isSharingScreen ? "Stop Sharing Screen" : "Share Screen"}
+            title={isSharingScreen ? "Stop Screen Share" : "Share Screen"}
           >
             <Monitor className="w-4.5 h-4.5" />
           </Button>
 
-          {/* Participants Badge */}
-          <div className="relative">
-            <Button
-              variant="secondary"
-              size="icon"
-              className="w-10 h-10 rounded-xl bg-secondary text-foreground hover:bg-secondary cursor-default"
-              title="Participants count"
-            >
-              <Users className="w-4.5 h-4.5" />
-            </Button>
-            <span className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-background shadow">
-              {participants.length}
-            </span>
-          </div>
-
-          {/* Chat Panel Trigger */}
+          {/* Raise Hand Button */}
           <Button
-            onClick={() => setShowChat(!showChat)}
-            variant={showChat ? "default" : "secondary"}
+            onClick={() => {
+              const nextState = !raisedHands[identity.userId];
+              setRaisedHands(prev => ({ ...prev, [identity.userId]: nextState }));
+              socketRef.current?.emit("room:control", {
+                roomId,
+                action: "raise-hand",
+                targetUserId: identity.userId,
+                value: nextState,
+              });
+            }}
+            variant={raisedHands[identity.userId] ? "default" : "secondary"}
             size="icon"
             className={`w-10 h-10 rounded-xl transition-all duration-200 active:scale-90 ${
-              showChat ? "bg-primary text-primary-foreground hover:bg-primary/95" : "bg-secondary text-foreground hover:bg-secondary/80"
+              raisedHands[identity.userId] ? "bg-amber-500 hover:bg-amber-600 text-white" : ""
             }`}
-            title="Toggle Chat"
+            title="Raise Hand"
           >
-            <MessageSquare className="w-4.5 h-4.5" />
+            <span className="text-sm">✋</span>
           </Button>
 
-          {/* Interviewer Extra MenuDropdown */}
+          {/* Interviewer Extra Moderation Controls inside Control Bar */}
           {identity.role === "interviewer" && (
-            <div className="relative">
+            <div className="h-6 w-[1px] bg-border mx-1 hidden sm:block" />
+          )}
+
+          {identity.role === "interviewer" && (
+            <>
               <Button
+                onClick={handleToggleLock}
                 variant="outline"
-                className="h-10 px-3.5 text-xs font-semibold gap-1 rounded-xl border-border bg-background hover:bg-secondary active:scale-95 transition-all select-none"
-                onClick={() => setShowMoreMenu(!showMoreMenu)}
+                className="h-10 rounded-xl px-3 border-border text-xs gap-1.5 hidden sm:flex bg-background hover:bg-secondary select-none"
+                title={roomLocked ? "Unlock Room" : "Lock Room"}
               >
-                More <ChevronDown className="w-3.5 h-3.5" />
+                {roomLocked ? <Unlock className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+                <span>{roomLocked ? "Unlock" : "Lock"}</span>
               </Button>
 
-              <AnimatePresence>
-                {showMoreMenu && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setShowMoreMenu(false)} />
-                    <motion.div
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 12 }}
-                      className="absolute bottom-12 left-1/2 -translate-x-1/2 mb-2 w-56 rounded-xl border border-border bg-popover p-2 shadow-2xl z-50 flex flex-col gap-1 text-popover-foreground select-none"
-                    >
-                      <button
-                        onClick={() => {
-                          handleCopyLink();
-                          setShowMoreMenu(false);
-                        }}
-                        className="flex items-center gap-2.5 w-full px-3 py-2 text-left text-xs font-semibold rounded-lg hover:bg-secondary transition-colors"
-                      >
-                        <Copy className="w-3.5 h-3.5 text-muted-foreground" /> Copy Room Link
-                      </button>
+              <Button
+                onClick={handleCopyLink}
+                variant="outline"
+                className="h-10 rounded-xl px-3 border-border text-xs gap-1.5 hidden sm:flex bg-background hover:bg-secondary select-none"
+                title="Copy Meeting Link"
+              >
+                <Copy className="w-3.5 h-3.5" />
+                <span>Link</span>
+              </Button>
 
-                      <button
-                        onClick={() => {
-                          handleMuteAll();
-                          setShowMoreMenu(false);
-                        }}
-                        className="flex items-center gap-2.5 w-full px-3 py-2 text-left text-xs font-semibold rounded-lg hover:bg-secondary text-destructive hover:text-destructive transition-colors"
-                      >
-                        <VolumeX className="w-3.5 h-3.5" /> Mute All Participants
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          handleToggleLock();
-                          setShowMoreMenu(false);
-                        }}
-                        className="flex items-center gap-2.5 w-full px-3 py-2 text-left text-xs font-semibold rounded-lg hover:bg-secondary transition-colors"
-                      >
-                        {roomLocked ? (
-                          <Unlock className="w-3.5 h-3.5 text-muted-foreground" />
-                        ) : (
-                          <Lock className="w-3.5 h-3.5 text-muted-foreground" />
-                        )}
-                        {roomLocked ? "Unlock Room" : "Lock Room"}
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          fetchConnectionStats();
-                          setShowStatsModal(true);
-                          setShowMoreMenu(false);
-                        }}
-                        className="flex items-center gap-2.5 w-full px-3 py-2 text-left text-xs font-semibold rounded-lg hover:bg-secondary transition-colors"
-                      >
-                        <Gauge className="w-3.5 h-3.5 text-muted-foreground" /> Connection Stats
-                      </button>
-
-                      {/* Participant Management list */}
-                      {connectedUsers.filter((u) => String(u.userId) !== String(identity.userId)).length > 0 && (
-                        <>
-                          <div className="h-[1px] bg-border my-1" />
-                          <div className="px-3 py-1 text-[9px] uppercase font-bold text-muted-foreground tracking-wider">
-                            Manage Users
-                          </div>
-                          {connectedUsers
-                            .filter((u) => String(u.userId) !== String(identity.userId))
-                            .map((u) => (
-                              <div key={u.userId} className="flex flex-col gap-1.5 p-1 bg-secondary/20 rounded-lg mb-1">
-                                <div className="px-2 text-[10px] font-bold truncate text-foreground/80">
-                                  {u.userName}
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <button
-                                    onClick={() => {
-                                      handleToggleParticipantCamera(u.userId);
-                                      setShowMoreMenu(false);
-                                    }}
-                                    className="flex-1 flex justify-center py-1 text-[9px] font-bold rounded bg-secondary hover:bg-secondary/80 text-foreground transition-colors border border-border/50"
-                                  >
-                                    Cam Off
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      handleRemoveParticipant(u.userId);
-                                      setShowMoreMenu(false);
-                                    }}
-                                    className="flex-1 flex justify-center py-1 text-[9px] font-bold rounded bg-destructive/10 hover:bg-destructive/20 text-destructive transition-colors border border-destructive/20"
-                                  >
-                                    Kick
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
-                        </>
-                      )}
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-            </div>
+              <Button
+                onClick={handleMuteAll}
+                variant="outline"
+                className="h-10 rounded-xl px-3 border-border text-xs gap-1.5 hidden sm:flex bg-background text-destructive hover:bg-destructive/10 select-none"
+                title="Mute All Candidates"
+              >
+                <VolumeX className="w-3.5 h-3.5" />
+                <span>Mute All</span>
+              </Button>
+            </>
           )}
         </div>
 
