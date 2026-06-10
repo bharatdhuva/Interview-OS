@@ -10,8 +10,9 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuthStore } from '@/store/authStore';
+import CustomSelect from '@/components/ui/CustomSelect';
+import SegmentedControl from '@/components/ui/SegmentedControl';
 import { useToast } from '@/hooks/use-toast';
 import api from '@/lib/api';
 import { createRoomSchema } from '@/lib/validations';
@@ -531,17 +532,23 @@ function CreateRoomModal({ onClose, onCreateRoom }) {
                   </div>
                   <div>
                     <Label>Duration (min) <span className="text-destructive">*</span></Label>
-                    <Controller name="duration" control={control} render={({ field }) => (<Select value={field.value} onValueChange={field.onChange}>
-                          <SelectTrigger className={`mt-1.5 bg-secondary border-border ${errors.duration ? "!border-destructive" : ""}`}>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="30">30 min</SelectItem>
-                            <SelectItem value="45">45 min</SelectItem>
-                            <SelectItem value="60">60 min</SelectItem>
-                            <SelectItem value="90">90 min</SelectItem>
-                          </SelectContent>
-                        </Select>)}/>
+                    <Controller
+                      name="duration"
+                      control={control}
+                      render={({ field }) => (
+                        <CustomSelect
+                          value={field.value}
+                          onChange={field.onChange}
+                          options={[
+                            { value: "30", label: "30 min" },
+                            { value: "45", label: "45 min" },
+                            { value: "60", label: "60 min" },
+                            { value: "90", label: "90 min" },
+                          ]}
+                          className={`mt-1.5 bg-secondary border-border ${errors.duration ? "!border-destructive" : ""}`}
+                        />
+                      )}
+                    />
                     <FieldError message={errors.duration?.message}/>
                   </div>
                 </div>
@@ -556,16 +563,22 @@ function CreateRoomModal({ onClose, onCreateRoom }) {
                 </div>
                 <div>
                   <Label>Difficulty <span className="text-destructive">*</span></Label>
-                  <Controller name="difficulty" control={control} render={({ field }) => (<Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger className={`mt-1.5 bg-secondary border-border ${errors.difficulty ? "!border-destructive" : ""}`}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="easy">Easy</SelectItem>
-                          <SelectItem value="medium">Medium</SelectItem>
-                          <SelectItem value="hard">Hard</SelectItem>
-                        </SelectContent>
-                      </Select>)}/>
+                  <Controller
+                    name="difficulty"
+                    control={control}
+                    render={({ field }) => (
+                      <SegmentedControl
+                        value={field.value}
+                        onChange={field.onChange}
+                        options={[
+                          { value: "easy", label: "Easy", activeBg: "bg-emerald-600 dark:bg-emerald-500", activeText: "text-white" },
+                          { value: "medium", label: "Medium", activeBg: "bg-amber-600 dark:bg-amber-500", activeText: "text-white" },
+                          { value: "hard", label: "Hard", activeBg: "bg-rose-600 dark:bg-rose-500", activeText: "text-white" },
+                        ]}
+                        className="mt-1.5"
+                      />
+                    )}
+                  />
                   <FieldError message={errors.difficulty?.message}/>
                 </div>
                 <div>
