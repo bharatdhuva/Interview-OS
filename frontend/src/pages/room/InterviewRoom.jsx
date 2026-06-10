@@ -2101,6 +2101,10 @@ export default function InterviewRoom() {
                   type="submit"
                   disabled={!chatInput.trim()}
                   className="absolute right-1 top-1 h-7 w-7 rounded-md bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 disabled:opacity-50 transition-all shadow"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </form>
           </div>
         </section>
