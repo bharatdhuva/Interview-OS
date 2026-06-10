@@ -25,6 +25,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.cancelRoom = exports.updateRoom = exports.endSession = exports.startSession = exports.joinRoomViaToken = exports.getRoomById = exports.listMyRooms = exports.createRoom = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
+const crypto_1 = __importDefault(require("crypto"));
 const room_model_1 = require("../models/room.model");
 const user_model_1 = require("../models/user.model");
 const session_model_1 = require("../models/session.model");
@@ -126,6 +127,11 @@ const getRoomById = async (req, res) => {
         if (!room) {
             res.status(404).json({ success: false, message: 'Room not found' });
             return;
+        }
+        if (!room.whiteboardKey) {
+            const secureKey = crypto_1.default.randomBytes(32).toString('hex');
+            await room_model_1.InterviewRoom.updateOne({ _id: room._id }, { whiteboardKey: secureKey });
+            room.whiteboardKey = secureKey;
         }
         const interviewerId = room.interviewer?._id?.toString() || room.interviewer?.toString();
         const candidateId = room.candidate?._id?.toString() || room.candidate?.toString();

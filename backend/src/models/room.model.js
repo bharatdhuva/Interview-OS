@@ -85,6 +85,10 @@ const interviewRoomSchema = new mongoose_1.Schema({
         enum: ['easy', 'medium', 'hard'],
         default: 'medium',
     },
+    whiteboardKey: {
+        type: String,
+        default: () => crypto_1.default.randomBytes(32).toString('hex'),
+    },
 }, {
     timestamps: true,
 });

@@ -128,6 +128,23 @@ function initSocket(io) {
       socket.to(roomId).emit("whiteboard:update", { roomId, elements, appState });
     });
 
+    socket.on("whiteboard:get-state", async ({ roomId }) => {
+      if (!roomId) return;
+      try {
+        const latestFrame = await ReplayFrame.findOne({ roomId, type: "whiteboard" })
+          .sort({ timestamp: -1 })
+          .lean();
+        if (latestFrame && latestFrame.payload) {
+          socket.emit("whiteboard:init", {
+            elements: latestFrame.payload.elements,
+            appState: latestFrame.payload.appState || null,
+          });
+        }
+      } catch (error) {
+        logger.error("Failed to fetch whiteboard state", error);
+      }
+    });
+
     socket.on("whiteboard:snapshot", async ({ roomId, elements, timestamp }) => {
       if (!roomId) return;
       try {

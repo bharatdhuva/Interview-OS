@@ -446,6 +446,7 @@ export default function InterviewRoom() {
   const [output, setOutput] = useState("");
   const [isRunning, setIsRunning] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [whiteboardKey, setWhiteboardKey] = useState("");
 
   // Media controls state
   const [micOn, setMicOn] = useState(true);
@@ -716,6 +717,9 @@ export default function InterviewRoom() {
           setRoomTitle(response.data.data.title);
         }
         const room = response.data.data;
+        if (room?.whiteboardKey) {
+          setWhiteboardKey(room.whiteboardKey);
+        }
         const interviewerId = room?.interviewer?._id || room?.interviewer;
         const candidateId = room?.candidate?._id || room?.candidate;
         const interviewerName = room?.interviewer?.name;
@@ -1874,7 +1878,7 @@ export default function InterviewRoom() {
                   </div>
                 </div>
               }>
-                <WhiteboardPanel isDark={isDark} />
+                <WhiteboardPanel isDark={isDark} roomId={roomId} socket={socketRef.current} whiteboardKey={whiteboardKey} />
               </React.Suspense>
             </div>
           )}
