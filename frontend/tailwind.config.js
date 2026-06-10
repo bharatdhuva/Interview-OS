@@ -79,11 +79,11 @@ export default {
                     ring: "hsl(var(--sidebar-ring))",
                 },
                 ios: {
-                    accent: "#6366f1",
-                    "accent-hover": "#4f46e5",
-                    purple: "#8b5cf6",
-                    cyan: "#06b6d4",
-                    success: "#22c55e",
+                    accent: "#0d631b",
+                    "accent-hover": "#094713",
+                    purple: "#2e7d32",
+                    cyan: "#a3f69c",
+                    success: "#88d982",
                 },
             },
             borderRadius: {
