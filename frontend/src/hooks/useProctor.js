@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
-export const useProctor = ({ roomId, onViolation, onEndSession, maxViolations = 3 } = {}) => {
+export const useProctor = ({ roomId, onViolation, onEndSession, maxViolations = 3, isEnabled = true } = {}) => {
     const [violationCount, setViolationCount] = useState(0);
     const { toast } = useToast();
     const triggerWarning = useCallback((type) => {
+        if (!isEnabled) return;
         setViolationCount((prev) => {
             const nextCount = prev + 1;
             let title = "Violation Detected";
@@ -48,8 +49,9 @@ export const useProctor = ({ roomId, onViolation, onEndSession, maxViolations = 
             }
             return nextCount;
         });
-    }, [maxViolations, onViolation, onEndSession, toast]);
+    }, [isEnabled, maxViolations, onViolation, onEndSession, toast]);
     useEffect(() => {
+        if (!isEnabled) return;
         const handleFullscreenChange = () => {
             if (!document.fullscreenElement) {
                 triggerWarning('fullscreen_exit');
@@ -72,14 +74,15 @@ export const useProctor = ({ roomId, onViolation, onEndSession, maxViolations = 
             document.removeEventListener('visibilitychange', handleVisibilityChange);
             window.removeEventListener('blur', handleBlur);
         };
-    }, [triggerWarning]);
+    }, [isEnabled, triggerWarning]);
     const enterFullscreen = useCallback(() => {
+        if (!isEnabled) return;
         if (!document.fullscreenElement) {
             document.documentElement.requestFullscreen().catch((err) => {
                 console.error(`Error attempting to enable fullscreen: ${err.message}`);
             });
         }
-    }, []);
+    }, [isEnabled]);
     return {
         violationCount,
         triggerWarning,

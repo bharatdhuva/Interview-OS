@@ -405,9 +405,7 @@ export default function InterviewRoom() {
     return () => observer.disconnect();
   }, []);
 
-  const { violationCount, enterFullscreen } = useProctor({
-    roomId,
-  });
+
 
   // Collaborative multi-file state
   const [files, setFiles] = useState({
@@ -520,6 +518,11 @@ export default function InterviewRoom() {
       userName: fallbackDisplayName,
       role: fallbackRole,
     };
+  });
+
+  const { violationCount, enterFullscreen } = useProctor({
+    roomId,
+    isEnabled: identity?.role === "candidate",
   });
 
   useEffect(() => {

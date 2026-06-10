@@ -3,54 +3,46 @@ import { Excalidraw } from "@excalidraw/excalidraw";
 import { ShieldCheck, ShieldAlert, Lock, Loader2 } from "lucide-react";
 import { encryptData, decryptData } from "@/lib/crypto";
 
+// Merges remote elements into local elements while preserving layering and resolving version conflicts
 const mergeElements = (localElements, remoteElements) => {
-  const localMap = new Map(localElements.map(el => [el.id, el]));
   const remoteMap = new Map(remoteElements.map(el => [el.id, el]));
-  const mergedMap = new Map();
+  const result = [];
+  const processed = new Set();
 
-  for (const [id, localEl] of localMap.entries()) {
-    const remoteEl = remoteMap.get(id);
-    if (!remoteEl) {
-      mergedMap.set(id, localEl);
-    } else {
-      if (localEl.version >= remoteEl.version) {
-        mergedMap.set(id, localEl);
+  for (const localEl of localElements) {
+    const remoteEl = remoteMap.get(localEl.id);
+    if (remoteEl) {
+      if (remoteEl.version > localEl.version) {
+        result.push(remoteEl);
       } else {
-        mergedMap.set(id, remoteEl);
+        result.push(localEl);
       }
+    } else {
+      result.push(localEl);
+    }
+    processed.add(localEl.id);
+  }
+
+  for (const remoteEl of remoteElements) {
+    if (!processed.has(remoteEl.id)) {
+      result.push(remoteEl);
     }
   }
 
-  for (const [id, remoteEl] of remoteMap.entries()) {
-    if (!mergedMap.has(id)) {
-      mergedMap.set(id, remoteEl);
-    }
-  }
-
-  return Array.from(mergedMap.values());
-};
-
-const elementsChanged = (newEls, oldEls) => {
-  if (newEls.length !== oldEls.length) return true;
-  for (let i = 0; i < newEls.length; i++) {
-    if (newEls[i].id !== oldEls[i].id || newEls[i].version !== oldEls[i].version) {
-      return true;
-    }
-  }
-  return false;
+  return result;
 };
 
 const WhiteboardPanel = ({ roomId, isDark, socket, whiteboardKey }) => {
   const [excalidrawAPI, setExcalidrawAPI] = useState(null);
   const [syncStatus, setSyncStatus] = useState("connecting"); // "connecting" | "synced" | "syncing" | "saving" | "error"
   
-  const isRemoteUpdateRef = useRef(false);
-  const localElementsRef = useRef([]);
-  const pendingUpdateRef = useRef(null);
+  // Track known versions to identify local changes vs remote updates
+  const knownVersionsRef = useRef(new Map());
+  const pendingUpdateRef = useRef(null); // Map of id -> element
   const throttleTimerRef = useRef(null);
   const saveSnapshotDebounced = useRef(null);
 
-  // Request latest whiteboard state on mount or when API is ready
+  // Sync state with socket (init and update listeners)
   useEffect(() => {
     if (!socket || !excalidrawAPI || !roomId) return;
 
@@ -64,15 +56,17 @@ const WhiteboardPanel = ({ roomId, isDark, socket, whiteboardKey }) => {
       }
       try {
         const decrypted = await decryptData(elements, whiteboardKey);
-        if (decrypted && Array.isArray(decrypted)) {
-          isRemoteUpdateRef.current = true;
-          localElementsRef.current = decrypted;
-          excalidrawAPI.updateScene({ elements: decrypted });
-        } else if (decrypted && decrypted.elements) {
-          isRemoteUpdateRef.current = true;
-          localElementsRef.current = decrypted.elements;
-          excalidrawAPI.updateScene({ elements: decrypted.elements });
+        const initEls = Array.isArray(decrypted) 
+          ? decrypted 
+          : (decrypted?.elements || []);
+        
+        // Initialize version map
+        knownVersionsRef.current.clear();
+        for (const el of initEls) {
+          knownVersionsRef.current.set(el.id, el.version);
         }
+
+        excalidrawAPI.updateScene({ elements: initEls });
         setSyncStatus("synced");
       } catch (err) {
         console.error("Failed to parse init whiteboard elements:", err);
@@ -88,11 +82,17 @@ const WhiteboardPanel = ({ roomId, isDark, socket, whiteboardKey }) => {
           ? decrypted 
           : (decrypted?.elements || []);
 
+        // Record incoming versions to prevent echo back
+        for (const el of remoteEls) {
+          const currentKnown = knownVersionsRef.current.get(el.id) || -1;
+          if (el.version > currentKnown) {
+            knownVersionsRef.current.set(el.id, el.version);
+          }
+        }
+
         const currentEls = excalidrawAPI.getSceneElements();
         const merged = mergeElements(currentEls, remoteEls);
 
-        isRemoteUpdateRef.current = true;
-        localElementsRef.current = merged;
         excalidrawAPI.updateScene({ elements: merged });
         setSyncStatus("synced");
       } catch (err) {
@@ -124,18 +124,18 @@ const WhiteboardPanel = ({ roomId, isDark, socket, whiteboardKey }) => {
     };
   }, []);
 
-  const emitUpdateThrottled = (elements) => {
-    pendingUpdateRef.current = elements;
+  const emitUpdateThrottled = () => {
     if (throttleTimerRef.current) return;
 
+    // Use a smaller throttle time (80ms) for high responsiveness
     throttleTimerRef.current = setTimeout(async () => {
       throttleTimerRef.current = null;
-      if (pendingUpdateRef.current && socket && roomId) {
-        const els = pendingUpdateRef.current;
+      if (pendingUpdateRef.current && pendingUpdateRef.current.size > 0 && socket && roomId) {
+        const elsToSend = Array.from(pendingUpdateRef.current.values());
         pendingUpdateRef.current = null;
 
         try {
-          const encrypted = await encryptData(els, whiteboardKey);
+          const encrypted = await encryptData(elsToSend, whiteboardKey);
           socket.emit("whiteboard:update", {
             roomId,
             elements: encrypted,
@@ -144,19 +144,20 @@ const WhiteboardPanel = ({ roomId, isDark, socket, whiteboardKey }) => {
           console.error("Failed to encrypt/emit whiteboard update:", err);
         }
       }
-    }, 150);
+    }, 80);
   };
 
-  const triggerSnapshotSave = (elements) => {
+  const triggerSnapshotSave = (allElements) => {
     if (saveSnapshotDebounced.current) {
       clearTimeout(saveSnapshotDebounced.current);
     }
 
+    // Save complete board snapshot after 3 seconds of drawing inactivity
     saveSnapshotDebounced.current = setTimeout(async () => {
       if (!socket || !roomId) return;
       try {
         setSyncStatus("saving");
-        const encrypted = await encryptData(elements, whiteboardKey);
+        const encrypted = await encryptData(allElements, whiteboardKey);
         socket.emit("whiteboard:snapshot", {
           roomId,
           elements: encrypted,
@@ -172,18 +173,30 @@ const WhiteboardPanel = ({ roomId, isDark, socket, whiteboardKey }) => {
 
   const handleChange = (elements, appState, files) => {
     if (!excalidrawAPI) return;
-    
-    // Check if change was triggered by remote socket update
-    if (isRemoteUpdateRef.current) {
-      isRemoteUpdateRef.current = false;
-      return;
+
+    // Detect if any element was created or modified locally
+    const changedEls = [];
+    for (const el of elements) {
+      const knownVer = knownVersionsRef.current.get(el.id) || -1;
+      if (el.version > knownVer) {
+        // Update known version map locally immediately to prevent redundant detection
+        knownVersionsRef.current.set(el.id, el.version);
+        changedEls.push(el);
+      }
     }
 
-    // Check if drawing elements actually changed to avoid syncing zoom/scrolls
-    if (elementsChanged(elements, localElementsRef.current)) {
-      localElementsRef.current = elements;
+    if (changedEls.length > 0) {
       setSyncStatus("syncing");
-      emitUpdateThrottled(elements);
+
+      // Stage changed elements in the update map
+      if (!pendingUpdateRef.current) {
+        pendingUpdateRef.current = new Map();
+      }
+      for (const el of changedEls) {
+        pendingUpdateRef.current.set(el.id, el);
+      }
+
+      emitUpdateThrottled();
       triggerSnapshotSave(elements);
     }
   };
