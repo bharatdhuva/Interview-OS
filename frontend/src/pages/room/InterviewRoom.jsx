@@ -2101,131 +2101,131 @@ export default function InterviewRoom() {
                   type="submit"
                   disabled={!chatInput.trim()}
                   className="absolute right-1 top-1 h-7 w-7 rounded-md bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 disabled:opacity-50 transition-all shadow"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                </button>
-              </div>
             </form>
           </div>
         </section>
       </div>
 
       {/* Centered Floating Control Bar overlay */}
-      <div className="absolute bottom-4 left-4 right-4 md:left-1/2 md:right-auto md:-translate-x-1/2 z-30 flex items-center justify-between gap-6 bg-card/85 backdrop-blur-xl px-4 sm:px-6 py-3 rounded-2xl border border-border/70 shadow-2xl w-auto md:w-[620px] select-none">
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2.5 bg-card/85 backdrop-blur-xl px-4 py-2.5 rounded-2xl border border-border/70 shadow-2xl select-none w-max max-w-[95vw] overflow-x-auto">
         
-        {/* Controls block (Centered on the bar) */}
-        <div className="flex items-center gap-2.5 sm:gap-3 flex-1 justify-center md:justify-start">
-          {/* Mic Button */}
-          <Button
-            onClick={handleToggleMic}
-            variant={micOn ? "secondary" : "destructive"}
-            size="icon"
-            className={`w-10 h-10 rounded-xl transition-all duration-300 active:scale-90 hover:scale-105 ${
-              micOn ? "bg-secondary/70 text-foreground hover:bg-secondary border border-border/40" : "bg-destructive text-destructive-foreground hover:bg-destructive/95"
-            }`}
-            title={micOn ? "Mute Microphone" : "Unmute Microphone"}
-          >
-            {micOn ? <Mic className="w-4.5 h-4.5" /> : <MicOff className="w-4.5 h-4.5" />}
-          </Button>
+        {/* Mic Button */}
+        <Button
+          onClick={handleToggleMic}
+          variant={micOn ? "secondary" : "destructive"}
+          size="icon"
+          className={`w-10 h-10 rounded-xl transition-all duration-300 active:scale-90 hover:scale-105 shrink-0 ${
+            micOn ? "bg-secondary/70 text-foreground hover:bg-secondary border border-border/40" : "bg-destructive text-destructive-foreground hover:bg-destructive/95"
+          }`}
+          title={micOn ? "Mute Microphone" : "Unmute Microphone"}
+        >
+          {micOn ? <Mic className="w-4.5 h-4.5" /> : <MicOff className="w-4.5 h-4.5" />}
+        </Button>
 
-          {/* Camera Button */}
-          <Button
-            onClick={handleToggleCam}
-            variant={camOn ? "secondary" : "destructive"}
-            size="icon"
-            className={`w-10 h-10 rounded-xl transition-all duration-300 active:scale-90 hover:scale-105 ${
-              camOn ? "bg-secondary/70 text-foreground hover:bg-secondary border border-border/40" : "bg-destructive text-destructive-foreground hover:bg-destructive/95"
-            }`}
-            title={camOn ? "Turn Camera Off" : "Turn Camera On"}
-          >
-            {camOn ? <VideoIcon className="w-4.5 h-4.5" /> : <VideoOff className="w-4.5 h-4.5" />}
-          </Button>
+        {/* Camera Button */}
+        <Button
+          onClick={handleToggleCam}
+          variant={camOn ? "secondary" : "destructive"}
+          size="icon"
+          className={`w-10 h-10 rounded-xl transition-all duration-300 active:scale-90 hover:scale-105 shrink-0 ${
+            camOn ? "bg-secondary/70 text-foreground hover:bg-secondary border border-border/40" : "bg-destructive text-destructive-foreground hover:bg-destructive/95"
+          }`}
+          title={camOn ? "Turn Camera Off" : "Turn Camera On"}
+        >
+          {camOn ? <VideoIcon className="w-4.5 h-4.5" /> : <VideoOff className="w-4.5 h-4.5" />}
+        </Button>
 
-          {/* Screen Share Button */}
-          <Button
-            onClick={handleToggleScreenShare}
-            variant={isSharingScreen ? "default" : "secondary"}
-            size="icon"
-            className={`w-10 h-10 rounded-xl transition-all duration-300 active:scale-90 hover:scale-105 ${
-              isSharingScreen ? "bg-primary text-primary-foreground hover:bg-primary/95" : "bg-secondary/70 text-foreground hover:bg-secondary border border-border/40"
-            }`}
-            title={isSharingScreen ? "Stop Screen Share" : "Share Screen"}
-          >
-            <Monitor className="w-4.5 h-4.5" />
-          </Button>
+        {/* Screen Share Button */}
+        <Button
+          onClick={handleToggleScreenShare}
+          variant={isSharingScreen ? "default" : "secondary"}
+          size="icon"
+          className={`w-10 h-10 rounded-xl transition-all duration-300 active:scale-90 hover:scale-105 shrink-0 ${
+            isSharingScreen ? "bg-primary text-primary-foreground hover:bg-primary/95" : "bg-secondary/70 text-foreground hover:bg-secondary border border-border/40"
+          }`}
+          title={isSharingScreen ? "Stop Screen Share" : "Share Screen"}
+        >
+          <Monitor className="w-4.5 h-4.5" />
+        </Button>
 
-          {/* Raise Hand Button */}
-          <Button
-            onClick={() => {
-              const nextState = !raisedHands[identity.userId];
-              setRaisedHands(prev => ({ ...prev, [identity.userId]: nextState }));
-              socketRef.current?.emit("room:control", {
-                roomId,
-                action: "raise-hand",
-                targetUserId: identity.userId,
-                value: nextState,
-              });
-            }}
-            variant={raisedHands[identity.userId] ? "default" : "secondary"}
-            size="icon"
-            className={`w-10 h-10 rounded-xl transition-all duration-300 active:scale-90 hover:scale-105 ${
-              raisedHands[identity.userId] ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-secondary/70 text-foreground hover:bg-secondary border border-border/40"
-            }`}
-            title="Raise Hand"
-          >
-            <span className="text-sm">✋</span>
-          </Button>
+        {/* Raise Hand Button */}
+        <Button
+          onClick={() => {
+            const nextState = !raisedHands[identity.userId];
+            setRaisedHands(prev => ({ ...prev, [identity.userId]: nextState }));
+            socketRef.current?.emit("room:control", {
+              roomId,
+              action: "raise-hand",
+              targetUserId: identity.userId,
+              value: nextState,
+            });
+          }}
+          variant={raisedHands[identity.userId] ? "default" : "secondary"}
+          size="icon"
+          className={`w-10 h-10 rounded-xl transition-all duration-300 active:scale-90 hover:scale-105 shrink-0 ${
+            raisedHands[identity.userId] ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-secondary/70 text-foreground hover:bg-secondary border border-border/40"
+          }`}
+          title="Raise Hand"
+        >
+          <span className="text-sm">✋</span>
+        </Button>
 
-          {/* Interviewer Extra Moderation Controls inside Control Bar */}
-          {identity.role === "interviewer" && (
-            <div className="h-6 w-[1px] bg-border mx-1 hidden sm:block" />
-          )}
+        {/* Interviewer Extra Moderation Controls inside Control Bar */}
+        {identity.role === "interviewer" && (
+          <div className="h-6 w-[1px] bg-border/60 mx-1.5 self-center shrink-0" />
+        )}
 
-          {identity.role === "interviewer" && (
-            <>
-              <Button
-                onClick={handleToggleLock}
-                className={`h-10 rounded-xl px-3 border text-xs gap-1.5 hidden sm:flex transition-all duration-300 active:scale-95 ${
-                  roomLocked ? "border-amber-500 bg-amber-500/10 text-amber-500 hover:bg-amber-500/15" : "border-border/60 bg-transparent hover:bg-secondary text-foreground"
-                }`}
-                title={roomLocked ? "Unlock Room" : "Lock Room"}
-              >
-                {roomLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
-                <span>{roomLocked ? "Locked" : "Lock"}</span>
-              </Button>
+        {identity.role === "interviewer" && (
+          <>
+            {/* Lock Room */}
+            <Button
+              onClick={handleToggleLock}
+              variant="outline"
+              size="icon"
+              className={`w-10 h-10 rounded-xl transition-all duration-300 active:scale-90 hover:scale-105 shrink-0 ${
+                roomLocked ? "border-amber-500 bg-amber-500/10 text-amber-500 hover:bg-amber-500/15" : "border-border/60 bg-transparent hover:bg-secondary text-foreground"
+              }`}
+              title={roomLocked ? "Unlock Room" : "Lock Room"}
+            >
+              {roomLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
+            </Button>
 
-              <Button
-                onClick={handleCopyLink}
-                className="h-10 rounded-xl px-3 border border-border/60 bg-transparent hover:bg-secondary text-foreground text-xs gap-1.5 hidden sm:flex transition-all duration-300 active:scale-95"
-                title="Copy Meeting Link"
-              >
-                <Copy className="w-3.5 h-3.5" />
-                <span>Link</span>
-              </Button>
+            {/* Copy Meeting Link */}
+            <Button
+              onClick={handleCopyLink}
+              variant="outline"
+              size="icon"
+              className="w-10 h-10 rounded-xl border border-border/60 bg-transparent hover:bg-secondary text-foreground transition-all duration-300 active:scale-90 hover:scale-105 shrink-0"
+              title="Copy Meeting Link"
+            >
+              <Copy className="w-4 h-4" />
+            </Button>
 
-              <Button
-                onClick={handleMuteAll}
-                className="h-10 rounded-xl px-3 border border-destructive/20 bg-destructive/5 text-destructive hover:bg-destructive/10 text-xs gap-1.5 hidden sm:flex transition-all duration-300 active:scale-95"
-                title="Mute All Candidates"
-              >
-                <VolumeX className="w-3.5 h-3.5" />
-                <span>Mute All</span>
-              </Button>
-            </>
-          )}
-        </div>
+            {/* Mute All Candidates */}
+            <Button
+              onClick={handleMuteAll}
+              variant="outline"
+              size="icon"
+              className="w-10 h-10 rounded-xl border border-destructive/20 bg-destructive/5 text-destructive hover:bg-destructive/10 transition-all duration-300 active:scale-90 hover:scale-105 shrink-0"
+              title="Mute All Candidates"
+            >
+              <VolumeX className="w-4 h-4" />
+            </Button>
+          </>
+        )}
 
-        {/* End Call Button on the right side */}
-        <div className="flex-none">
-          <Button
-            size="sm"
-            className="h-10 text-xs font-bold px-4 bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-md shadow-destructive/20 active:scale-[0.96] hover:scale-105 transition-all duration-300 rounded-xl animate-pulse-glow"
-            aria-label="End interview session"
-            onClick={() => setShowEndSessionConfirm(true)}
-          >
-            End Session
-          </Button>
-        </div>
+        <div className="h-6 w-[1px] bg-border/60 mx-1.5 self-center shrink-0" />
+
+        {/* End Call Button */}
+        <Button
+          size="sm"
+          className="h-10 text-xs font-bold px-4 bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-md shadow-destructive/20 active:scale-[0.96] hover:scale-105 transition-all duration-300 rounded-xl flex items-center gap-1.5 animate-pulse-glow shrink-0"
+          aria-label="End interview session"
+          onClick={() => setShowEndSessionConfirm(true)}
+        >
+          <PhoneOff className="w-3.5 h-3.5" />
+          <span className="hidden xs:inline">End Session</span>
+        </Button>
       </div>
 
       {/* Connection Statistics Modal Overlay */}
