@@ -183,7 +183,7 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="signup-container min-h-screen w-full flex flex-col justify-center relative">
+    <div className="signup-container h-screen w-full flex flex-col relative overflow-hidden">
       <style dangerouslySetInnerHTML={{ __html: `
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
@@ -345,9 +345,9 @@ const RegisterPage = () => {
 
       <AuthNavbar pageType="register" />
 
-      <main className="flex flex-1 flex-col lg:flex-row min-h-0">
+      <main className="flex flex-1 flex-col lg:flex-row min-h-0 overflow-hidden">
         {/* Left Section: Visual & Branding */}
-        <section className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-primary items-center justify-center p-xl lg:h-auto">
+        <section className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-primary items-center justify-center p-xl h-full">
           {/* Background Image with Overlay */}
           <div className="absolute inset-0 z-0">
             <img 
@@ -383,7 +383,7 @@ const RegisterPage = () => {
         </section>
 
         {/* Right Section: Onboarding Form */}
-        <section className="w-full lg:w-1/2 flex flex-col items-center bg-surface p-margin-mobile md:p-margin-desktop min-h-0 relative justify-center py-8">
+        <section className="w-full lg:w-1/2 flex flex-col items-center bg-surface p-margin-mobile md:p-margin-desktop min-h-0 relative justify-center py-8 overflow-y-auto h-full">
           <div className="w-full max-w-[480px] my-auto">
             {/* Header */}
             <header className="mb-md">

@@ -146,7 +146,7 @@ const LoginPage = () => {
   });
 
   return (
-    <div className="login-container min-h-screen w-full flex flex-col justify-center relative">
+    <div className="login-container h-screen w-full flex flex-col relative overflow-hidden">
       <style dangerouslySetInnerHTML={{
         __html: `
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
@@ -299,9 +299,9 @@ const LoginPage = () => {
 
       <AuthNavbar pageType="login" />
 
-      <main className="flex flex-1 flex-col lg:flex-row min-h-0">
+      <main className="flex flex-1 flex-col lg:flex-row min-h-0 overflow-hidden">
         {/* Left Section: Brand & Visuals (Desktop) */}
-        <section className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-primary items-center justify-center p-xl lg:h-auto">
+        <section className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-primary items-center justify-center p-xl h-full">
           {/* Abstract Tech Background Overlay */}
           <div className="absolute inset-0 opacity-20 pointer-events-none">
             <div className="absolute top-0 left-0 w-full h-full" style={{ backgroundImage: "radial-gradient(circle at 2px 2px, rgba(163, 246, 156, 0.15) 1px, transparent 0)", backgroundSize: "40px 40px" }}></div>
@@ -355,7 +355,7 @@ const LoginPage = () => {
         </section>
 
         {/* Right Section: Onboarding Form */}
-        <section className="w-full lg:w-1/2 flex flex-col items-center bg-surface p-margin-mobile md:p-margin-desktop min-h-0 relative justify-center py-8">
+        <section className="w-full lg:w-1/2 flex flex-col items-center bg-surface p-margin-mobile md:p-margin-desktop min-h-0 relative justify-center py-8 overflow-y-auto h-full">
           {/* Background Decor */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-[#e8f5e9]/30 rounded-full blur-3xl pointer-events-none"></div>
           <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#0d631b]/5 rounded-full blur-3xl pointer-events-none"></div>

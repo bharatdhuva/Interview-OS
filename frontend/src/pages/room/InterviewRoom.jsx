@@ -193,7 +193,7 @@ const useSpeechDetector = (stream, onSpeechToggle) => {
         }
         const average = sum / bufferLength;
         const speaking = average > 12; // volume threshold
-        
+
         if (speaking) {
           consecutiveFrames = Math.min(10, consecutiveFrames + 1);
         } else {
@@ -216,13 +216,13 @@ const useSpeechDetector = (stream, onSpeechToggle) => {
     return () => {
       if (rafId) cancelAnimationFrame(rafId);
       if (source) {
-        try { source.disconnect(); } catch (e) {}
+        try { source.disconnect(); } catch (e) { }
       }
       if (analyser) {
-        try { analyser.disconnect(); } catch (e) {}
+        try { analyser.disconnect(); } catch (e) { }
       }
       if (audioCtx) {
-        try { audioCtx.close(); } catch (e) {}
+        try { audioCtx.close(); } catch (e) { }
       }
     };
   }, [stream, onSpeechToggle]);
@@ -257,11 +257,10 @@ const VideoTile = ({ participant, isLocal, localVideoRef, hasHand }) => {
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.85 }}
       transition={{ duration: 0.2 }}
-      className={`relative rounded-2xl bg-[#eceeec] dark:bg-[#182219] border overflow-hidden flex flex-col shadow-md hover:shadow-lg transition-all duration-300 w-full h-full min-h-[160px] aspect-[4/3] ${
-        isSpeaking
+      className={`relative rounded-2xl bg-[#eceeec] dark:bg-[#182219] border overflow-hidden flex flex-col shadow-md hover:shadow-lg transition-all duration-300 w-full h-full min-h-[160px] aspect-[4/3] ${isSpeaking
           ? "border-primary ring-2 ring-primary/45 ring-offset-2 ring-offset-background shadow-[0_0_20px_rgba(13,99,27,0.3)] scale-[1.01] z-10"
           : "border-border/80"
-      }`}
+        }`}
     >
       {/* Top bar indicators inside tile */}
       <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/40 to-transparent p-3 flex items-center justify-between z-10">
@@ -339,11 +338,10 @@ const MessageBubble = ({ msg, currentUserName, currentUserId }) => {
         <span className="text-[9px] text-muted-foreground/60">{msg.time}</span>
       </div>
       <div
-        className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-xs select-text leading-relaxed shadow-[0_2px_8px_rgba(0,0,0,0.03)] ${
-          isOwnMessage
+        className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-xs select-text leading-relaxed shadow-[0_2px_8px_rgba(0,0,0,0.03)] ${isOwnMessage
             ? "bg-primary text-primary-foreground rounded-tr-sm"
             : "bg-[#f2f4f2] dark:bg-[#182219] text-foreground border border-border/40 rounded-tl-sm"
-        }`}
+          }`}
       >
         {msg.message}
       </div>
@@ -431,7 +429,7 @@ export default function InterviewRoom() {
   const [output, setOutput] = useState("");
   const [isRunning, setIsRunning] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  
+
   // Media controls state
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
@@ -442,7 +440,7 @@ export default function InterviewRoom() {
   const [roomTitle, setRoomTitle] = useState("Interview Room");
   const [messages, setMessages] = useState([]);
   const [connectedUsers, setConnectedUsers] = useState([]);
-  
+
   // Custom states for refined End Session modal flow
   const [showEndSessionConfirm, setShowEndSessionConfirm] = useState(false);
   const [isSessionEndedAlert, setIsSessionEndedAlert] = useState(false);
@@ -450,7 +448,7 @@ export default function InterviewRoom() {
 
   const chatEndRef = useRef(null);
   const autosaveTimeoutRef = useRef(null);
-  
+
   // Custom states and refs for multi-peer/redesign
   const socketRef = useRef(null);
   const localStreamRef = useRef(null);
@@ -796,7 +794,7 @@ export default function InterviewRoom() {
         const peer = buildPeerConnection(remoteUser.userId);
         const shouldInitiate = String(identity.userId) > String(remoteUser.userId);
         if (shouldInitiate && peer.signalingState === "stable") {
-          startOffer(remoteUser.userId).catch(() => {});
+          startOffer(remoteUser.userId).catch(() => { });
         }
       });
     };
@@ -828,7 +826,7 @@ export default function InterviewRoom() {
       if (!userId || String(userId) === String(identity.userId)) return;
       const shouldInitiate = String(identity.userId) > String(userId);
       if (shouldInitiate) {
-        startOffer(userId).catch(() => {});
+        startOffer(userId).catch(() => { });
       }
     };
 
@@ -941,7 +939,7 @@ export default function InterviewRoom() {
         }
       } else if (action === "raise-hand") {
         setRaisedHands(prev => ({ ...prev, [targetUserId]: value }));
-        
+
         // Interviewer audio & visual buzzer alert
         if (identity.role === "interviewer" && value && String(targetUserId) !== String(identity.userId)) {
           const u = list => (list.find(e => String(e.userId) === String(targetUserId)));
@@ -956,7 +954,7 @@ export default function InterviewRoom() {
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = "sine";
-            osc.frequency.setValueAtTime(440, audioCtx.currentTime); 
+            osc.frequency.setValueAtTime(440, audioCtx.currentTime);
             gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
             osc.connect(gain);
             gain.connect(audioCtx.destination);
@@ -1160,7 +1158,7 @@ export default function InterviewRoom() {
     } catch (error) {
       setOutput(
         error?.response?.data?.message ||
-          "Execution failed. Make sure the room is started and the execution service is available.\n"
+        "Execution failed. Make sure the room is started and the execution service is available.\n"
       );
     } finally {
       setIsRunning(false);
@@ -1173,7 +1171,7 @@ export default function InterviewRoom() {
       ...prev,
       [activeFile]: nextCode
     }));
-    
+
     // Synchronize content
     socketRef.current?.emit("room:control", {
       roomId,
@@ -1224,7 +1222,7 @@ export default function InterviewRoom() {
       const remaining = Object.keys(files).filter(f => f !== filePath);
       setActiveFile(remaining[0]);
     }
-    
+
     socketRef.current?.emit("room:control", {
       roomId,
       action: "file-delete",
@@ -1702,11 +1700,10 @@ export default function InterviewRoom() {
 
           {/* Proctoring badge in header */}
           <div
-            className={`flex items-center gap-2 px-2.5 sm:px-3 py-1 rounded-full border text-[11px] sm:text-xs font-semibold transition-colors ${
-              violationCount > 0
+            className={`flex items-center gap-2 px-2.5 sm:px-3 py-1 rounded-full border text-[11px] sm:text-xs font-semibold transition-colors ${violationCount > 0
                 ? "bg-destructive/10 border-destructive/20 text-destructive animate-pulse"
                 : "bg-primary/10 border-primary/20 text-primary"
-            }`}
+              }`}
           >
             {violationCount > 0 ? (
               <ShieldAlert className="w-3.5 h-3.5 animate-bounce-short" />
@@ -1772,7 +1769,7 @@ export default function InterviewRoom() {
 
       {/* Main layout frame (3 panels) */}
       <div className="flex-1 flex overflow-hidden relative">
-        
+
         {/* PANEL 1: Left Sidebar Icon navigation (Dribbble UI) */}
         <nav className="w-16 border-r border-border bg-card/65 flex flex-col items-center py-4 gap-4 shrink-0 select-none">
           {tabs
@@ -1784,11 +1781,10 @@ export default function InterviewRoom() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-300 relative group active:scale-95 ${
-                    isActive
+                  className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-300 relative group active:scale-95 ${isActive
                       ? "bg-primary text-primary-foreground shadow-md shadow-primary/30 scale-105"
                       : "text-muted-foreground hover:bg-primary/10 hover:text-primary"
-                  }`}
+                    }`}
                   title={tab.label}
                 >
                   <IconComp className="w-5 h-5 group-hover:scale-105 transition-transform" />
@@ -1802,7 +1798,7 @@ export default function InterviewRoom() {
 
         {/* PANEL 2: Center Main Content area */}
         <main className="flex-1 flex flex-col min-w-0 bg-background relative overflow-hidden">
-          
+
           {/* TAB: Video Call view */}
           {activeTab === "video" && (
             <div className="flex-1 flex flex-col min-h-0 bg-card/5 relative pb-20 overflow-y-auto">
@@ -1946,13 +1942,13 @@ export default function InterviewRoom() {
               <h2 className="text-lg font-bold text-primary flex items-center gap-2 border-b border-border/50 pb-2">
                 <Settings className="w-5 h-5" /> Room Settings & Statistics
               </h2>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="p-4 rounded-xl border border-border/80 bg-secondary/20">
                   <div className="text-xs font-semibold text-muted-foreground mb-1">Room ID</div>
                   <div className="font-mono text-xs sm:text-sm font-bold truncate">{roomId}</div>
                 </div>
-                
+
                 <div className="p-4 rounded-xl border border-border/80 bg-secondary/20">
                   <div className="text-xs font-semibold text-muted-foreground mb-1">Session Title</div>
                   <div className="text-sm font-bold truncate">{roomTitle}</div>
@@ -2047,7 +2043,7 @@ export default function InterviewRoom() {
                     <div className="flex items-center gap-1.5 shrink-0">
                       {p.micOn ? <Mic className="w-3.5 h-3.5 text-primary" /> : <MicOff className="w-3.5 h-3.5 text-destructive" />}
                       {p.camOn ? <VideoIcon className="w-3.5 h-3.5 text-primary" /> : <VideoOff className="w-3.5 h-3.5 text-destructive" />}
-                      
+
                       {/* Interviewer moderate buttons for other participants */}
                       {identity.role === "interviewer" && !p.isLocal && (
                         <div className="flex gap-1 ml-1.5">
@@ -2080,7 +2076,7 @@ export default function InterviewRoom() {
               <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Chat Room</span>
               <div className="w-1.5 h-1.5 rounded-full room-pulse-green" />
             </div>
-            
+
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {messages.map((msg) => (
                 <MessageBubble key={msg.id} msg={msg} currentUserName={identity.userName} currentUserId={identity.userId} />
@@ -2112,15 +2108,14 @@ export default function InterviewRoom() {
 
       {/* Centered Floating Control Bar overlay */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2.5 bg-card/85 backdrop-blur-xl px-4 py-2.5 rounded-2xl border border-border/70 shadow-2xl select-none w-max max-w-[95vw] overflow-x-auto">
-        
+
         {/* Mic Button */}
         <Button
           onClick={handleToggleMic}
           variant={micOn ? "secondary" : "destructive"}
           size="icon"
-          className={`w-10 h-10 rounded-xl transition-all duration-300 active:scale-90 hover:scale-105 shrink-0 ${
-            micOn ? "bg-secondary/70 text-foreground hover:bg-secondary border border-border/40" : "bg-destructive text-destructive-foreground hover:bg-destructive/95"
-          }`}
+          className={`w-10 h-10 rounded-xl transition-all duration-300 active:scale-90 hover:scale-105 shrink-0 ${micOn ? "bg-secondary/70 text-foreground hover:bg-secondary border border-border/40" : "bg-destructive text-destructive-foreground hover:bg-destructive/95"
+            }`}
           title={micOn ? "Mute Microphone" : "Unmute Microphone"}
         >
           {micOn ? <Mic className="w-4.5 h-4.5" /> : <MicOff className="w-4.5 h-4.5" />}
@@ -2131,9 +2126,8 @@ export default function InterviewRoom() {
           onClick={handleToggleCam}
           variant={camOn ? "secondary" : "destructive"}
           size="icon"
-          className={`w-10 h-10 rounded-xl transition-all duration-300 active:scale-90 hover:scale-105 shrink-0 ${
-            camOn ? "bg-secondary/70 text-foreground hover:bg-secondary border border-border/40" : "bg-destructive text-destructive-foreground hover:bg-destructive/95"
-          }`}
+          className={`w-10 h-10 rounded-xl transition-all duration-300 active:scale-90 hover:scale-105 shrink-0 ${camOn ? "bg-secondary/70 text-foreground hover:bg-secondary border border-border/40" : "bg-destructive text-destructive-foreground hover:bg-destructive/95"
+            }`}
           title={camOn ? "Turn Camera Off" : "Turn Camera On"}
         >
           {camOn ? <VideoIcon className="w-4.5 h-4.5" /> : <VideoOff className="w-4.5 h-4.5" />}
@@ -2144,9 +2138,8 @@ export default function InterviewRoom() {
           onClick={handleToggleScreenShare}
           variant={isSharingScreen ? "default" : "secondary"}
           size="icon"
-          className={`w-10 h-10 rounded-xl transition-all duration-300 active:scale-90 hover:scale-105 shrink-0 ${
-            isSharingScreen ? "bg-primary text-primary-foreground hover:bg-primary/95" : "bg-secondary/70 text-foreground hover:bg-secondary border border-border/40"
-          }`}
+          className={`w-10 h-10 rounded-xl transition-all duration-300 active:scale-90 hover:scale-105 shrink-0 ${isSharingScreen ? "bg-primary text-primary-foreground hover:bg-primary/95" : "bg-secondary/70 text-foreground hover:bg-secondary border border-border/40"
+            }`}
           title={isSharingScreen ? "Stop Screen Share" : "Share Screen"}
         >
           <Monitor className="w-4.5 h-4.5" />
@@ -2166,9 +2159,8 @@ export default function InterviewRoom() {
           }}
           variant={raisedHands[identity.userId] ? "default" : "secondary"}
           size="icon"
-          className={`w-10 h-10 rounded-xl transition-all duration-300 active:scale-90 hover:scale-105 shrink-0 ${
-            raisedHands[identity.userId] ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-secondary/70 text-foreground hover:bg-secondary border border-border/40"
-          }`}
+          className={`w-10 h-10 rounded-xl transition-all duration-300 active:scale-90 hover:scale-105 shrink-0 ${raisedHands[identity.userId] ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-secondary/70 text-foreground hover:bg-secondary border border-border/40"
+            }`}
           title="Raise Hand"
         >
           <span className="text-sm">✋</span>
@@ -2186,9 +2178,8 @@ export default function InterviewRoom() {
               onClick={handleToggleLock}
               variant="outline"
               size="icon"
-              className={`w-10 h-10 rounded-xl transition-all duration-300 active:scale-90 hover:scale-105 shrink-0 ${
-                roomLocked ? "border-amber-500 bg-amber-500/10 text-amber-500 hover:bg-amber-500/15" : "border-border/60 bg-transparent hover:bg-secondary text-foreground"
-              }`}
+              className={`w-10 h-10 rounded-xl transition-all duration-300 active:scale-90 hover:scale-105 shrink-0 ${roomLocked ? "border-amber-500 bg-amber-500/10 text-amber-500 hover:bg-amber-500/15" : "border-border/60 bg-transparent hover:bg-secondary text-foreground"
+                }`}
               title={roomLocked ? "Unlock Room" : "Lock Room"}
             >
               {roomLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
@@ -2327,7 +2318,7 @@ export default function InterviewRoom() {
             </motion.div>
           </>
         )}
-        
+
         {/* Interviewer End Session Modal */}
         {showEndSessionConfirm && identity.role === "interviewer" && (
           <>
