@@ -448,18 +448,6 @@ export default function InterviewRoom() {
   const [isSessionEndedAlert, setIsSessionEndedAlert] = useState(false);
   const [redirectCountdown, setRedirectCountdown] = useState(null);
 
-  useEffect(() => {
-    if (redirectCountdown === null) return;
-    if (redirectCountdown === 0) {
-      navigate(identity.role === "interviewer" ? `/feedback/${roomId}` : "/dashboard/candidate");
-      return;
-    }
-    const timerId = setTimeout(() => {
-      setRedirectCountdown((c) => c - 1);
-    }, 1000);
-    return () => clearTimeout(timerId);
-  }, [redirectCountdown, identity.role, navigate, roomId]);
-
   const chatEndRef = useRef(null);
   const autosaveTimeoutRef = useRef(null);
   
@@ -513,6 +501,18 @@ export default function InterviewRoom() {
       role: fallbackRole,
     };
   });
+
+  useEffect(() => {
+    if (redirectCountdown === null) return;
+    if (redirectCountdown === 0) {
+      navigate(identity.role === "interviewer" ? `/feedback/${roomId}` : "/dashboard/candidate");
+      return;
+    }
+    const timerId = setTimeout(() => {
+      setRedirectCountdown((c) => c - 1);
+    }, 1000);
+    return () => clearTimeout(timerId);
+  }, [redirectCountdown, identity.role, navigate, roomId]);
 
   useEffect(() => {
     const interval = setInterval(() => setTimer((t) => Math.max(0, t - 1)), 1000);
