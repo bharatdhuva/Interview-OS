@@ -61,6 +61,7 @@
 
     --shadow-glow: 0 0 60px -12px hsl(239, 84%, 67%, 0.15);
     --shadow-card: 0 4px 24px -4px hsl(0, 0%, 0%, 0.1);
+    --calendar-icon-filter: invert(0.2);
   }
 
   .dark {
@@ -119,6 +120,7 @@
 
     --shadow-glow: 0 0 60px -12px hsl(263, 84%, 58%, 0.3);
     --shadow-card: 0 4px 24px -4px hsl(0, 0%, 0%, 0.5);
+    --calendar-icon-filter: invert(0.8) sepia(1) saturate(2) hue-rotate(220deg);
   }
 }
 
@@ -674,3 +676,16 @@
     background-position: 0% 50%;
   }
 }
+
+/* Custom premium styling for datetime-local input indicators */
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: var(--calendar-icon-filter, invert(0.5));
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 4px;
+  transition: all 0.2s ease;
+}
+
+input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+  background: hsl(var(--primary) / 0.15);
+}
