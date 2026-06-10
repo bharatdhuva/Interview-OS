@@ -1,12 +1,6 @@
 import React from "react";
 import { FileText } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import CustomSelect from "@/components/ui/CustomSelect";
 
 export default function ProblemTabPanel({
   identity,
@@ -25,23 +19,18 @@ export default function ProblemTabPanel({
         {identity.role === "interviewer" && (
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-bold text-muted-foreground uppercase">Template:</span>
-            <Select
-              onValueChange={(val) => {
+            <CustomSelect
+              placeholder="Select Template"
+              onChange={(val) => {
                 const q = questionTemplates.find((t) => t.title === val);
                 if (q) handleProblemChange(q.markdown);
               }}
-            >
-              <SelectTrigger className="h-8 w-44 bg-secondary/50 border-border text-[11px] font-semibold">
-                <SelectValue placeholder="Select Template" />
-              </SelectTrigger>
-              <SelectContent>
-                {questionTemplates.map((q) => (
-                  <SelectItem key={q.title} value={q.title} className="text-xs">
-                    {q.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              options={questionTemplates.map((q) => ({
+                value: q.title,
+                label: q.title
+              }))}
+              className="h-8 w-44 bg-secondary/50 border-border text-[11px] font-semibold"
+            />
           </div>
         )}
       </div>

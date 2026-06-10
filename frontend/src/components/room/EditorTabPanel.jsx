@@ -3,13 +3,7 @@ import Editor from "@monaco-editor/react";
 import { Code2, Play, Save, Brain, X, Terminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import CustomSelect from "@/components/ui/CustomSelect";
 
 const languages = [
   { value: "javascript", label: "JavaScript" },
@@ -53,18 +47,12 @@ export default function EditorTabPanel({
         </div>
 
         <div className="flex items-center gap-3">
-          <Select value={language} onValueChange={setLanguage}>
-            <SelectTrigger className="h-8 w-32 bg-secondary/50 border-border text-[11px] font-semibold">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {languages.map((l) => (
-                <SelectItem key={l.value} value={l.value} className="text-xs">
-                  {l.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <CustomSelect
+            value={language}
+            onChange={setLanguage}
+            options={languages}
+            className="h-8 w-32 bg-secondary/50 border-border text-[11px] font-semibold"
+          />
 
           <div className="flex items-center gap-1.5">
             <Button
