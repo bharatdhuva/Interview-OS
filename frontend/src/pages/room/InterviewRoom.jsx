@@ -433,6 +433,10 @@ export default function InterviewRoom() {
   // Media controls state
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
+  const micOnRef = useRef(micOn);
+  micOnRef.current = micOn;
+  const camOnRef = useRef(camOn);
+  camOnRef.current = camOn;
   const [chatInput, setChatInput] = useState("");
   const [timer, setTimer] = useState(3600);
   const [totalDurationSeconds, setTotalDurationSeconds] = useState(3600);
@@ -755,8 +759,8 @@ export default function InterviewRoom() {
         userId: identity.userId,
         role: identity.role,
         userName: identity.userName,
-        micOn,
-        camOn,
+        micOn: micOnRef.current,
+        camOn: camOnRef.current,
       });
       announceReadyIfPossible();
     };
