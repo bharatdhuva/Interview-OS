@@ -3,6 +3,7 @@ const { InterviewRoom } = require("../models/room.model");
 const { ReplayFrame } = require("../models/replayFrame.model");
 const { Violation } = require("../models/violation.model");
 const logger = require("../utils/logger").default;
+const mongoose = require("mongoose");
 
 const socketRoomMap = new Map();
 const roomUsersMap = new Map();
@@ -59,7 +60,7 @@ function initSocket(io) {
   io.on("connection", (socket) => {
     logger.info(`Socket connected: ${socket.id}`);
 
-    socket.on("room:join", ({ roomId, userId, role, userName, micOn, camOn }) => {
+    socket.on("room:join", async ({ roomId, userId, role, userName, micOn, camOn }) => {
       if (!roomId || !userId) return;
       socket.join(roomId);
       socketRoomMap.set(socket.id, { roomId, userId });
@@ -76,6 +77,30 @@ function initSocket(io) {
 
       socket.to(roomId).emit("room:user-joined", { roomId, userId, role, userName, micOn, camOn });
       broadcastUserList(io, roomId);
+
+      // Fetch and send chat history to the newly joined user
+      try {
+        const roomObjectId = await resolveRoomObjectId(roomId);
+        if (roomObjectId) {
+          const history = await ChatMessage.find({ room: roomObjectId, isDeleted: { $ne: true } })
+            .populate("sender", "name")
+            .sort({ timestamp: 1 })
+            .lean();
+
+          if (history && history.length > 0) {
+            socket.emit("chat:history", history.map(msg => ({
+              roomId,
+              message: msg.message,
+              userId: msg.sender?._id || msg.sender,
+              userName: msg.sender?.name || "Participant",
+              timestamp: msg.timestamp,
+              chatId: msg._id,
+            })));
+          }
+        }
+      } catch (error) {
+        logger.error("Failed to load chat history on join", error);
+      }
     });
 
     socket.on("room:leave", ({ roomId, userId }) => {
@@ -167,13 +192,30 @@ function initSocket(io) {
       try {
         const roomObjectId = await resolveRoomObjectId(roomId);
         if (roomObjectId) {
-          persisted = await ChatMessage.create({
-            room: roomObjectId,
-            sender: userId,
-            message,
-            messageType: "text",
-            timestamp: timestamp ? new Date(timestamp) : new Date(),
-          });
+          let cleanUserId = String(userId).split(":")[0];
+          if (!mongoose.Types.ObjectId.isValid(cleanUserId)) {
+            // Fallback: resolve to candidate or interviewer of the room
+            const roomDoc = await InterviewRoom.findOne({ roomId }).lean();
+            if (roomDoc) {
+              const users = getOrCreateRoomUsers(roomId);
+              const userEntry = users.get(socket.id);
+              if (userEntry?.role === "interviewer") {
+                cleanUserId = roomDoc.interviewer;
+              } else {
+                cleanUserId = roomDoc.candidate;
+              }
+            }
+          }
+
+          if (mongoose.Types.ObjectId.isValid(cleanUserId)) {
+            persisted = await ChatMessage.create({
+              room: roomObjectId,
+              sender: cleanUserId,
+              message,
+              messageType: "text",
+              timestamp: timestamp ? new Date(timestamp) : new Date(),
+            });
+          }
         }
       } catch (error) {
         logger.error("Failed to save chat message", error);

@@ -393,6 +393,7 @@ export default function InterviewRoom() {
   // Tab mode: 'video' | 'editor' | 'whiteboard' | 'problem' | 'notes' | 'settings'
   const [activeTab, setActiveTab] = useState("video");
   const [isDark, setIsDark] = useState(document.documentElement.classList.contains("dark"));
+  const [localMediaReady, setLocalMediaReady] = useState(false);
 
   useEffect(() => {
     const observer = new MutationObserver(() => {
@@ -631,6 +632,7 @@ export default function InterviewRoom() {
         { urls: "stun:stun1.l.google.com:19302" },
       ],
     });
+    peer.iceQueue = [];
 
     peer.onicecandidate = (event) => {
       if (!event.candidate || !socketRef.current) return;
@@ -653,6 +655,13 @@ export default function InterviewRoom() {
     const localStream = localStreamRef.current;
     if (localStream) {
       localStream.getTracks().forEach((track) => {
+        if (track.kind === "video" && screenStreamRef.current) {
+          const screenTrack = screenStreamRef.current.getVideoTracks()[0];
+          if (screenTrack) {
+            peer.addTrack(screenTrack, screenStreamRef.current);
+            return;
+          }
+        }
         peer.addTrack(track, localStream);
       });
     }
@@ -684,16 +693,48 @@ export default function InterviewRoom() {
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = stream;
         }
-        setMicOn(stream.getAudioTracks().some((track) => track.enabled));
-        setCamOn(stream.getVideoTracks().some((track) => track.enabled));
-        announceReadyIfPossible();
+        const actualMic = stream.getAudioTracks().some((track) => track.enabled);
+        const actualCam = stream.getVideoTracks().some((track) => track.enabled);
+        setMicOn(actualMic);
+        setCamOn(actualCam);
+        if (socketRef.current?.connected) {
+          socketRef.current.emit("room:media-toggle", {
+            roomId,
+            userId: identity.userId,
+            micOn: actualMic,
+            camOn: actualCam,
+          });
+        }
       } catch {
         setMicOn(false);
         setCamOn(false);
+        if (socketRef.current?.connected) {
+          socketRef.current.emit("room:media-toggle", {
+            roomId,
+            userId: identity.userId,
+            micOn: false,
+            camOn: false,
+          });
+        }
         toast({
           title: "Media access denied",
           description: "Camera and microphone access is required for live interview calls.",
           variant: "destructive",
+        });
+      } finally {
+        setLocalMediaReady(true);
+        announceReadyIfPossible();
+        // Send offers to any already connected users if we should initiate
+        setConnectedUsers((currentList) => {
+          currentList.forEach((remoteUser) => {
+            if (String(remoteUser.userId) !== String(identity.userId)) {
+              const shouldInitiate = String(identity.userId) > String(remoteUser.userId);
+              if (shouldInitiate) {
+                startOffer(remoteUser.userId).catch(() => {});
+              }
+            }
+          });
+          return currentList;
         });
       }
     };
@@ -709,7 +750,7 @@ export default function InterviewRoom() {
       }
       cleanupAllPeerConnections();
     };
-  }, [announceReadyIfPossible, cleanupAllPeerConnections, toast]);
+  }, [announceReadyIfPossible, cleanupAllPeerConnections, toast, startOffer, identity.userId, roomId]);
 
   useEffect(() => {
     const loadRoom = async () => {
@@ -768,7 +809,7 @@ export default function InterviewRoom() {
   }, [identity.userId, roleOverride, roomId, user?.id, user?._id]);
 
   useEffect(() => {
-    if (!roomId) return;
+    if (!roomId || !localMediaReady) return;
 
     const socket = io(getSocketServerUrl(), {
       transports: ["websocket", "polling"],
@@ -850,6 +891,25 @@ export default function InterviewRoom() {
       ]);
     };
 
+    const onChatHistory = (historyList) => {
+      if (!Array.isArray(historyList)) return;
+      const formatted = historyList.map(payload => {
+        const senderName =
+          payload.userName ||
+          (String(payload.userId) === String(identity.userId)
+            ? identity.userName
+            : "Participant");
+        return {
+          id: payload.chatId || `${payload.userId || "msg"}-${payload.timestamp || Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          userId: payload.userId,
+          sender: senderName,
+          message: payload.message,
+          time: formatMessageTime(payload.timestamp),
+        };
+      });
+      setMessages(formatted);
+    };
+
     const onUserReady = ({ userId }) => {
       if (!userId || String(userId) === String(identity.userId)) return;
       const shouldInitiate = String(identity.userId) > String(userId);
@@ -862,6 +922,19 @@ export default function InterviewRoom() {
       if (!offer || !fromUserId || String(fromUserId) === String(identity.userId)) return;
       const peer = buildPeerConnection(fromUserId);
       await peer.setRemoteDescription(new RTCSessionDescription(offer));
+
+      // Process queued candidates
+      if (peer.iceQueue && peer.iceQueue.length > 0) {
+        for (const candidate of peer.iceQueue) {
+          try {
+            await peer.addIceCandidate(new RTCIceCandidate(candidate));
+          } catch (e) {
+            console.error("Error adding queued ice candidate", e);
+          }
+        }
+        peer.iceQueue = [];
+      }
+
       const answer = await peer.createAnswer();
       await peer.setLocalDescription(answer);
       socket.emit("webrtc:answer", {
@@ -877,6 +950,18 @@ export default function InterviewRoom() {
       const pc = peerConnectionsRef.current[fromUserId];
       if (pc) {
         await pc.setRemoteDescription(new RTCSessionDescription(answer));
+
+        // Process queued candidates
+        if (pc.iceQueue && pc.iceQueue.length > 0) {
+          for (const candidate of pc.iceQueue) {
+            try {
+              await pc.addIceCandidate(new RTCIceCandidate(candidate));
+            } catch (e) {
+              console.error("Error adding queued ice candidate", e);
+            }
+          }
+          pc.iceQueue = [];
+        }
       }
     };
 
@@ -885,9 +970,14 @@ export default function InterviewRoom() {
       const pc = peerConnectionsRef.current[fromUserId];
       if (pc) {
         try {
-          await pc.addIceCandidate(new RTCIceCandidate(candidate));
-        } catch {
-          // ignore
+          if (pc.remoteDescription && pc.remoteDescription.type) {
+            await pc.addIceCandidate(new RTCIceCandidate(candidate));
+          } else {
+            pc.iceQueue = pc.iceQueue || [];
+            pc.iceQueue.push(candidate);
+          }
+        } catch (e) {
+          console.error("Error adding ice candidate", e);
         }
       }
     };
@@ -1035,6 +1125,7 @@ export default function InterviewRoom() {
     socket.on("connect", onConnect);
     socket.on("room:user-list", onUserList);
     socket.on("chat:message", onChatMessage);
+    socket.on("chat:history", onChatHistory);
     socket.on("webrtc:user-ready", onUserReady);
     socket.on("webrtc:offer", onOffer);
     socket.on("webrtc:answer", onAnswer);
@@ -1057,6 +1148,7 @@ export default function InterviewRoom() {
       socket.off("connect", onConnect);
       socket.off("room:user-list", onUserList);
       socket.off("chat:message", onChatMessage);
+      socket.off("chat:history", onChatHistory);
       socket.off("webrtc:user-ready", onUserReady);
       socket.off("webrtc:offer", onOffer);
       socket.off("webrtc:answer", onAnswer);
@@ -1081,6 +1173,7 @@ export default function InterviewRoom() {
     roomLocked,
     navigate,
     toast,
+    localMediaReady,
   ]);
 
   const elapsedSeconds = Math.max(0, totalDurationSeconds - timer);
@@ -1305,6 +1398,9 @@ export default function InterviewRoom() {
           }
         });
       }
+      if (localVideoRef.current && localStreamRef.current) {
+        localVideoRef.current.srcObject = localStreamRef.current;
+      }
     } else {
       try {
         const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
@@ -1323,6 +1419,9 @@ export default function InterviewRoom() {
             videoSender.replaceTrack(screenTrack);
           }
         });
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = stream;
+        }
       } catch (err) {
         console.error("Screen share error:", err);
         toast({
