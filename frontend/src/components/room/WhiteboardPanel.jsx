@@ -77,7 +77,9 @@ const WhiteboardPanel = ({ roomId, isDark, socket, whiteboardKey }) => {
     const onWhiteboardUpdate = async ({ elements }) => {
       try {
         setSyncStatus("syncing");
+        console.log("Whiteboard update received. Key length:", whiteboardKey?.length || 0, "Payload length/type:", typeof elements === "string" ? elements.length : typeof elements);
         const decrypted = await decryptData(elements, whiteboardKey);
+        console.log("Decrypted elements. type:", typeof decrypted, "isArray:", Array.isArray(decrypted), "count:", Array.isArray(decrypted) ? decrypted.length : 0);
         const remoteEls = Array.isArray(decrypted) 
           ? decrypted 
           : (decrypted?.elements || []);
@@ -135,7 +137,9 @@ const WhiteboardPanel = ({ roomId, isDark, socket, whiteboardKey }) => {
         pendingUpdateRef.current = null;
 
         try {
+          console.log("Encrypting & emitting elements update. count:", elsToSend.length, "Key length:", whiteboardKey?.length || 0);
           const encrypted = await encryptData(elsToSend, whiteboardKey);
+          console.log("Emitting whiteboard:update. Payload length/type:", typeof encrypted === "string" ? encrypted.length : typeof encrypted);
           socket.emit("whiteboard:update", {
             roomId,
             elements: encrypted,
@@ -186,6 +190,7 @@ const WhiteboardPanel = ({ roomId, isDark, socket, whiteboardKey }) => {
     }
 
     if (changedEls.length > 0) {
+      console.log("Whiteboard change detected. count:", changedEls.length);
       setSyncStatus("syncing");
 
       // Stage changed elements in the update map
