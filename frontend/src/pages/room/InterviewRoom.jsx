@@ -472,6 +472,7 @@ export default function InterviewRoom() {
 
   // Custom states and refs for multi-peer/redesign
   const socketRef = useRef(null);
+  const [activeSocket, setActiveSocket] = useState(null);
   const localStreamRef = useRef(null);
   const localVideoRef = useRef(null);
   const readySignalSentRef = useRef(false);
@@ -817,6 +818,7 @@ export default function InterviewRoom() {
     });
 
     socketRef.current = socket;
+    setActiveSocket(socket);
 
     const onConnect = () => {
       socket.emit("room:join", {
@@ -1158,6 +1160,7 @@ export default function InterviewRoom() {
       socket.off("room:control", onRoomControl);
       socket.disconnect();
       socketRef.current = null;
+      setActiveSocket(null);
       readySignalSentRef.current = false;
     };
   }, [
@@ -1980,7 +1983,7 @@ export default function InterviewRoom() {
                   </div>
                 </div>
               }>
-                <WhiteboardPanel isDark={isDark} roomId={roomId} socket={socketRef.current} whiteboardKey={whiteboardKey} />
+                <WhiteboardPanel isDark={isDark} roomId={roomId} socket={activeSocket} whiteboardKey={whiteboardKey} />
               </React.Suspense>
             </div>
           )}
