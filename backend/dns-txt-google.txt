@@ -1,1 +1,0 @@
-[["authSource=admin&replicaSet=atlas-hgagjl-shard-0"]]
