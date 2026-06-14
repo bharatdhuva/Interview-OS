@@ -41,10 +41,12 @@ const WhiteboardPanel = ({ roomId, isDark, socket, whiteboardKey }) => {
   const pendingUpdateRef = useRef(null); // Map of id -> element
   const throttleTimerRef = useRef(null);
   const saveSnapshotDebounced = useRef(null);
+  const elementsRef = useRef([]);
+  const hasUnsavedChangesRef = useRef(false);
 
   // Sync state with socket (init and update listeners)
   useEffect(() => {
-    if (!socket || !excalidrawAPI || !roomId) return;
+    if (!socket || !excalidrawAPI || !roomId || !whiteboardKey) return;
 
     setSyncStatus("connecting");
     socket.emit("whiteboard:get-state", { roomId });
@@ -118,13 +120,28 @@ const WhiteboardPanel = ({ roomId, isDark, socket, whiteboardKey }) => {
     };
   }, [socket, excalidrawAPI, roomId, whiteboardKey]);
 
-  // Clean up timers on unmount
+  // Clean up timers on unmount & save final snapshot if unsaved changes exist
   useEffect(() => {
     return () => {
       if (throttleTimerRef.current) clearTimeout(throttleTimerRef.current);
       if (saveSnapshotDebounced.current) clearTimeout(saveSnapshotDebounced.current);
+
+      if (hasUnsavedChangesRef.current && socket && roomId && whiteboardKey) {
+        // Run final snapshot save immediately on unmount (as a floating promise)
+        encryptData(elementsRef.current, whiteboardKey)
+          .then((encrypted) => {
+            socket.emit("whiteboard:snapshot", {
+              roomId,
+              elements: encrypted,
+              timestamp: Date.now(),
+            });
+          })
+          .catch((err) => {
+            console.error("Failed to save final whiteboard snapshot on unmount:", err);
+          });
+      }
     };
-  }, []);
+  }, [socket, roomId, whiteboardKey]);
 
   const emitUpdateThrottled = () => {
     if (throttleTimerRef.current) return;
@@ -167,6 +184,7 @@ const WhiteboardPanel = ({ roomId, isDark, socket, whiteboardKey }) => {
           elements: encrypted,
           timestamp: Date.now(),
         });
+        hasUnsavedChangesRef.current = false;
         setSyncStatus("synced");
       } catch (err) {
         console.error("Failed to save whiteboard snapshot:", err);
@@ -177,6 +195,7 @@ const WhiteboardPanel = ({ roomId, isDark, socket, whiteboardKey }) => {
 
   const handleChange = (elements, appState, files) => {
     if (!excalidrawAPI) return;
+    elementsRef.current = elements;
 
     // Detect if any element was created or modified locally
     const changedEls = [];
@@ -191,6 +210,7 @@ const WhiteboardPanel = ({ roomId, isDark, socket, whiteboardKey }) => {
 
     if (changedEls.length > 0) {
       console.log("Whiteboard change detected. count:", changedEls.length);
+      hasUnsavedChangesRef.current = true;
       setSyncStatus("syncing");
 
       // Stage changed elements in the update map
@@ -216,23 +236,11 @@ const WhiteboardPanel = ({ roomId, isDark, socket, whiteboardKey }) => {
             <span className="text-muted-foreground">Initializing Security...</span>
           </>
         )}
-        {syncStatus === "synced" && (
+        {(syncStatus === "synced" || syncStatus === "syncing" || syncStatus === "saving") && (
           <>
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
             <span className="text-emerald-500">End-to-End Encrypted</span>
             <Lock className="w-2.5 h-2.5 text-muted-foreground/60 ml-0.5" />
-          </>
-        )}
-        {syncStatus === "syncing" && (
-          <>
-            <Loader2 className="w-3.5 h-3.5 text-blue-500 animate-spin" />
-            <span className="text-blue-500">Syncing drawings...</span>
-          </>
-        )}
-        {syncStatus === "saving" && (
-          <>
-            <Loader2 className="w-3.5 h-3.5 text-violet-500 animate-spin" />
-            <span className="text-violet-500">Saving snapshot...</span>
           </>
         )}
         {syncStatus === "error" && (
