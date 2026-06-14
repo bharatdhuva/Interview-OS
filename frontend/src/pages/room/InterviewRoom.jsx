@@ -1983,7 +1983,16 @@ export default function InterviewRoom() {
                   </div>
                 </div>
               }>
-                <WhiteboardPanel isDark={isDark} roomId={roomId} socket={activeSocket} whiteboardKey={whiteboardKey} />
+                {whiteboardKey ? (
+                  <WhiteboardPanel isDark={isDark} roomId={roomId} socket={activeSocket} whiteboardKey={whiteboardKey} />
+                ) : (
+                  <div className="flex-1 flex flex-col items-center justify-center select-none text-xs text-muted-foreground">
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                      <span>Loading Encryption Keys...</span>
+                    </div>
+                  </div>
+                )}
               </React.Suspense>
             </div>
           )}
