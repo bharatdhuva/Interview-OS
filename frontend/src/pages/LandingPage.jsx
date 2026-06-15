@@ -237,6 +237,23 @@ export default function LandingPage() {
           }
         }
 
+        @media (max-width: 480px) {
+          .mockup-container {
+            height: 240px !important;
+          }
+          .mockup-man {
+            top: 70px !important;
+            left: 0px !important;
+            width: 65% !important;
+          }
+          .mockup-woman {
+            width: 63% !important;
+          }
+          .mockup-dots {
+            display: none !important;
+          }
+        }
+
         /* Color classes override */
         .bg-primary { background-color: #0d631b !important; }
         .text-primary { color: #0d631b !important; }
@@ -372,7 +389,7 @@ export default function LandingPage() {
       <div className="landing-container bg-background text-on-background min-h-screen w-full flex flex-col items-center">
         {/* TopNavBar */}
         <header className="bg-surface dark:bg-background shadow-sm fixed top-0 left-0 right-0 h-20 transition-all duration-300 z-50">
-          <nav className="flex justify-between items-center w-full px-12 max-w-[1280px] mx-auto h-full">
+          <nav className="flex justify-between items-center w-full px-6 md:px-12 max-w-[1280px] mx-auto h-full">
             <div
               onClick={() => {
                 window.scrollTo({ top: 0, behavior: "smooth" });
@@ -446,7 +463,7 @@ export default function LandingPage() {
 
           {/* Mobile Menu Drawer */}
           {mobileMenuOpen && (
-            <div className="md:hidden absolute top-20 left-0 right-0 bg-white/95 backdrop-blur-md shadow-lg border-b border-[#bfcaba]/30 py-6 px-12 z-40 transition-all duration-300 animate-in-up">
+            <div className="md:hidden absolute top-20 left-0 right-0 bg-white/95 backdrop-blur-md shadow-lg border-b border-[#bfcaba]/30 py-6 px-6 z-40 transition-all duration-300 animate-in-up">
               <div className="flex flex-col gap-6 font-title-lg text-title-lg text-[#40493d]">
                 <a
                   href="#platform"
@@ -502,11 +519,11 @@ export default function LandingPage() {
         <main className="pt-20 overflow-x-hidden w-full flex flex-col items-center">
           {/* Hero Section */}
           <section id="platform" className="hero-gradient relative hero-padding w-full">
-            <div className="w-full max-w-[1280px] mx-auto px-12 grid grid-cols-1 lg:grid-cols-2 gap-lg items-center lg:pt-6">
+            <div className="w-full max-w-[1280px] mx-auto px-6 md:px-12 grid grid-cols-1 lg:grid-cols-2 gap-lg items-center lg:pt-6">
               <div className="flex flex-col gap-5">
                 <h1 className="font-display-lg text-display-lg text-[#191c1b] leading-tight">
-                  The Engineering<br />
-                  Leader's <span className="text-[#0d631b]">Technical<br />
+                  The Engineering<br className="hidden md:inline" />
+                  Leader's <span className="text-[#0d631b]">Technical<br className="hidden md:inline" />
                     Interview Platform.</span>
                 </h1>
                 <p className="font-body-lg text-body-lg text-[#40493d] max-w-xl">
@@ -583,7 +600,7 @@ export default function LandingPage() {
 
           {/* Integrations & Tech Stack */}
           <section id="features" className="py-20 bg-background w-full border-t border-[#bfcaba]/30">
-            <div className="w-full max-w-[1280px] mx-auto px-12 grid grid-cols-1 lg:grid-cols-12 gap-y-12 gap-x-8 items-center py-8">
+            <div className="w-full max-w-[1280px] mx-auto px-6 md:px-12 grid grid-cols-1 lg:grid-cols-12 gap-y-12 gap-x-8 items-center py-8">
               <div className="lg:col-span-5 flex flex-col gap-4">
                 <h2 className="text-4xl md:text-5xl font-extrabold text-[#191c1b] leading-tight">Integrations &amp; Tech Stack</h2>
                 <p className="text-body-lg text-[#40493d] max-w-sm leading-relaxed">
@@ -651,7 +668,7 @@ export default function LandingPage() {
 
           {/* Key Features Section */}
           <section id="key-features" className="py-20 bg-[#f2f4f2] w-full border-t border-[#bfcaba]/30">
-            <div className="w-full max-w-[1280px] mx-auto px-12">
+            <div className="w-full max-w-[1280px] mx-auto px-6 md:px-12">
               <div className="text-center mb-xl">
                 <h2 className="font-headline-lg text-headline-lg text-[#191c1b] mb-sm">Key Features</h2>
                 <p className="font-body-md text-body-md text-[#40493d] max-w-xl mx-auto">
@@ -717,7 +734,7 @@ export default function LandingPage() {
 
           {/* How It Works Section */}
           <section id="how-it-works" className="py-20 bg-background w-full border-t border-[#bfcaba]/30">
-            <div className="w-full max-w-[1280px] mx-auto px-12">
+            <div className="w-full max-w-[1280px] mx-auto px-6 md:px-12">
               <div className="text-center mb-xl">
                 <h2 className="font-headline-lg text-headline-lg text-[#191c1b] mb-sm">How It Works</h2>
                 <p className="font-body-md text-body-md text-[#40493d] max-w-xl mx-auto">
@@ -766,14 +783,14 @@ export default function LandingPage() {
           </section>
 
           {/* Final CTA */}
-          <section className="py-xl px-12 w-full border-t border-[#bfcaba]/30">
+          <section className="py-xl px-6 md:px-12 w-full border-t border-[#bfcaba]/30">
             <div className="w-full max-w-[1280px] mx-auto bg-[#0d631b] rounded-2xl p-8 md:p-12 lg:p-16 text-center relative overflow-hidden group">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.1),transparent)] group-hover:scale-110 transition-transform duration-700"></div>
               <div className="relative z-10">
                 <h2 className="font-display-lg text-display-lg text-white mb-lg leading-tight">Ready to scale your technical hiring?</h2>
                 <button
                   onClick={() => navigate("/register")}
-                  className="bg-white hover:bg-[#a3f69c] text-[#0d631b] px-xl py-md rounded-lg font-title-lg transition-all active:scale-95 shadow-xl"
+                  className="bg-white hover:bg-[#a3f69c] text-[#0d631b] px-8 sm:px-16 py-md rounded-lg font-title-lg transition-all active:scale-95 shadow-xl"
                 >
                   Get Started Free
                 </button>
@@ -784,7 +801,7 @@ export default function LandingPage() {
 
         {/* Footer */}
         <footer className="bg-[#eceeec] dark:bg-zinc-900 border-t border-[#bfcaba] dark:border-zinc-800 w-full pt-16 pb-12">
-          <div className="w-full max-w-[1280px] mx-auto px-12 grid grid-cols-1 md:grid-cols-12 gap-y-8 gap-x-8 mb-16 text-label-md font-label-md">
+          <div className="w-full max-w-[1280px] mx-auto px-6 md:px-12 grid grid-cols-1 md:grid-cols-12 gap-y-8 gap-x-8 mb-16 text-label-md font-label-md">
             <div className="md:col-span-5 space-y-4">
               <span className="text-2xl font-bold text-[#0d631b] block">InterviewOS</span>
               <p className="text-[#40493d] dark:text-zinc-400 max-w-[320px] leading-relaxed text-body-md">
@@ -855,7 +872,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="w-full max-w-[1280px] mx-auto px-12 py-md border-t border-[#bfcaba]/30 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-[#707a6c] dark:text-zinc-400">
+          <div className="w-full max-w-[1280px] mx-auto px-6 md:px-12 py-md border-t border-[#bfcaba]/30 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-[#707a6c] dark:text-zinc-400">
             <p>© 2024 InterviewOS. All rights reserved.</p>
             <p className="font-semibold text-center select-none">
               Made with <span className="text-[#0d631b] dark:text-[#88d982] animate-pulse">❤️</span> by <a href="https://github.com/bharatdhuva" target="_blank" rel="noopener noreferrer" className="hover:text-[#0d631b] dark:hover:text-[#88d982] transition-colors duration-300 underline underline-offset-4 font-bold">Bharat Dhuva</a>
