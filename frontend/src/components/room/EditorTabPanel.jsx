@@ -6,10 +6,8 @@ import { Input } from "@/components/ui/input";
 import CustomSelect from "@/components/ui/CustomSelect";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 
-
+const [stdin, setStdin] = useState('');
 const languages = [
-  // State for standard input to be passed to code execution
-  const [stdin, setStdin] = useState('');
   { value: "javascript", label: "JavaScript" },
   { value: "typescript", label: "TypeScript" },
   { value: "python", label: "Python" },

@@ -1269,7 +1269,7 @@ export default function InterviewRoom() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [handleManualSave]);
 
-  const handleRun = async () => {
+  const handleRun = async (stdin = '') => {
     const activeCode = files[activeFile] || "";
     if (!activeCode.trim()) {
       setOutput("Please write some code before running.\n");
@@ -1283,6 +1283,7 @@ export default function InterviewRoom() {
         roomId,
         language,
         code: activeCode,
+        stdin,
         ...(sessionId ? { sessionId } : {}),
       });
       if (!response.data.success || !response.data.data) {
