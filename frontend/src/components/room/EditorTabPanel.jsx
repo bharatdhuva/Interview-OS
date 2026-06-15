@@ -8,6 +8,8 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/componen
 
 
 const languages = [
+  // State for standard input to be passed to code execution
+  const [stdin, setStdin] = useState('');
   { value: "javascript", label: "JavaScript" },
   { value: "typescript", label: "TypeScript" },
   { value: "python", label: "Python" },
@@ -81,14 +83,14 @@ export default function EditorTabPanel({
               </span>
             )}
             <Button
-              size="sm"
-              className="h-8 text-[11px] gap-1.5 bg-primary hover:bg-primary/90 hover:scale-[1.03] active:scale-95 transition-all shadow-md shadow-primary/20"
-              onClick={handleRun}
-              disabled={isRunning}
-            >
-              <Play className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{isRunning ? "Running..." : "Run"}</span>
-            </Button>
+                size="sm"
+                className="h-8 text-[11px] gap-1.5 bg-primary hover:bg-primary/90 hover:scale-[1.03] active:scale-95 transition-all shadow-md shadow-primary/20"
+                onClick={() => handleRun(stdin)}
+                disabled={isRunning}
+              >
+                <Play className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">{isRunning ? "Running..." : "Run"}</span>
+              </Button>
           </div>
         </div>
       </div>
@@ -231,14 +233,21 @@ export default function EditorTabPanel({
                   Output Console
                 </span>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 px-2 text-[10px] hover:bg-secondary active:scale-95 transition-all"
-                onClick={() => setOutput("")}
-              >
-                Clear
-              </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-[10px] hover:bg-secondary active:scale-95 transition-all"
+                  onClick={() => setOutput("")}
+                >
+                  Clear
+                </Button>
+                {/* Stdin input area */}
+                <textarea
+                  value={stdin}
+                  onChange={(e) => setStdin(e.target.value)}
+                  placeholder="Standard Input (optional)"
+                  className="w-full h-20 p-2 mt-2 bg-background border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary text-xs resize-none"
+                />
             </div>
             <pre className="flex-1 p-4 pb-24 font-mono text-xs overflow-auto bg-black/[0.03] dark:bg-black/30 text-foreground/95 leading-relaxed selection:bg-primary/20">
               {output || (
