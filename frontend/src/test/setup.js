@@ -1,4 +1,5 @@
 import "@testing-library/jest-dom";
+globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 Object.defineProperty(window, "matchMedia", {
     writable: true,
     value: (query) => ({
@@ -12,3 +13,4 @@ Object.defineProperty(window, "matchMedia", {
         dispatchEvent: () => { },
     }),
 });
+
