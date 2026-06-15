@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
@@ -16,7 +16,47 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
   const loginAction = useAuthStore((s) => s.login);
+
+  useEffect(() => {
+    let targetUrl = "";
+    if (location.state?.from) {
+      if (typeof location.state.from === "string") {
+        targetUrl = location.state.from;
+      } else {
+        const fromLoc = location.state.from;
+        targetUrl = fromLoc.pathname + (fromLoc.search || "") + (fromLoc.hash || "");
+      }
+    }
+    if (!targetUrl) {
+      const params = new URLSearchParams(window.location.search);
+      targetUrl = params.get("redirect") || params.get("from") || "";
+    }
+
+    if (targetUrl) {
+      sessionStorage.setItem("redirectUrl", targetUrl);
+    } else {
+      const params = new URLSearchParams(window.location.search);
+      if (!params.has("code")) {
+        sessionStorage.removeItem("redirectUrl");
+      }
+    }
+  }, [location]);
+
+  const handlePostLoginRedirect = (user) => {
+    if (user.isOnboarded === false) {
+      navigate("/onboarding");
+    } else {
+      const redirectUrl = sessionStorage.getItem("redirectUrl");
+      if (redirectUrl) {
+        sessionStorage.removeItem("redirectUrl");
+        navigate(redirectUrl);
+      } else {
+        navigate(user.role === "interviewer" ? "/dashboard/interviewer" : "/dashboard/candidate");
+      }
+    }
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -44,11 +84,7 @@ const LoginPage = () => {
           loginAction(user, d.accessToken);
           sessionStorage.setItem("justLoggedIn", "true");
           window.history.replaceState({}, document.title, window.location.pathname);
-          if (d.isOnboarded === false) {
-            navigate("/onboarding");
-          } else {
-            navigate(user.role === "interviewer" ? "/dashboard/interviewer" : "/dashboard/candidate");
-          }
+          handlePostLoginRedirect(user);
         } catch (err) {
           setServerError(err?.response?.data?.message || "GitHub authentication failed");
           window.history.replaceState({}, document.title, window.location.pathname);
@@ -97,11 +133,7 @@ const LoginPage = () => {
       };
       loginAction(user, d.accessToken);
       sessionStorage.setItem("justLoggedIn", "true");
-      if (d.isOnboarded === false) {
-        navigate("/onboarding");
-      } else {
-        navigate(user.role === "interviewer" ? "/dashboard/interviewer" : "/dashboard/candidate");
-      }
+      handlePostLoginRedirect(user);
     } catch (err) {
       const msg = err?.response?.data?.message || "Invalid email or password";
       setServerError(msg);
@@ -131,11 +163,7 @@ const LoginPage = () => {
         };
         loginAction(user, d.accessToken);
         sessionStorage.setItem("justLoggedIn", "true");
-        if (d.isOnboarded === false) {
-          navigate("/onboarding");
-        } else {
-          navigate(user.role === "interviewer" ? "/dashboard/interviewer" : "/dashboard/candidate");
-        }
+        handlePostLoginRedirect(user);
       } catch (err) {
         setServerError(err?.response?.data?.message || "Google authentication failed");
       } finally {

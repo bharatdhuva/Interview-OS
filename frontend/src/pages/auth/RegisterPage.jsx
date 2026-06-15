@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
 import { useToast } from "@/hooks/use-toast";
 import { useGoogleLogin } from "@react-oauth/google";
@@ -36,8 +36,48 @@ const RegisterPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
   const login = useAuthStore((s) => s.login);
   const { toast } = useToast();
+
+  useEffect(() => {
+    let targetUrl = "";
+    if (location.state?.from) {
+      if (typeof location.state.from === "string") {
+        targetUrl = location.state.from;
+      } else {
+        const fromLoc = location.state.from;
+        targetUrl = fromLoc.pathname + (fromLoc.search || "") + (fromLoc.hash || "");
+      }
+    }
+    if (!targetUrl) {
+      const params = new URLSearchParams(window.location.search);
+      targetUrl = params.get("redirect") || params.get("from") || "";
+    }
+
+    if (targetUrl) {
+      sessionStorage.setItem("redirectUrl", targetUrl);
+    } else {
+      const params = new URLSearchParams(window.location.search);
+      if (!params.has("code")) {
+        sessionStorage.removeItem("redirectUrl");
+      }
+    }
+  }, [location]);
+
+  const handlePostLoginRedirect = (user) => {
+    if (user.isOnboarded === false) {
+      navigate("/onboarding");
+    } else {
+      const redirectUrl = sessionStorage.getItem("redirectUrl");
+      if (redirectUrl) {
+        sessionStorage.removeItem("redirectUrl");
+        navigate(redirectUrl);
+      } else {
+        navigate(user.role === "interviewer" ? "/dashboard/interviewer" : "/dashboard/candidate");
+      }
+    }
+  };
 
   const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const strength = useMemo(() => getPasswordStrength(password), [password]);
@@ -68,11 +108,7 @@ const RegisterPage = () => {
           login(user, d.accessToken);
           sessionStorage.setItem("justLoggedIn", "true");
           window.history.replaceState({}, document.title, window.location.pathname);
-          if (d.isOnboarded === false) {
-            navigate("/onboarding");
-          } else {
-            navigate(user.role === "interviewer" ? "/dashboard/interviewer" : "/dashboard/candidate");
-          }
+          handlePostLoginRedirect(user);
         } catch (err) {
           setError(err?.response?.data?.message || "GitHub authentication failed");
           window.history.replaceState({}, document.title, window.location.pathname);
@@ -111,11 +147,7 @@ const RegisterPage = () => {
         };
         login(user, d.accessToken);
         sessionStorage.setItem("justLoggedIn", "true");
-        if (d.isOnboarded === false) {
-          navigate("/onboarding");
-        } else {
-          navigate(user.role === "interviewer" ? "/dashboard/interviewer" : "/dashboard/candidate");
-        }
+        handlePostLoginRedirect(user);
       } catch (err) {
         setError(err?.response?.data?.message || "Google authentication failed");
       } finally {
@@ -169,11 +201,7 @@ const RegisterPage = () => {
         description: "Your account has been created successfully.",
       });
 
-      if (d.isOnboarded === false) {
-        navigate("/onboarding");
-      } else {
-        navigate(user.role === "interviewer" ? "/dashboard/interviewer" : "/dashboard/candidate");
-      }
+      handlePostLoginRedirect(user);
     } catch (err) {
       const msg = err?.response?.data?.message || "Something went wrong";
       setError(msg);

@@ -33,8 +33,14 @@ const OnboardingPage = () => {
         description: `Welcome aboard! You are signed in as a ${role}.`,
       });
 
-      // Redirect to correct dashboard
-      navigate(role === "interviewer" ? "/dashboard/interviewer" : "/dashboard/candidate");
+      // Redirect to correct dashboard or saved redirect URL
+      const redirectUrl = sessionStorage.getItem("redirectUrl");
+      if (redirectUrl) {
+        sessionStorage.removeItem("redirectUrl");
+        navigate(redirectUrl);
+      } else {
+        navigate(role === "interviewer" ? "/dashboard/interviewer" : "/dashboard/candidate");
+      }
     } catch (err) {
       setError(err?.response?.data?.message || "Failed to complete onboarding. Please try again.");
     } finally {
