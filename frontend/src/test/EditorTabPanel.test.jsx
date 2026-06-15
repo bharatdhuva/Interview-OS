@@ -24,8 +24,10 @@ vi.mock("lucide-react", () => {
     Terminal: () => <span>Terminal</span>,
     ChevronDown: () => <span>ChevronDown</span>,
     Check: () => <span>Check</span>,
+    GripVertical: () => <span>GripVertical</span>,
   };
 });
+
 
 describe("EditorTabPanel Component", () => {
   let container;

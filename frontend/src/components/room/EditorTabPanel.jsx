@@ -93,10 +93,13 @@ export default function EditorTabPanel({
       </div>
 
       {/* Editor Workspace splits (sidebar filetree & monaco) */}
-      <div className="flex-1 flex overflow-hidden min-h-0 relative">
-        {/* Collapsible File Explorer */}
-        {showFileExplorer && (
-          <div className="w-44 border-r border-border bg-card/45 flex flex-col p-3 shrink-0 h-full select-none">
+      <div className="flex-1 min-h-0 overflow-hidden relative">
+        <ResizablePanelGroup direction="horizontal" className="h-full w-full">
+          {/* Collapsible File Explorer */}
+          {showFileExplorer && (
+            <>
+              <ResizablePanel defaultSize={15} minSize={10} maxSize={30} className="flex flex-col min-w-0">
+                <div className="w-full h-full border-r border-border bg-card/45 flex flex-col p-3 overflow-hidden select-none">
             <div className="flex items-center justify-between mb-3 border-b border-border/40 pb-2">
               <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Files</span>
               <Button
@@ -169,10 +172,15 @@ export default function EditorTabPanel({
               </button>
             </form>
           </div>
-        )}
+              </ResizablePanel>
+              <ResizableHandle withHandle className="w-1 bg-border/40 hover:bg-primary/50 transition-all cursor-col-resize z-40" />
+            </>
 
-        {/* Monaco & Output split */}
-        <div className="flex-1 flex flex-col min-w-0 h-full relative">
+          )}
+
+          <ResizablePanel defaultSize={showFileExplorer ? 85 : 100} className="flex flex-col min-w-0">
+            {/* Monaco & Output split */}
+            <div className="w-full h-full flex flex-col min-w-0 relative">
           {!showFileExplorer && (
             <button
               onClick={() => setShowFileExplorer(true)}
@@ -183,32 +191,38 @@ export default function EditorTabPanel({
             </button>
           )}
 
-          <div className="flex-1 min-h-0">
-            <Editor
-              height="100%"
-              language={language}
-              theme={isDark ? "vs-dark" : "light"}
-              value={files[activeFile] || ""}
-              onChange={handleCodeChange}
-              options={{
-                fontSize: 14,
-                fontFamily: '"JetBrains Mono", monospace',
-                minimap: { enabled: false },
-                padding: { top: 16 },
-                scrollBeyondLastLine: false,
-                automaticLayout: true,
-                cursorBlinking: "smooth",
-                lineNumbers: "on",
-                renderLineHighlight: "all",
-                overviewRulerBorder: false,
-                hideCursorInOverviewRuler: true,
-                bracketPairColorization: { enabled: true },
-                smoothScrolling: true,
-              }}
-            />
-          </div>
-
-          <div className="h-40 border-t border-border bg-card/50 flex flex-col shrink-0 select-none">
+              <ResizablePanelGroup direction="vertical" className="h-full w-full flex-1">
+                <ResizablePanel defaultSize={70} minSize={30} className="flex flex-col min-h-0">
+                  <div className="flex-1 min-h-0 h-full">
+                    <Editor
+                      height="100%"
+                      language={language}
+                      theme={isDark ? "vs-dark" : "light"}
+                      value={files[activeFile] || ""}
+                      onChange={handleCodeChange}
+                      options={{
+                        fontSize: 14,
+                        fontFamily: '"JetBrains Mono", monospace',
+                        minimap: { enabled: false },
+                        padding: { top: 16 },
+                        scrollBeyondLastLine: false,
+                        automaticLayout: true,
+                        cursorBlinking: "smooth",
+                        lineNumbers: "on",
+                        renderLineHighlight: "all",
+                        overviewRulerBorder: false,
+                        hideCursorInOverviewRuler: true,
+                        bracketPairColorization: { enabled: true },
+                        smoothScrolling: true,
+                      }}
+                    />
+                  </div>
+                </ResizablePanel>
+                
+                <ResizableHandle withHandle className="h-1 bg-border/40 hover:bg-primary/50 transition-all cursor-row-resize z-40" />
+                
+                <ResizablePanel defaultSize={30} minSize={15} className="flex flex-col min-h-0">
+                  <div className="w-full h-full bg-card/50 flex flex-col overflow-hidden select-none">
             <div className="h-8 px-4 flex items-center justify-between border-b border-border bg-background/30">
               <div className="flex items-center gap-2">
                 <Terminal className="w-3.5 h-3.5 text-primary" />
@@ -232,8 +246,12 @@ export default function EditorTabPanel({
                 </span>
               )}
             </pre>
-          </div>
-        </div>
+            </div>
+                </ResizablePanel>
+              </ResizablePanelGroup>
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
       </div>
     </div>
   );
