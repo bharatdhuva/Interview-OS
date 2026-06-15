@@ -440,7 +440,22 @@ export default function InterviewRoom() {
     }
   };
 
-  const [language, setLanguage] = useState("typescript");
+  const [language, setLanguage] = useState("javascript");
+
+  // Synchronize editor language state when activeFile changes
+  useEffect(() => {
+    if (!activeFile) return;
+    const ext = activeFile.split(".").pop();
+    let lang = "javascript";
+    if (ext === "py") lang = "python";
+    else if (ext === "java") lang = "java";
+    else if (ext === "cpp" || ext === "cc") lang = "cpp";
+    else if (ext === "go") lang = "go";
+    else if (ext === "rs") lang = "rust";
+    else if (ext === "ts") lang = "typescript";
+    setLanguage(lang);
+  }, [activeFile]);
+
   const [lastSavedAt, setLastSavedAt] = useState(null);
   const [output, setOutput] = useState("");
   const [isRunning, setIsRunning] = useState(false);
