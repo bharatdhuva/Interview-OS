@@ -53,6 +53,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useProctor } from "@/hooks/useProctor";
 import api from "@/lib/api";
 import { io } from "socket.io-client";
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
+
 
 // Lazy-loaded components for code-splitting
 const EditorTabPanel = React.lazy(() => import("@/components/room/EditorTabPanel"));
@@ -1943,7 +1945,10 @@ export default function InterviewRoom() {
         </nav>
 
         {/* PANEL 2: Center Main Content area */}
-        <main className="flex-1 flex flex-col min-w-0 bg-background relative overflow-hidden">
+        <div className="flex-1 h-full min-w-0 overflow-hidden">
+          <ResizablePanelGroup direction="horizontal" className="h-full w-full">
+            <ResizablePanel defaultSize={75} minSize={50} className="flex flex-col min-w-0">
+              <main className="w-full h-full flex flex-col min-w-0 bg-background relative overflow-hidden">
 
           {/* TAB: Video Call view */}
           {activeTab === "video" && (
@@ -2162,10 +2167,14 @@ export default function InterviewRoom() {
                 </div>
               )}
             </div>
-          )}
-        </main>
-        {/* PANEL 3: Right Sidebar Panel (Always visible Participants + Chat) */}
-        <section className="w-80 border-l border-border/50 dark:border-white/5 bg-card/45 dark:bg-[#111612]/45 backdrop-blur-xl flex flex-col shrink-0 h-full overflow-hidden select-none" aria-label="Room details panel">
+                  </main>
+            </ResizablePanel>
+
+            <ResizableHandle withHandle className="w-1 bg-border/40 hover:bg-primary/50 transition-all cursor-col-resize z-40" />
+
+            <ResizablePanel defaultSize={25} minSize={15} maxSize={40} className="flex flex-col min-w-0">
+              {/* PANEL 3: Right Sidebar Panel (Always visible Participants + Chat) */}
+              <section className="w-full h-full border-none bg-card/45 dark:bg-[#111612]/45 backdrop-blur-xl flex flex-col overflow-hidden select-none" aria-label="Room details panel">
           {/* Top Half: Participants */}
           <div className="flex-1 flex flex-col min-h-0 border-b border-border/50 dark:border-white/5">
             <div className="h-12 flex items-center justify-between px-4 border-b border-border/50 dark:border-white/5 bg-background/20 dark:bg-muted/30 shrink-0">
@@ -2262,7 +2271,10 @@ export default function InterviewRoom() {
             </form>
           </div>
         </section>
-      </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        </div>
+       </div>
 
       {/* Centered Floating Control Bar overlay */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 bg-card/75 dark:bg-[#111612]/85 backdrop-blur-xl px-5 py-3 rounded-2xl border border-primary/20 dark:border-primary/30 shadow-[0_12px_40px_rgba(0,0,0,0.12)] dark:shadow-[0_12px_40px_rgba(0,0,0,0.4)] select-none w-max max-w-[95vw] overflow-x-auto">

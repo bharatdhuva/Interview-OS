@@ -4,6 +4,8 @@ import { Code2, Play, Save, Brain, X, Terminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import CustomSelect from "@/components/ui/CustomSelect";
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
+
 
 const languages = [
   { value: "javascript", label: "JavaScript" },
