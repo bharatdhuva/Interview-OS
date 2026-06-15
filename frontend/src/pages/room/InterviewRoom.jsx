@@ -2165,10 +2165,13 @@ export default function InterviewRoom() {
                     This room has recorded {violationCount} integrity violations (e.g. browser tab switches, exit fullscreen). Review candidate logs with caution.
                   </p>
                 </div>
+              )}
             </div>
           )}
                   </main>
             </ResizablePanel>
+
+
 
 
             <ResizableHandle withHandle className="w-1 bg-border/40 hover:bg-primary/50 transition-all cursor-col-resize z-40" />
