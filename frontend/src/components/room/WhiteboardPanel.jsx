@@ -46,64 +46,79 @@ const WhiteboardPanel = ({ roomId, isDark, socket, whiteboardKey }) => {
 
   // Sync state with socket (init and update listeners)
   useEffect(() => {
-    if (!socket || !excalidrawAPI || !roomId || !whiteboardKey) return;
+    if (!socket || !excalidrawAPI || !roomId) return; // whiteboardKey is optional; handled below
 
     setSyncStatus("connecting");
-    socket.emit("whiteboard:get-state", { roomId });
+    if (whiteboardKey) {
+        socket.emit("whiteboard:get-state", { roomId });
+      } else {
+        // No encryption key – assume empty board
+        setSyncStatus("synced");
+      }
 
     const onWhiteboardInit = async ({ elements }) => {
-      if (!elements) {
-        setSyncStatus("synced");
-        return;
-      }
-      try {
-        const decrypted = await decryptData(elements, whiteboardKey);
-        const initEls = Array.isArray(decrypted) 
-          ? decrypted 
-          : (decrypted?.elements || []);
-        
-        // Initialize version map
-        knownVersionsRef.current.clear();
-        for (const el of initEls) {
-          knownVersionsRef.current.set(el.id, el.version);
+        if (!whiteboardKey) {
+          // No encryption – start with empty board
+          setSyncStatus("synced");
+          return;
         }
-
-        excalidrawAPI.updateScene({ elements: initEls });
-        setSyncStatus("synced");
-      } catch (err) {
-        console.error("Failed to parse init whiteboard elements:", err);
-        setSyncStatus("error");
-      }
-    };
-
-    const onWhiteboardUpdate = async ({ elements }) => {
-      try {
-        setSyncStatus("syncing");
-        console.log("Whiteboard update received. Key length:", whiteboardKey?.length || 0, "Payload length/type:", typeof elements === "string" ? elements.length : typeof elements);
-        const decrypted = await decryptData(elements, whiteboardKey);
-        console.log("Decrypted elements. type:", typeof decrypted, "isArray:", Array.isArray(decrypted), "count:", Array.isArray(decrypted) ? decrypted.length : 0);
-        const remoteEls = Array.isArray(decrypted) 
-          ? decrypted 
-          : (decrypted?.elements || []);
-
-        // Record incoming versions to prevent echo back
-        for (const el of remoteEls) {
-          const currentKnown = knownVersionsRef.current.get(el.id) || -1;
-          if (el.version > currentKnown) {
+        if (!elements) {
+          setSyncStatus("synced");
+          return;
+        }
+        try {
+          const decrypted = await decryptData(elements, whiteboardKey);
+          const initEls = Array.isArray(decrypted) 
+            ? decrypted 
+            : (decrypted?.elements || []);
+          
+          // Initialize version map
+          knownVersionsRef.current.clear();
+          for (const el of initEls) {
             knownVersionsRef.current.set(el.id, el.version);
           }
+
+          excalidrawAPI.updateScene({ elements: initEls });
+          setSyncStatus("synced");
+        } catch (err) {
+          console.error("Failed to parse init whiteboard elements:", err);
+          setSyncStatus("error");
         }
+      };
 
-        const currentEls = excalidrawAPI.getSceneElements();
-        const merged = mergeElements(currentEls, remoteEls);
+    const onWhiteboardUpdate = async ({ elements }) => {
+        if (!whiteboardKey) {
+          // No encryption – ignore updates
+          setSyncStatus("synced");
+          return;
+        }
+        try {
+          setSyncStatus("syncing");
+          console.log("Whiteboard update received. Key length:", whiteboardKey?.length || 0, "Payload length/type:", typeof elements === "string" ? elements.length : typeof elements);
+          const decrypted = await decryptData(elements, whiteboardKey);
+          console.log("Decrypted elements. type:", typeof decrypted, "isArray:", Array.isArray(decrypted), "count:", Array.isArray(decrypted) ? decrypted.length : 0);
+          const remoteEls = Array.isArray(decrypted) 
+            ? decrypted 
+            : (decrypted?.elements || []);
 
-        excalidrawAPI.updateScene({ elements: merged });
-        setSyncStatus("synced");
-      } catch (err) {
-        console.error("Failed to handle whiteboard update:", err);
-        setSyncStatus("error");
-      }
-    };
+          // Record incoming versions to prevent echo back
+          for (const el of remoteEls) {
+            const currentKnown = knownVersionsRef.current.get(el.id) || -1;
+            if (el.version > currentKnown) {
+              knownVersionsRef.current.set(el.id, el.version);
+            }
+          }
+
+          const currentEls = excalidrawAPI.getSceneElements();
+          const merged = mergeElements(currentEls, remoteEls);
+
+          excalidrawAPI.updateScene({ elements: merged });
+          setSyncStatus("synced");
+        } catch (err) {
+          console.error("Failed to handle whiteboard update:", err);
+          setSyncStatus("error");
+        }
+      };
 
     socket.on("whiteboard:init", onWhiteboardInit);
     socket.on("whiteboard:update", onWhiteboardUpdate);
@@ -126,19 +141,20 @@ const WhiteboardPanel = ({ roomId, isDark, socket, whiteboardKey }) => {
       if (throttleTimerRef.current) clearTimeout(throttleTimerRef.current);
       if (saveSnapshotDebounced.current) clearTimeout(saveSnapshotDebounced.current);
 
-      if (hasUnsavedChangesRef.current && socket && roomId && whiteboardKey) {
+      if (hasUnsavedChangesRef.current && socket && roomId) {
         // Run final snapshot save immediately on unmount (as a floating promise)
-        encryptData(elementsRef.current, whiteboardKey)
-          .then((encrypted) => {
-            socket.emit("whiteboard:snapshot", {
-              roomId,
-              elements: encrypted,
-              timestamp: Date.now(),
-            });
-          })
-          .catch((err) => {
-            console.error("Failed to save final whiteboard snapshot on unmount:", err);
-          });
+        if (whiteboardKey) {
+            encryptData(elementsRef.current, whiteboardKey)
+              .then((encrypted) => {
+                socket.emit("whiteboard:snapshot", { roomId, elements: encrypted, timestamp: Date.now() });
+              })
+              .catch((err) => {
+                console.error("Failed to save final whiteboard snapshot on unmount:", err);
+              });
+          } else {
+            const plain = JSON.stringify(elementsRef.current);
+            socket.emit("whiteboard:snapshot", { roomId, elements: plain, timestamp: Date.now() });
+          }
       }
     };
   }, [socket, roomId, whiteboardKey]);
@@ -155,12 +171,19 @@ const WhiteboardPanel = ({ roomId, isDark, socket, whiteboardKey }) => {
 
         try {
           console.log("Encrypting & emitting elements update. count:", elsToSend.length, "Key length:", whiteboardKey?.length || 0);
-          const encrypted = await encryptData(elsToSend, whiteboardKey);
-          console.log("Emitting whiteboard:update. Payload length/type:", typeof encrypted === "string" ? encrypted.length : typeof encrypted);
-          socket.emit("whiteboard:update", {
-            roomId,
-            elements: encrypted,
-          });
+          if (!whiteboardKey) {
+            // Skip encryption when no key – send plain elements (as JSON string)
+            const plain = JSON.stringify(elsToSend);
+            console.log("Emitting unencrypted whiteboard:update. Count:", elsToSend.length);
+            socket.emit("whiteboard:update", { roomId, elements: plain });
+          } else {
+            const encrypted = await encryptData(elsToSend, whiteboardKey);
+            console.log("Emitting whiteboard:update. Payload length/type:", typeof encrypted === "string" ? encrypted.length : typeof encrypted);
+            socket.emit("whiteboard:update", {
+              roomId,
+              elements: encrypted,
+            });
+          }
         } catch (err) {
           console.error("Failed to encrypt/emit whiteboard update:", err);
         }
@@ -178,12 +201,13 @@ const WhiteboardPanel = ({ roomId, isDark, socket, whiteboardKey }) => {
       if (!socket || !roomId) return;
       try {
         setSyncStatus("saving");
-        const encrypted = await encryptData(allElements, whiteboardKey);
-        socket.emit("whiteboard:snapshot", {
-          roomId,
-          elements: encrypted,
-          timestamp: Date.now(),
-        });
+        if (!whiteboardKey) {
+            const plain = JSON.stringify(allElements);
+            socket.emit("whiteboard:snapshot", { roomId, elements: plain, timestamp: Date.now() });
+          } else {
+            const encrypted = await encryptData(allElements, whiteboardKey);
+            socket.emit("whiteboard:snapshot", { roomId, elements: encrypted, timestamp: Date.now() });
+          }
         hasUnsavedChangesRef.current = false;
         setSyncStatus("synced");
       } catch (err) {
