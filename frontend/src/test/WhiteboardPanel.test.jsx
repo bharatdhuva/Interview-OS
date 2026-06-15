@@ -126,7 +126,7 @@ describe("WhiteboardPanel Component", () => {
 
     // Get the init listener registered
     const initListener = socket.on.mock.calls.find(call => call[0] === "whiteboard:init")[1];
-    
+
     const testElements = [
       { id: "el1", type: "rectangle", version: 5 }
     ];
@@ -253,7 +253,7 @@ describe("WhiteboardPanel Component", () => {
     const postThrottleEmits = socket.emit.mock.calls.filter(call => call[0] === "whiteboard:update");
     expect(postThrottleEmits.length).toBe(1);
     expect(postThrottleEmits[0][1].roomId).toBe(roomId);
-    
+
     // Decrypt the emitted data and check if it has the local element
     const decrypted = await decryptData(postThrottleEmits[0][1].elements, hexKey);
     expect(decrypted).toEqual(localElements);
