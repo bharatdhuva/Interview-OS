@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import CustomSelect from "@/components/ui/CustomSelect";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 
-const [stdin, setStdin] = useState('');
+
 const languages = [
   { value: "javascript", label: "JavaScript" },
   { value: "typescript", label: "TypeScript" },
@@ -38,7 +38,7 @@ export default function EditorTabPanel({
   handleDeleteFile,
   handleCreateFile,
   lastSavedAt
-}) {
+}) { const [stdin, setStdin] = useState('');
   return (
     <div className="flex-1 flex flex-col min-h-0 overflow-hidden pb-20">
       {/* Toolbar */}

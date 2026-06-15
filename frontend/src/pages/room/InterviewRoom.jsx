@@ -57,9 +57,9 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/componen
 
 
 // Lazy-loaded components for code-splitting
-const EditorTabPanel = React.lazy(() => import("@/components/room/EditorTabPanel"));
-const WhiteboardPanel = React.lazy(() => import("@/components/room/WhiteboardPanel"));
-const ProblemTabPanel = React.lazy(() => import("@/components/room/ProblemTabPanel"));
+const EditorTabPanel = React.lazy(() => import("@/components/room/EditorTabPanel.jsx"));
+const WhiteboardPanel = React.lazy(() => import("@/components/room/WhiteboardPanel.jsx"));
+const ProblemTabPanel = React.lazy(() => import("@/components/room/ProblemTabPanel.jsx"));
 
 const languages = [
   { value: "javascript", label: "JavaScript" },
