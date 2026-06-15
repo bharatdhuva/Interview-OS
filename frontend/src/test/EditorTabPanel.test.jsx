@@ -71,7 +71,6 @@ describe("EditorTabPanel Component", () => {
     isDark: true,
     handleCodeChange: vi.fn(),
     handleDeleteFile: vi.fn(),
-    handleDeleteFile: vi.fn(),
     handleCreateFile: vi.fn(),
     lastSavedAt: null
   };
@@ -92,12 +91,14 @@ describe("EditorTabPanel Component", () => {
       root.render(<EditorTabPanel {...defaultProps} />);
     });
 
-    const fileItem = Array.from(container.querySelectorAll("div")).find(
-      (el) => el.textContent.includes("helper.py")
+    const fileSpan = Array.from(container.querySelectorAll("span")).find(
+      (el) => el.textContent === "helper.py"
     );
     
+    expect(fileSpan).toBeDefined();
+
     act(() => {
-      fileItem.click();
+      fileSpan.click();
     });
 
     expect(defaultProps.setActiveFile).toHaveBeenCalledWith("helper.py");
