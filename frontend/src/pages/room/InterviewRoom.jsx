@@ -780,8 +780,12 @@ export default function InterviewRoom() {
           setRoomTitle(response.data.data.title);
         }
         const room = response.data.data;
+        // Set whiteboard key; use fallback if not provided by backend
         if (room?.whiteboardKey) {
           setWhiteboardKey(room.whiteboardKey);
+        } else {
+          // Fallback key for development/testing to prevent perpetual loading
+          setWhiteboardKey('fallback-key');
         }
         const interviewerId = room?.interviewer?._id || room?.interviewer;
         const candidateId = room?.candidate?._id || room?.candidate;
