@@ -463,6 +463,7 @@ export default function InterviewRoom() {
   const [isRunning, setIsRunning] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [whiteboardKey, setWhiteboardKey] = useState("");
+  const [showRightSidebar, setShowRightSidebar] = useState(true);
 
   // Media controls state
   const [micOn, setMicOn] = useState(true);
@@ -1905,6 +1906,19 @@ export default function InterviewRoom() {
           <Button
             variant="ghost"
             size="sm"
+            className={`text-xs h-8 gap-1.5 border border-border/50 hover:bg-secondary active:scale-95 transition-all duration-200 ${
+              showRightSidebar ? "bg-secondary text-primary font-bold" : ""
+            }`}
+            onClick={() => setShowRightSidebar(!showRightSidebar)}
+            title={showRightSidebar ? "Collapse Chat & Participants" : "Expand Chat & Participants"}
+          >
+            <MessageSquare className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">{showRightSidebar ? "Hide Sidebar" : "Show Sidebar"}</span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
             className="text-xs h-8 gap-1.5 border border-border/50 hover:bg-secondary active:scale-95 transition-all duration-200"
             onClick={enterFullscreen}
           >
@@ -2174,9 +2188,11 @@ export default function InterviewRoom() {
 
 
 
-            <ResizableHandle withHandle className="w-1 bg-border/40 hover:bg-primary/50 transition-all cursor-col-resize z-40" />
+            {showRightSidebar && (
+              <>
+                <ResizableHandle withHandle className="w-1 bg-border/40 hover:bg-primary/50 transition-all cursor-col-resize z-40" />
 
-            <ResizablePanel defaultSize={25} minSize={15} maxSize={40} className="flex flex-col min-w-0">
+                <ResizablePanel defaultSize={25} minSize={15} maxSize={40} className="flex flex-col min-w-0">
               {/* PANEL 3: Right Sidebar Panel (Always visible Participants + Chat) */}
               <section className="w-full h-full border-none bg-card/45 dark:bg-[#111612]/45 backdrop-blur-xl flex flex-col overflow-hidden select-none" aria-label="Room details panel">
           {/* Top Half: Participants */}
@@ -2276,6 +2292,8 @@ export default function InterviewRoom() {
           </div>
         </section>
             </ResizablePanel>
+              </>
+            )}
           </ResizablePanelGroup>
         </div>
        </div>
