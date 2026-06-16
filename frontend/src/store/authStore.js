@@ -22,10 +22,14 @@ export const useAuthStore = create((set) => ({
     user: null,
     isAuthenticated: !!localStorage.getItem('accessToken'),
     login: (user, token) => {
+        // Always store the token (even if empty) to keep auth state consistent
         if (token) {
             localStorage.setItem('accessToken', token);
+        } else {
+            // Ensure any stale token is cleared
+            localStorage.removeItem('accessToken');
         }
-        set({ user, isAuthenticated: true });
+        set({ user, isAuthenticated: !!token });
     },
     logout: () => {
         localStorage.removeItem('accessToken');
