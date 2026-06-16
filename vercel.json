@@ -4,6 +4,9 @@
   "buildCommand": "npm run build --prefix frontend",
   "outputDirectory": "frontend/dist",
   "cleanUrls": true,
+  "env": {
+    "VITE_API_URL": "https://interviewos-api.render.com/api/v1"
+  },
   "rewrites": [
     {
       "source": "/:path*",
