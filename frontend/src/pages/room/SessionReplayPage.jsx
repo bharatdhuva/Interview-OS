@@ -293,7 +293,7 @@ export default function SessionReplayPage() {
           description = `Drawing board updated.`;
         } else if (f.type === "execution") {
           title = "Code Executed";
-          icon = <Terminal className="w-3.5 h-3.5 text-purple-400" />;
+          icon = <Terminal className="w-3.5 h-3.5 text-primary" />;
           description = `Console run triggered.`;
         } else if (f.type === "violation") {
           title = "Proctoring Violation";

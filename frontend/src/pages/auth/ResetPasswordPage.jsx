@@ -35,9 +35,9 @@ const getPasswordStrength = (pw) => {
   if (/[^a-zA-Z0-9]/.test(pw)) score++;
   
   const map = {
-    1: { label: "Weak", color: "#ef4444" },
-    2: { label: "Fair", color: "#f97316" },
-    3: { label: "Good", color: "#eab308" },
+    1: { label: "Weak", color: "#ba1a1a" },
+    2: { label: "Fair", color: "#fbbf24" },
+    3: { label: "Good", color: "#88d982" },
     4: { label: "Strong", color: "#0d631b" },
   };
   
