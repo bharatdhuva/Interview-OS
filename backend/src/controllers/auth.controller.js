@@ -61,21 +61,34 @@ const sendWelcomeEmailSafely = async (user) => {
 const register = async (req, res) => {
     try {
         const { name, email, password, role } = auth_validation_1.registerSchema.parse(req.body);
-        // Prevent duplicate accounts
+        // Prevent duplicate accounts, unless it's a placeholder candidate account
         const existingUser = await user_model_1.User.findOne({ email });
-        if (existingUser) {
+        const isPlaceholder = existingUser && 
+                             existingUser.passwordHash === 'placeholder' && 
+                             !existingUser.googleId && 
+                             !existingUser.githubId;
+        if (existingUser && !isPlaceholder) {
             res.status(400).json({ success: false, message: 'Email already exists' });
             return;
         }
         // Hash the password before persisting (salt rounds = 12)
         const passwordHash = await bcrypt_1.default.hash(password, 12);
-        const user = await user_model_1.User.create({
-            name,
-            email,
-            passwordHash,
-            role: role || 'candidate',
-            isOnboarded: false,
-        });
+        let user;
+        if (isPlaceholder) {
+            existingUser.name = name;
+            existingUser.passwordHash = passwordHash;
+            existingUser.role = role || existingUser.role || 'candidate';
+            existingUser.isOnboarded = false;
+            user = await existingUser.save();
+        } else {
+            user = await user_model_1.User.create({
+                name,
+                email,
+                passwordHash,
+                role: role || 'candidate',
+                isOnboarded: false,
+            });
+        }
 
         /* 
         // Verification email logic - DISABLED as per user request
