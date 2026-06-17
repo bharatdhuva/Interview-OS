@@ -826,6 +826,7 @@ export default function InterviewRoom() {
         }
       } catch {
         setRoomTitle("Interview Room");
+        setWhiteboardKey('fallback-key');
       }
     };
     loadRoom();
