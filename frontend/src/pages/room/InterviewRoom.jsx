@@ -259,11 +259,10 @@ const VideoTile = ({ participant, isLocal, localVideoRef, hasHand }) => {
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.85 }}
       transition={{ duration: 0.2 }}
-      className={`relative rounded-2xl bg-secondary/10 dark:bg-card border overflow-hidden flex flex-col shadow-sm hover:shadow-md hover:border-primary/35 transition-all duration-300 w-full h-full min-h-[160px] aspect-[4/3] ${
-        isSpeaking
+      className={`relative rounded-2xl bg-secondary/10 dark:bg-card border overflow-hidden flex flex-col shadow-sm hover:shadow-md hover:border-primary/35 transition-all duration-300 w-full h-full min-h-[160px] aspect-[4/3] ${isSpeaking
           ? "border-primary ring-2 ring-primary/35 shadow-[0_0_24px_rgba(13,99,27,0.3)] dark:shadow-[0_0_24px_rgba(136,217,130,0.25)] scale-[1.005] z-10"
           : "border-border/60"
-      }`}
+        }`}
     >
       {/* Top right status badges like Hand Raise */}
       {hasHand && (
@@ -301,13 +300,13 @@ const VideoTile = ({ participant, isLocal, localVideoRef, hasHand }) => {
           <div className="flex flex-col items-center justify-center z-10 select-none relative w-full h-full">
             {/* Ambient Background Glow */}
             <div className="absolute w-36 h-36 rounded-full bg-primary/10 dark:bg-primary/5 blur-2xl pointer-events-none" />
-            
+
             {/* Pulsating Ring Wrapper */}
             <div className="relative flex items-center justify-center">
               {/* Outer pulsing rings */}
               <div className="absolute inset-0 rounded-full border border-primary/20 dark:border-primary/30 animate-pulse scale-[1.3] pointer-events-none" />
               <div className="absolute inset-0 rounded-full border border-primary/10 dark:border-primary/20 animate-ping scale-[1.5] opacity-20 pointer-events-none" />
-              
+
               {/* Double-circle avatar */}
               <div className="w-16 h-16 rounded-full bg-secondary/80 dark:bg-muted/90 border border-border/80 dark:border-border/30 flex items-center justify-center p-1 relative shadow-inner z-10">
                 <div className="w-full h-full rounded-full bg-gradient-to-tr from-primary/30 via-primary/15 to-primary/5 dark:from-primary/40 dark:via-primary/20 dark:to-primary/10 flex items-center justify-center text-primary text-xl font-black shadow-md border border-primary/20">
@@ -315,7 +314,7 @@ const VideoTile = ({ participant, isLocal, localVideoRef, hasHand }) => {
                 </div>
               </div>
             </div>
-            
+
             <span className="text-[9px] font-extrabold text-primary/80 dark:text-primary/95 px-2.5 py-1 rounded-full bg-primary/10 dark:bg-primary/15 border border-primary/20 dark:border-primary/30 mt-4 uppercase tracking-widest shadow-sm select-none z-10">
               Camera Off
             </span>
@@ -358,8 +357,8 @@ const MessageBubble = ({ msg, currentUserName, currentUserId }) => {
       </div>
       <div
         className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-xs select-text leading-relaxed shadow-[0_2px_8px_rgba(0,0,0,0.03)] ${isOwnMessage
-            ? "bg-primary text-primary-foreground rounded-tr-sm"
-            : "bg-[#f2f4f2] dark:bg-[#182219] text-foreground border border-border/40 rounded-tl-sm"
+          ? "bg-primary text-primary-foreground rounded-tr-sm"
+          : "bg-[#f2f4f2] dark:bg-[#182219] text-foreground border border-border/40 rounded-tl-sm"
           }`}
       >
         {msg.message}
@@ -749,7 +748,7 @@ export default function InterviewRoom() {
             if (String(remoteUser.userId) !== String(identity.userId)) {
               const shouldInitiate = String(identity.userId) > String(remoteUser.userId);
               if (shouldInitiate) {
-                startOffer(remoteUser.userId).catch(() => {});
+                startOffer(remoteUser.userId).catch(() => { });
               }
             }
           });
@@ -1868,11 +1867,10 @@ export default function InterviewRoom() {
 
         <div className="w-full lg:w-auto flex flex-wrap items-center gap-2.5 justify-end">
           <div
-            className={`h-7 px-3 text-[11px] font-bold rounded-full border flex items-center gap-1.5 select-none transition-all duration-300 ${
-              isOnline
+            className={`h-7 px-3 text-[11px] font-bold rounded-full border flex items-center gap-1.5 select-none transition-all duration-300 ${isOnline
                 ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
                 : "bg-destructive/15 border-destructive/20 text-destructive"
-            }`}
+              }`}
             aria-live="polite"
           >
             <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? "bg-emerald-500 animate-pulse" : "bg-destructive"}`} />
@@ -1881,11 +1879,10 @@ export default function InterviewRoom() {
 
           {/* Proctoring badge in header */}
           <div
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-[11px] font-bold transition-all duration-300 ${
-              violationCount > 0
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-[11px] font-bold transition-all duration-300 ${violationCount > 0
                 ? "bg-rose-500/10 border-rose-500/25 text-rose-600 dark:text-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.15)] animate-pulse"
                 : "bg-primary/10 border-primary/20 text-primary dark:text-[#88d982]"
-            }`}
+              }`}
           >
             {violationCount > 0 ? (
               <ShieldAlert className="w-3.5 h-3.5 text-rose-500 animate-pulse" />
@@ -1940,9 +1937,8 @@ export default function InterviewRoom() {
           <Button
             variant="ghost"
             size="sm"
-            className={`text-xs h-8 gap-1.5 border border-border/50 hover:bg-secondary active:scale-95 transition-all duration-200 ${
-              showRightSidebar ? "bg-secondary text-primary font-bold" : ""
-            }`}
+            className={`text-xs h-8 gap-1.5 border border-border/50 hover:bg-secondary active:scale-95 transition-all duration-200 ${showRightSidebar ? "bg-secondary text-primary font-bold" : ""
+              }`}
             onClick={() => setShowRightSidebar(!showRightSidebar)}
             title={showRightSidebar ? "Collapse Chat & Participants" : "Expand Chat & Participants"}
           >
@@ -1976,11 +1972,10 @@ export default function InterviewRoom() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-300 relative group active:scale-90 hover:scale-105 ${
-                    isActive
+                  className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-300 relative group active:scale-90 hover:scale-105 ${isActive
                       ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25 dark:shadow-primary/15 scale-105 border border-primary/20 dark:border-white/10"
                       : "text-muted-foreground hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15 dark:hover:text-primary-foreground"
-                  }`}
+                    }`}
                   title={tab.label}
                 >
                   <IconComp className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
@@ -1998,225 +1993,225 @@ export default function InterviewRoom() {
             <ResizablePanel defaultSize={75} minSize={50} className="flex flex-col min-w-0">
               <main className="w-full h-full flex flex-col min-w-0 bg-background relative overflow-hidden">
 
-          {/* TAB: Video Call view */}
-          {activeTab === "video" && (
-            <div className="flex-1 flex flex-col min-h-0 bg-card/5 bg-room-dot-pattern relative pb-24 overflow-y-auto">
-              {renderVideoGrid()}
-            </div>
-          )}
-
-          {/* TAB: Code Editor view (multi-file IDE layout) */}
-          {activeTab === "editor" && (
-            <React.Suspense fallback={
-              <div className="flex-1 flex items-center justify-center select-none text-xs text-muted-foreground pb-20">
-                <div className="flex flex-col items-center gap-2">
-                  <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-                  <span>Loading Editor...</span>
-                </div>
-              </div>
-            }>
-              <EditorTabPanel
-                files={files}
-                activeFile={activeFile}
-                setActiveFile={setActiveFile}
-                newFileName={newFileName}
-                setNewFileName={setNewFileName}
-                showFileExplorer={showFileExplorer}
-                setShowFileExplorer={setShowFileExplorer}
-                language={language}
-                setLanguage={setLanguage}
-                handleManualSave={handleManualSave}
-                isSaving={isSaving}
-                handleRun={handleRun}
-                isRunning={isRunning}
-                output={output}
-                setOutput={setOutput}
-                isDark={isDark}
-                handleCodeChange={handleCodeChange}
-                handleDeleteFile={handleDeleteFile}
-                handleCreateFile={handleCreateFile}
-                lastSavedAt={lastSavedAt}
-              />
-            </React.Suspense>
-          )}
-
-          {/* TAB: Whiteboard view */}
-          {activeTab === "whiteboard" && (
-            <div className="flex-1 bg-background pb-20 relative overflow-hidden">
-              <React.Suspense fallback={
-                <div className="flex-1 flex items-center justify-center select-none text-xs text-muted-foreground">
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-                    <span>Loading Whiteboard...</span>
+                {/* TAB: Video Call view */}
+                {activeTab === "video" && (
+                  <div className="flex-1 flex flex-col min-h-0 bg-card/5 bg-room-dot-pattern relative pb-24 overflow-y-auto">
+                    {renderVideoGrid()}
                   </div>
-                </div>
-              }>
-                {whiteboardKey ? (
-                  <WhiteboardPanel isDark={isDark} roomId={roomId} socket={activeSocket} whiteboardKey={whiteboardKey} />
-                ) : (
-                  <div className="flex-1 flex flex-col items-center justify-center select-none text-xs text-muted-foreground">
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-                      <span>Loading Encryption Keys...</span>
+                )}
+
+                {/* TAB: Code Editor view (multi-file IDE layout) */}
+                {activeTab === "editor" && (
+                  <React.Suspense fallback={
+                    <div className="flex-1 flex items-center justify-center select-none text-xs text-muted-foreground pb-20">
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                        <span>Loading Editor...</span>
+                      </div>
+                    </div>
+                  }>
+                    <EditorTabPanel
+                      files={files}
+                      activeFile={activeFile}
+                      setActiveFile={setActiveFile}
+                      newFileName={newFileName}
+                      setNewFileName={setNewFileName}
+                      showFileExplorer={showFileExplorer}
+                      setShowFileExplorer={setShowFileExplorer}
+                      language={language}
+                      setLanguage={setLanguage}
+                      handleManualSave={handleManualSave}
+                      isSaving={isSaving}
+                      handleRun={handleRun}
+                      isRunning={isRunning}
+                      output={output}
+                      setOutput={setOutput}
+                      isDark={isDark}
+                      handleCodeChange={handleCodeChange}
+                      handleDeleteFile={handleDeleteFile}
+                      handleCreateFile={handleCreateFile}
+                      lastSavedAt={lastSavedAt}
+                    />
+                  </React.Suspense>
+                )}
+
+                {/* TAB: Whiteboard view */}
+                {activeTab === "whiteboard" && (
+                  <div className="flex-1 bg-background pb-20 relative overflow-hidden">
+                    <React.Suspense fallback={
+                      <div className="flex-1 flex items-center justify-center select-none text-xs text-muted-foreground">
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                          <span>Loading Whiteboard...</span>
+                        </div>
+                      </div>
+                    }>
+                      {whiteboardKey ? (
+                        <WhiteboardPanel isDark={isDark} roomId={roomId} socket={activeSocket} whiteboardKey={whiteboardKey} />
+                      ) : (
+                        <div className="flex-1 flex flex-col items-center justify-center select-none text-xs text-muted-foreground">
+                          <div className="flex flex-col items-center gap-2">
+                            <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                            <span>Loading Encryption Keys...</span>
+                          </div>
+                        </div>
+                      )}
+                    </React.Suspense>
+                  </div>
+                )}
+
+                {/* TAB: Problem Statement view */}
+                {activeTab === "problem" && (
+                  <React.Suspense fallback={
+                    <div className="flex-1 flex items-center justify-center select-none text-xs text-muted-foreground pb-20">
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                        <span>Loading Problem Statement...</span>
+                      </div>
+                    </div>
+                  }>
+                    <ProblemTabPanel
+                      identity={identity}
+                      problemText={problemText}
+                      handleProblemChange={handleProblemChange}
+                      questionTemplates={questionTemplates}
+                    />
+                  </React.Suspense>
+                )}
+
+                {/* TAB: Private Notes view (Interviewer only) */}
+                {activeTab === "notes" && identity.role === "interviewer" && (
+                  <div className="flex-1 p-6 space-y-6 overflow-y-auto pb-24 max-w-2xl select-none">
+                    <h2 className="text-lg font-bold text-primary flex items-center gap-2 border-b border-border/50 pb-2">
+                      <ClipboardList className="w-5 h-5" /> Private Interviewer Notes
+                    </h2>
+
+                    <div className="p-4 rounded-xl border border-border/80 bg-secondary/10 space-y-3">
+                      <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Candidate Score Assessment</div>
+                      <div className="flex items-center gap-4">
+                        <input
+                          type="range"
+                          min="1"
+                          max="5"
+                          value={privateNotes.score}
+                          onChange={(e) => savePrivateNotes({ ...privateNotes, score: Number(e.target.value) })}
+                          className="flex-1 accent-primary h-2 rounded bg-border cursor-pointer"
+                        />
+                        <span className="w-8 text-center text-sm font-bold text-primary px-2 py-0.5 rounded bg-primary/10 border border-primary/20">
+                          {privateNotes.score} / 5
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-xl border border-border/80 bg-secondary/10 space-y-3">
+                      <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Evaluation Checklist</div>
+                      <div className="space-y-2.5">
+                        {[
+                          { id: "solving", label: "Structured Problem Solving" },
+                          { id: "communication", label: "Clear & Concise Communication" },
+                          { id: "coding", label: "Clean Code Quality & Standard Practices" }
+                        ].map((item) => (
+                          <label key={item.id} className="flex items-center gap-2.5 text-xs font-semibold cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={privateNotes.checklist[item.id] || false}
+                              onChange={(e) => {
+                                const checklist = { ...privateNotes.checklist, [item.id]: e.target.checked };
+                                savePrivateNotes({ ...privateNotes, checklist });
+                              }}
+                              className="rounded border-border text-primary focus:ring-primary w-4 h-4"
+                            />
+                            {item.label}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-xl border border-border/80 bg-secondary/10 space-y-3">
+                      <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Remarks & Feedback</div>
+                      <textarea
+                        value={privateNotes.text}
+                        onChange={(e) => savePrivateNotes({ ...privateNotes, text: e.target.value })}
+                        placeholder="Enter interviewer details, summary comments, candidate observation metrics..."
+                        className="w-full h-32 p-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-1 focus:ring-primary text-xs font-medium leading-relaxed resize-none"
+                      />
                     </div>
                   </div>
                 )}
-              </React.Suspense>
-            </div>
-          )}
 
-          {/* TAB: Problem Statement view */}
-          {activeTab === "problem" && (
-            <React.Suspense fallback={
-              <div className="flex-1 flex items-center justify-center select-none text-xs text-muted-foreground pb-20">
-                <div className="flex flex-col items-center gap-2">
-                  <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-                  <span>Loading Problem Statement...</span>
-                </div>
-              </div>
-            }>
-              <ProblemTabPanel
-                identity={identity}
-                problemText={problemText}
-                handleProblemChange={handleProblemChange}
-                questionTemplates={questionTemplates}
-              />
-            </React.Suspense>
-          )}
+                {/* TAB: Room Settings view */}
+                {activeTab === "settings" && (
+                  <div className="flex-1 p-6 space-y-6 overflow-y-auto pb-24 max-w-2xl select-none">
+                    <h2 className="text-lg font-bold text-primary flex items-center gap-2 border-b border-border/50 pb-2">
+                      <Settings className="w-5 h-5" /> Room Settings & Statistics
+                    </h2>
 
-          {/* TAB: Private Notes view (Interviewer only) */}
-          {activeTab === "notes" && identity.role === "interviewer" && (
-            <div className="flex-1 p-6 space-y-6 overflow-y-auto pb-24 max-w-2xl select-none">
-              <h2 className="text-lg font-bold text-primary flex items-center gap-2 border-b border-border/50 pb-2">
-                <ClipboardList className="w-5 h-5" /> Private Interviewer Notes
-              </h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="p-4 rounded-xl border border-border/80 bg-secondary/20">
+                        <div className="text-xs font-semibold text-muted-foreground mb-1">Room ID</div>
+                        <div className="font-mono text-xs sm:text-sm font-bold truncate">{roomId}</div>
+                      </div>
 
-              <div className="p-4 rounded-xl border border-border/80 bg-secondary/10 space-y-3">
-                <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Candidate Score Assessment</div>
-                <div className="flex items-center gap-4">
-                  <input
-                    type="range"
-                    min="1"
-                    max="5"
-                    value={privateNotes.score}
-                    onChange={(e) => savePrivateNotes({ ...privateNotes, score: Number(e.target.value) })}
-                    className="flex-1 accent-primary h-2 rounded bg-border cursor-pointer"
-                  />
-                  <span className="w-8 text-center text-sm font-bold text-primary px-2 py-0.5 rounded bg-primary/10 border border-primary/20">
-                    {privateNotes.score} / 5
-                  </span>
-                </div>
-              </div>
+                      <div className="p-4 rounded-xl border border-border/80 bg-secondary/20">
+                        <div className="text-xs font-semibold text-muted-foreground mb-1">Session Title</div>
+                        <div className="text-sm font-bold truncate">{roomTitle}</div>
+                      </div>
 
-              <div className="p-4 rounded-xl border border-border/80 bg-secondary/10 space-y-3">
-                <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Evaluation Checklist</div>
-                <div className="space-y-2.5">
-                  {[
-                    { id: "solving", label: "Structured Problem Solving" },
-                    { id: "communication", label: "Clear & Concise Communication" },
-                    { id: "coding", label: "Clean Code Quality & Standard Practices" }
-                  ].map((item) => (
-                    <label key={item.id} className="flex items-center gap-2.5 text-xs font-semibold cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={privateNotes.checklist[item.id] || false}
-                        onChange={(e) => {
-                          const checklist = { ...privateNotes.checklist, [item.id]: e.target.checked };
-                          savePrivateNotes({ ...privateNotes, checklist });
-                        }}
-                        className="rounded border-border text-primary focus:ring-primary w-4 h-4"
-                      />
-                      {item.label}
-                    </label>
-                  ))}
-                </div>
-              </div>
+                      <div className="p-4 rounded-xl border border-border/80 bg-secondary/20">
+                        <div className="text-xs font-semibold text-muted-foreground mb-1">Your Identity</div>
+                        <div className="text-sm font-bold truncate flex items-center gap-2">
+                          {identity.userName}
+                          <Badge className="bg-primary/25 text-primary border-0 text-[9px] font-bold py-0 h-4">
+                            {identity.role}
+                          </Badge>
+                        </div>
+                      </div>
 
-              <div className="p-4 rounded-xl border border-border/80 bg-secondary/10 space-y-3">
-                <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Remarks & Feedback</div>
-                <textarea
-                  value={privateNotes.text}
-                  onChange={(e) => savePrivateNotes({ ...privateNotes, text: e.target.value })}
-                  placeholder="Enter interviewer details, summary comments, candidate observation metrics..."
-                  className="w-full h-32 p-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-1 focus:ring-primary text-xs font-medium leading-relaxed resize-none"
-                />
-              </div>
-            </div>
-          )}
+                      <div className="p-4 rounded-xl border border-border/80 bg-secondary/20">
+                        <div className="text-xs font-semibold text-muted-foreground mb-1">Session Timer</div>
+                        <div className="text-sm font-bold truncate">{formatTime(timer)} left / {formatTime(totalDurationSeconds)}</div>
+                      </div>
+                    </div>
 
-          {/* TAB: Room Settings view */}
-          {activeTab === "settings" && (
-            <div className="flex-1 p-6 space-y-6 overflow-y-auto pb-24 max-w-2xl select-none">
-              <h2 className="text-lg font-bold text-primary flex items-center gap-2 border-b border-border/50 pb-2">
-                <Settings className="w-5 h-5" /> Room Settings & Statistics
-              </h2>
+                    <div className="p-4 rounded-xl border border-border/80 bg-secondary/20 space-y-3">
+                      <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Quick Action Controls</div>
+                      <div className="flex flex-wrap gap-2">
+                        <Button variant="outline" size="sm" className="rounded-lg text-xs" onClick={handleCopyLink}>
+                          <Copy className="mr-1.5 w-3.5 h-3.5" /> Copy Meeting Link
+                        </Button>
+                        <Button variant="outline" size="sm" className="rounded-lg text-xs" onClick={enterFullscreen}>
+                          <Maximize2 className="mr-1.5 w-3.5 h-3.5" /> Toggle Fullscreen
+                        </Button>
+                        {identity.role === "interviewer" && (
+                          <>
+                            <Button variant="outline" size="sm" className="rounded-lg text-xs text-destructive hover:bg-destructive/10" onClick={handleMuteAll}>
+                              <VolumeX className="mr-1.5 w-3.5 h-3.5" /> Mute All
+                            </Button>
+                            <Button variant="outline" size="sm" className="rounded-lg text-xs" onClick={handleToggleLock}>
+                              {roomLocked ? <Unlock className="mr-1.5 w-3.5 h-3.5" /> : <Lock className="mr-1.5 w-3.5 h-3.5" />}
+                              {roomLocked ? "Unlock Room" : "Lock Room"}
+                            </Button>
+                            <Button variant="outline" size="sm" className="rounded-lg text-xs" onClick={() => { fetchConnectionStats(); setShowStatsModal(true); }}>
+                              <Gauge className="mr-1.5 w-3.5 h-3.5" /> View Network Stats
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="p-4 rounded-xl border border-border/80 bg-secondary/20">
-                  <div className="text-xs font-semibold text-muted-foreground mb-1">Room ID</div>
-                  <div className="font-mono text-xs sm:text-sm font-bold truncate">{roomId}</div>
-                </div>
-
-                <div className="p-4 rounded-xl border border-border/80 bg-secondary/20">
-                  <div className="text-xs font-semibold text-muted-foreground mb-1">Session Title</div>
-                  <div className="text-sm font-bold truncate">{roomTitle}</div>
-                </div>
-
-                <div className="p-4 rounded-xl border border-border/80 bg-secondary/20">
-                  <div className="text-xs font-semibold text-muted-foreground mb-1">Your Identity</div>
-                  <div className="text-sm font-bold truncate flex items-center gap-2">
-                    {identity.userName}
-                    <Badge className="bg-primary/25 text-primary border-0 text-[9px] font-bold py-0 h-4">
-                      {identity.role}
-                    </Badge>
+                    {violationCount > 0 && (
+                      <div className="p-4 rounded-xl border border-destructive/20 bg-destructive/5 space-y-2">
+                        <div className="text-xs font-bold text-destructive flex items-center gap-1.5">
+                          <ShieldAlert className="w-4.5 h-4.5 animate-bounce-short" /> Integrity Flagged
+                        </div>
+                        <p className="text-[11px] text-muted-foreground leading-relaxed font-medium">
+                          This room has recorded {violationCount} integrity violations (e.g. browser tab switches, exit fullscreen). Review candidate logs with caution.
+                        </p>
+                      </div>
+                    )}
                   </div>
-                </div>
-
-                <div className="p-4 rounded-xl border border-border/80 bg-secondary/20">
-                  <div className="text-xs font-semibold text-muted-foreground mb-1">Session Timer</div>
-                  <div className="text-sm font-bold truncate">{formatTime(timer)} left / {formatTime(totalDurationSeconds)}</div>
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl border border-border/80 bg-secondary/20 space-y-3">
-                <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Quick Action Controls</div>
-                <div className="flex flex-wrap gap-2">
-                  <Button variant="outline" size="sm" className="rounded-lg text-xs" onClick={handleCopyLink}>
-                    <Copy className="mr-1.5 w-3.5 h-3.5" /> Copy Meeting Link
-                  </Button>
-                  <Button variant="outline" size="sm" className="rounded-lg text-xs" onClick={enterFullscreen}>
-                    <Maximize2 className="mr-1.5 w-3.5 h-3.5" /> Toggle Fullscreen
-                  </Button>
-                  {identity.role === "interviewer" && (
-                    <>
-                      <Button variant="outline" size="sm" className="rounded-lg text-xs text-destructive hover:bg-destructive/10" onClick={handleMuteAll}>
-                        <VolumeX className="mr-1.5 w-3.5 h-3.5" /> Mute All
-                      </Button>
-                      <Button variant="outline" size="sm" className="rounded-lg text-xs" onClick={handleToggleLock}>
-                        {roomLocked ? <Unlock className="mr-1.5 w-3.5 h-3.5" /> : <Lock className="mr-1.5 w-3.5 h-3.5" />}
-                        {roomLocked ? "Unlock Room" : "Lock Room"}
-                      </Button>
-                      <Button variant="outline" size="sm" className="rounded-lg text-xs" onClick={() => { fetchConnectionStats(); setShowStatsModal(true); }}>
-                        <Gauge className="mr-1.5 w-3.5 h-3.5" /> View Network Stats
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {violationCount > 0 && (
-                <div className="p-4 rounded-xl border border-destructive/20 bg-destructive/5 space-y-2">
-                  <div className="text-xs font-bold text-destructive flex items-center gap-1.5">
-                    <ShieldAlert className="w-4.5 h-4.5 animate-bounce-short" /> Integrity Flagged
-                  </div>
-                  <p className="text-[11px] text-muted-foreground leading-relaxed font-medium">
-                    This room has recorded {violationCount} integrity violations (e.g. browser tab switches, exit fullscreen). Review candidate logs with caution.
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-                  </main>
+                )}
+              </main>
             </ResizablePanel>
 
 
@@ -2227,110 +2222,109 @@ export default function InterviewRoom() {
                 <ResizableHandle withHandle className="w-1 bg-border/40 hover:bg-primary/50 transition-all cursor-col-resize z-40" />
 
                 <ResizablePanel defaultSize={25} minSize={15} maxSize={40} className="flex flex-col min-w-0">
-              {/* PANEL 3: Right Sidebar Panel (Always visible Participants + Chat) */}
-              <section className="w-full h-full border-none bg-card/45 dark:bg-[#111612]/45 backdrop-blur-xl flex flex-col overflow-hidden select-none" aria-label="Room details panel">
-          {/* Top Half: Participants */}
-          <div className="flex-1 flex flex-col min-h-0 border-b border-border/50 dark:border-white/5">
-            <div className="h-12 flex items-center justify-between px-4 border-b border-border/50 dark:border-white/5 bg-background/20 dark:bg-muted/30 shrink-0">
-              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Participants</span>
-              <span className="text-[10px] bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-full font-bold">
-                {participants.length}
-              </span>
-            </div>
-            <div className="flex-1 overflow-y-auto p-3 space-y-2">
-              {participants.map((p) => {
-                const hasHand = raisedHands[p.userId];
-                return (
-                  <div
-                    key={p.userId}
-                    className={`flex items-center justify-between p-2.5 rounded-xl border transition-all duration-200 select-none ${
-                      p.isLocal
-                        ? "bg-primary/5 border-primary/25 dark:bg-primary/10 dark:border-primary/35"
-                        : "bg-secondary/35 dark:bg-muted/40 border-border/30 dark:border-white/5 hover:border-primary/25 hover:bg-secondary/55 dark:hover:bg-muted/65"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-primary/15 to-primary/5 dark:from-primary/30 dark:to-primary/10 border border-primary/30 flex items-center justify-center text-primary text-xs font-bold shadow-sm shrink-0">
-                        {getInitials(p.userName)}
-                      </div>
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-xs font-semibold truncate flex items-center gap-1.5">
-                          {p.userName}
-                          {hasHand && <span className="animate-bounce text-xs" title="Hand Raised">✋</span>}
+                  {/* PANEL 3: Right Sidebar Panel (Always visible Participants + Chat) */}
+                  <section className="w-full h-full border-none bg-card/45 dark:bg-[#111612]/45 backdrop-blur-xl flex flex-col overflow-hidden select-none" aria-label="Room details panel">
+                    {/* Top Half: Participants */}
+                    <div className="flex-1 flex flex-col min-h-0 border-b border-border/50 dark:border-white/5">
+                      <div className="h-12 flex items-center justify-between px-4 border-b border-border/50 dark:border-white/5 bg-background/20 dark:bg-muted/30 shrink-0">
+                        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Participants</span>
+                        <span className="text-[10px] bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-full font-bold">
+                          {participants.length}
                         </span>
-                        <span className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider">{p.role}</span>
+                      </div>
+                      <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                        {participants.map((p) => {
+                          const hasHand = raisedHands[p.userId];
+                          return (
+                            <div
+                              key={p.userId}
+                              className={`flex items-center justify-between p-2.5 rounded-xl border transition-all duration-200 select-none ${p.isLocal
+                                  ? "bg-primary/5 border-primary/25 dark:bg-primary/10 dark:border-primary/35"
+                                  : "bg-secondary/35 dark:bg-muted/40 border-border/30 dark:border-white/5 hover:border-primary/25 hover:bg-secondary/55 dark:hover:bg-muted/65"
+                                }`}
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-primary/15 to-primary/5 dark:from-primary/30 dark:to-primary/10 border border-primary/30 flex items-center justify-center text-primary text-xs font-bold shadow-sm shrink-0">
+                                  {getInitials(p.userName)}
+                                </div>
+                                <div className="flex flex-col min-w-0">
+                                  <span className="text-xs font-semibold truncate flex items-center gap-1.5">
+                                    {p.userName}
+                                    {hasHand && <span className="animate-bounce text-xs" title="Hand Raised">✋</span>}
+                                  </span>
+                                  <span className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider">{p.role}</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                {p.micOn ? <Mic className="w-3.5 h-3.5 text-primary" /> : <MicOff className="w-3.5 h-3.5 text-destructive" />}
+                                {p.camOn ? <VideoIcon className="w-3.5 h-3.5 text-primary" /> : <VideoOff className="w-3.5 h-3.5 text-destructive" />}
+
+                                {/* Interviewer moderate buttons for other participants */}
+                                {identity.role === "interviewer" && !p.isLocal && (
+                                  <div className="flex gap-1.5 ml-1.5">
+                                    <button
+                                      onClick={() => handleToggleParticipantCamera(p.userId)}
+                                      className="w-6 h-6 rounded-lg bg-secondary/50 dark:bg-muted/70 hover:bg-rose-500/10 hover:border-rose-500/30 hover:text-rose-500 dark:hover:bg-rose-500/20 text-muted-foreground border border-border/40 dark:border-white/10 flex items-center justify-center transition-all duration-200"
+                                      title="Toggle Camera Off"
+                                    >
+                                      <VideoOff className="w-3 h-3" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleRemoveParticipant(p.userId)}
+                                      className="w-6 h-6 rounded-lg bg-rose-500/5 hover:bg-rose-500/15 text-rose-500 hover:text-rose-600 border border-rose-500/20 hover:border-rose-500/40 flex items-center justify-center transition-all duration-200"
+                                      title="Kick Participant"
+                                    >
+                                      <X className="w-3.5 h-3.5 text-destructive" />
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {p.micOn ? <Mic className="w-3.5 h-3.5 text-primary" /> : <MicOff className="w-3.5 h-3.5 text-destructive" />}
-                      {p.camOn ? <VideoIcon className="w-3.5 h-3.5 text-primary" /> : <VideoOff className="w-3.5 h-3.5 text-destructive" />}
 
-                      {/* Interviewer moderate buttons for other participants */}
-                      {identity.role === "interviewer" && !p.isLocal && (
-                        <div className="flex gap-1.5 ml-1.5">
+                    {/* Bottom Half: Chat */}
+                    <div className="flex-1 flex flex-col min-h-0">
+                      <div className="h-12 flex items-center justify-between px-4 border-b border-border/50 dark:border-white/5 bg-background/20 dark:bg-muted/30 shrink-0">
+                        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Chat Room</span>
+                        <div className="w-1.5 h-1.5 rounded-full room-pulse-green" />
+                      </div>
+
+                      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                        {messages.map((msg) => (
+                          <MessageBubble key={msg.id} msg={msg} currentUserName={identity.userName} currentUserId={identity.userId} />
+                        ))}
+                        <div ref={chatEndRef} />
+                      </div>
+
+                      <form onSubmit={handleSendMessage} className="p-3 border-t border-border/50 dark:border-white/5 bg-background/30 backdrop-blur-md">
+                        <div className="relative group">
+                          <Input
+                            value={chatInput}
+                            onChange={(e) => setChatInput(e.target.value.slice(0, 500))}
+                            placeholder="Type message..."
+                            className="pr-10 bg-secondary/40 dark:bg-[#111612]/60 border-border/60 dark:border-white/5 focus-visible:ring-primary h-9.5 rounded-xl text-xs focus-visible:border-primary placeholder:text-muted-foreground/60"
+                            maxLength={500}
+                          />
                           <button
-                            onClick={() => handleToggleParticipantCamera(p.userId)}
-                            className="w-6 h-6 rounded-lg bg-secondary/50 dark:bg-muted/70 hover:bg-rose-500/10 hover:border-rose-500/30 hover:text-rose-500 dark:hover:bg-rose-500/20 text-muted-foreground border border-border/40 dark:border-white/10 flex items-center justify-center transition-all duration-200"
-                            title="Toggle Camera Off"
+                            type="submit"
+                            disabled={!chatInput.trim()}
+                            className="absolute right-1 top-1 h-7.5 w-7.5 rounded-lg bg-primary text-primary-foreground flex items-center justify-center hover:opacity-90 disabled:opacity-30 transition-all shadow-sm"
                           >
-                            <VideoOff className="w-3 h-3" />
-                          </button>
-                          <button
-                            onClick={() => handleRemoveParticipant(p.userId)}
-                            className="w-6 h-6 rounded-lg bg-rose-500/5 hover:bg-rose-500/15 text-rose-500 hover:text-rose-600 border border-rose-500/20 hover:border-rose-500/40 flex items-center justify-center transition-all duration-200"
-                            title="Kick Participant"
-                          >
-                            <X className="w-3.5 h-3.5 text-destructive" />
+                            <Send className="w-3.5 h-3.5" />
                           </button>
                         </div>
-                      )}
+                      </form>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Bottom Half: Chat */}
-          <div className="flex-1 flex flex-col min-h-0">
-            <div className="h-12 flex items-center justify-between px-4 border-b border-border/50 dark:border-white/5 bg-background/20 dark:bg-muted/30 shrink-0">
-              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Chat Room</span>
-              <div className="w-1.5 h-1.5 rounded-full room-pulse-green" />
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {messages.map((msg) => (
-                <MessageBubble key={msg.id} msg={msg} currentUserName={identity.userName} currentUserId={identity.userId} />
-              ))}
-              <div ref={chatEndRef} />
-            </div>
-
-            <form onSubmit={handleSendMessage} className="p-3 border-t border-border/50 dark:border-white/5 bg-background/30 backdrop-blur-md">
-              <div className="relative group">
-                <Input
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value.slice(0, 500))}
-                  placeholder="Type message..."
-                  className="pr-10 bg-secondary/40 dark:bg-[#111612]/60 border-border/60 dark:border-white/5 focus-visible:ring-primary h-9.5 rounded-xl text-xs focus-visible:border-primary placeholder:text-muted-foreground/60"
-                  maxLength={500}
-                />
-                <button
-                  type="submit"
-                  disabled={!chatInput.trim()}
-                  className="absolute right-1 top-1 h-7.5 w-7.5 rounded-lg bg-primary text-primary-foreground flex items-center justify-center hover:opacity-90 disabled:opacity-30 transition-all shadow-sm"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </form>
-          </div>
-        </section>
-            </ResizablePanel>
+                  </section>
+                </ResizablePanel>
               </>
             )}
           </ResizablePanelGroup>
         </div>
-       </div>
+      </div>
 
       {/* Centered Floating Control Bar overlay */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 bg-card/75 dark:bg-[#111612]/85 backdrop-blur-xl px-5 py-3 rounded-2xl border border-primary/20 dark:border-primary/30 shadow-[0_12px_40px_rgba(0,0,0,0.12)] dark:shadow-[0_12px_40px_rgba(0,0,0,0.4)] select-none w-max max-w-[95vw] overflow-x-auto">
@@ -2340,11 +2334,10 @@ export default function InterviewRoom() {
           onClick={handleToggleMic}
           variant="ghost"
           size="icon"
-          className={`w-10 h-10 rounded-xl transition-all duration-300 active:scale-90 hover:scale-105 shrink-0 ${
-            micOn
+          className={`w-10 h-10 rounded-xl transition-all duration-300 active:scale-90 hover:scale-105 shrink-0 ${micOn
               ? "bg-secondary/50 dark:bg-muted/70 text-foreground border border-border/40 dark:border-white/5 hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/25 dark:hover:text-primary"
               : "bg-rose-500/15 text-rose-600 border border-rose-500/30 dark:bg-rose-500/20 dark:text-rose-400 dark:border-rose-500/30"
-          }`}
+            }`}
           title={micOn ? "Mute Microphone" : "Unmute Microphone"}
         >
           {micOn ? <Mic className="w-4.5 h-4.5" /> : <MicOff className="w-4.5 h-4.5" />}
@@ -2355,11 +2348,10 @@ export default function InterviewRoom() {
           onClick={handleToggleCam}
           variant="ghost"
           size="icon"
-          className={`w-10 h-10 rounded-xl transition-all duration-300 active:scale-90 hover:scale-105 shrink-0 ${
-            camOn
+          className={`w-10 h-10 rounded-xl transition-all duration-300 active:scale-90 hover:scale-105 shrink-0 ${camOn
               ? "bg-secondary/50 dark:bg-muted/70 text-foreground border border-border/40 dark:border-white/5 hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/25 dark:hover:text-primary"
               : "bg-rose-500/15 text-rose-600 border border-rose-500/30 dark:bg-rose-500/20 dark:text-rose-400 dark:border-rose-500/30"
-          }`}
+            }`}
           title={camOn ? "Turn Camera Off" : "Turn Camera On"}
         >
           {camOn ? <VideoIcon className="w-4.5 h-4.5" /> : <VideoOff className="w-4.5 h-4.5" />}
@@ -2370,11 +2362,10 @@ export default function InterviewRoom() {
           onClick={handleToggleScreenShare}
           variant="ghost"
           size="icon"
-          className={`w-10 h-10 rounded-xl transition-all duration-300 active:scale-90 hover:scale-105 shrink-0 ${
-            isSharingScreen
+          className={`w-10 h-10 rounded-xl transition-all duration-300 active:scale-90 hover:scale-105 shrink-0 ${isSharingScreen
               ? "bg-primary/20 text-primary border border-primary/30 dark:bg-primary/30 dark:text-primary-foreground dark:border-primary/45 shadow-sm"
               : "bg-secondary/50 dark:bg-muted/70 text-foreground border border-border/40 dark:border-white/5 hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/25 dark:hover:text-primary"
-          }`}
+            }`}
           title={isSharingScreen ? "Stop Screen Share" : "Share Screen"}
         >
           <Monitor className="w-4.5 h-4.5" />
@@ -2394,11 +2385,10 @@ export default function InterviewRoom() {
           }}
           variant="ghost"
           size="icon"
-          className={`w-10 h-10 rounded-xl transition-all duration-300 active:scale-90 hover:scale-105 shrink-0 ${
-            raisedHands[identity.userId]
+          className={`w-10 h-10 rounded-xl transition-all duration-300 active:scale-90 hover:scale-105 shrink-0 ${raisedHands[identity.userId]
               ? "bg-amber-500/15 text-amber-600 border border-amber-500/30 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30 shadow-sm"
               : "bg-secondary/50 dark:bg-muted/70 text-foreground border border-border/40 dark:border-white/5 hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/25 dark:hover:text-primary"
-          }`}
+            }`}
           title="Raise Hand"
         >
           <span className="text-sm">✋</span>
@@ -2416,11 +2406,10 @@ export default function InterviewRoom() {
               onClick={handleToggleLock}
               variant="ghost"
               size="icon"
-              className={`w-10 h-10 rounded-xl transition-all duration-300 active:scale-90 hover:scale-105 shrink-0 ${
-                roomLocked
+              className={`w-10 h-10 rounded-xl transition-all duration-300 active:scale-90 hover:scale-105 shrink-0 ${roomLocked
                   ? "bg-amber-500/15 text-amber-600 border border-amber-500/30 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30 shadow-sm"
                   : "bg-secondary/50 dark:bg-muted/70 text-foreground border border-border/40 dark:border-white/5 hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/25 dark:hover:text-primary"
-              }`}
+                }`}
               title={roomLocked ? "Unlock Room" : "Lock Room"}
             >
               {roomLocked ? <Lock className="w-4 h-4 text-amber-500" /> : <Unlock className="w-4 h-4" />}
