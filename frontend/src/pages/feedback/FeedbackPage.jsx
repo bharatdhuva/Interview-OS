@@ -1,13 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Star, Terminal, CheckCircle2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Star, Terminal, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useAuthStore } from '@/store/authStore';
-import { mockFeedback } from '@/data/mockData';
+import api from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { feedbackSchema } from '@/lib/validations';
 const recommendations = [
@@ -16,6 +16,9 @@ const recommendations = [
     { value: 'no', label: 'No', color: 'bg-warning/10 text-warning border-warning/20' },
     { value: 'strong_no', label: 'Strong No', color: 'bg-destructive/10 text-destructive border-destructive/20' },
 ];
+
+const defaultRatings = { problemSolving: 3, codeQuality: 3, communication: 3, efficiency: 3 };
+
 function RatingBar({ label, value, max = 5 }) {
     return (<div className="flex items-center gap-3">
       <span className="text-sm text-muted-foreground w-32 shrink-0">{label}</span>
@@ -31,14 +34,75 @@ export default function FeedbackPage() {
     const navigate = useNavigate();
     const { toast } = useToast();
     const isInterviewer = user?.role === 'interviewer';
-    // For interviewer: show form. For candidate: show read-only feedback.
-    const [ratings, setRatings] = useState(mockFeedback.ratings);
-    const [recommendation, setRecommendation] = useState(mockFeedback.recommendation);
-    const [strengths, setStrengths] = useState(mockFeedback.strengths);
-    const [improvements, setImprovements] = useState(mockFeedback.improvements);
-    const [notes, setNotes] = useState(mockFeedback.overallNotes);
+
+    // Room metadata (resolved from API)
+    const [roomData, setRoomData] = useState(null);
+
+    // Loading states
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [existingFeedback, setExistingFeedback] = useState(null);
+
+    // Form state — for interviewer submission
+    const [ratings, setRatings] = useState(defaultRatings);
+    const [recommendation, setRecommendation] = useState('');
+    const [strengths, setStrengths] = useState('');
+    const [improvements, setImprovements] = useState('');
+    const [notes, setNotes] = useState('');
     const [fieldErrors, setFieldErrors] = useState({});
-    const handleSubmit = (e) => {
+
+    // Fetch room details + existing feedback on mount
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+                setIsLoading(true);
+
+                // 1. Fetch room details to get MongoDB _id
+                const roomRes = await api.get(`/rooms/${roomId}`);
+                const room = roomRes.data.data;
+                setRoomData(room);
+
+                // 2. Try to fetch existing feedback for this room
+                try {
+                    const fbRes = await api.get(`/feedback/${room._id}`);
+                    const fb = fbRes.data.data;
+                    if (fb) {
+                        setExistingFeedback(fb);
+                        // Pre-fill form with existing feedback (useful for viewing)
+                        if (fb.ratings) setRatings(fb.ratings);
+                        if (fb.recommendation) setRecommendation(fb.recommendation);
+                        if (fb.strengths) setStrengths(fb.strengths);
+                        if (fb.improvements) setImprovements(fb.improvements);
+                        if (fb.overallNotes) setNotes(fb.overallNotes);
+                    }
+                } catch (fbErr) {
+                    // 404 = no feedback yet (expected for new submissions), 403 = not shared yet
+                    if (fbErr.response?.status === 403) {
+                        toast({
+                            title: 'Feedback not available yet',
+                            description: 'The interviewer has not shared the feedback with you.',
+                            variant: 'destructive',
+                        });
+                        navigate(-1);
+                        return;
+                    }
+                    // 404 is fine — interviewer is submitting new feedback
+                }
+            } catch (error) {
+                console.error('Failed to load feedback page data', error);
+                toast({
+                    title: 'Error loading data',
+                    description: 'Could not load room details. Please try again.',
+                    variant: 'destructive',
+                });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        loadData();
+    }, [roomId, navigate, toast]);
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
         // Validate using Zod schema
         const result = feedbackSchema.safeParse({
@@ -59,10 +123,77 @@ export default function FeedbackPage() {
             return;
         }
         setFieldErrors({});
-        toast({ title: 'Feedback submitted!', description: 'The candidate will be notified.' });
-        navigate(-1);
+
+        // Submit to backend API
+        try {
+            setIsSubmitting(true);
+
+            // Find the latest session for this room
+            // The backend will resolve the session if we provide the room _id
+            // We need to get the sessionId — fetch from room sessions or use the last one
+            let sessionId = roomData?.latestSessionId;
+
+            // If no sessionId cached, try to find it from the session endpoint
+            if (!sessionId) {
+                try {
+                    // The room object may have session info after endSession was called
+                    // Try to get it from the rooms endpoint which returns session data
+                    const roomRes = await api.get(`/rooms/${roomId}`);
+                    const roomDoc = roomRes.data.data;
+                    // The startSession/endSession handlers create InterviewSession docs linked to room._id
+                    // We'll pass the room _id and let backend use the latest session
+                    sessionId = roomDoc._id; // Fallback: use room _id, backend resolves session
+                } catch {
+                    sessionId = roomData?._id;
+                }
+            }
+
+            await api.post('/feedback', {
+                roomId: roomData._id,
+                sessionId: sessionId || roomData._id,
+                ratings,
+                strengths,
+                improvements,
+                overallNotes: notes,
+                recommendation,
+            });
+
+            toast({ title: 'Feedback submitted!', description: 'The candidate will be notified.' });
+            navigate(-1);
+        } catch (error) {
+            console.error('Failed to submit feedback', error);
+            toast({
+                title: 'Submission failed',
+                description: error.response?.data?.message || 'Could not submit feedback. Please try again.',
+                variant: 'destructive',
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
-    const avgRating = Object.values(ratings).reduce((a, b) => a + b, 0) / 4;
+
+    // Loading state
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-background flex items-center justify-center">
+                <div className="flex flex-col items-center gap-3">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                    <p className="text-sm text-muted-foreground">Loading feedback...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // For candidates: if feedback is loaded, show read-only. If not, show a message.
+    const showReadOnly = !isInterviewer || existingFeedback;
+    const displayRatings = existingFeedback?.ratings || ratings;
+    const displayStrengths = existingFeedback?.strengths || strengths;
+    const displayImprovements = existingFeedback?.improvements || improvements;
+    const displayNotes = existingFeedback?.overallNotes || notes;
+    const displayRecommendation = existingFeedback?.recommendation || recommendation;
+
+    const avgRating = Object.values(displayRatings).reduce((a, b) => a + b, 0) / 4;
+
     return (<div className="min-h-screen bg-background">
       <header className="border-b border-border">
         <div className="container flex items-center gap-4 h-16">
@@ -81,10 +212,12 @@ export default function FeedbackPage() {
       <div className="container max-w-3xl py-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="text-3xl font-display font-bold mb-2">
-            {isInterviewer ? 'Submit Feedback' : 'Interview Feedback'}
+            {isInterviewer && !existingFeedback ? 'Submit Feedback' : 'Interview Feedback'}
           </h1>
           <p className="text-muted-foreground mb-8">
-            {isInterviewer ? "Rate the candidate\u2019s performance and provide constructive feedback." : "Here\u2019s the feedback from your interview."}
+            {isInterviewer && !existingFeedback
+              ? "Rate the candidate\u2019s performance and provide constructive feedback."
+              : "Here\u2019s the feedback from your interview."}
           </p>
         </motion.div>
 
@@ -102,14 +235,14 @@ export default function FeedbackPage() {
             </div>
           </div>
           <div className="space-y-3">
-            <RatingBar label="Problem Solving" value={ratings.problemSolving}/>
-            <RatingBar label="Code Quality" value={ratings.codeQuality}/>
-            <RatingBar label="Communication" value={ratings.communication}/>
-            <RatingBar label="Efficiency" value={ratings.efficiency}/>
+            <RatingBar label="Problem Solving" value={displayRatings.problemSolving}/>
+            <RatingBar label="Code Quality" value={displayRatings.codeQuality}/>
+            <RatingBar label="Communication" value={displayRatings.communication}/>
+            <RatingBar label="Efficiency" value={displayRatings.efficiency}/>
           </div>
         </motion.div>
 
-        {isInterviewer ? (<form onSubmit={handleSubmit} className="space-y-6">
+        {isInterviewer && !existingFeedback ? (<form onSubmit={handleSubmit} className="space-y-6">
             {/* Sliders */}
             <div className="p-6 rounded-xl bg-card border border-border space-y-5">
               <h3 className="font-display font-semibold">Adjust Ratings</h3>
@@ -178,29 +311,31 @@ export default function FeedbackPage() {
 
             <div className="flex gap-3">
               <Button type="button" variant="outline" onClick={() => navigate(-1)} className="flex-1">Cancel</Button>
-              <Button type="submit" className="flex-1 bg-gradient-primary hover:opacity-90">Submit Feedback</Button>
+              <Button type="submit" disabled={isSubmitting} className="flex-1 bg-gradient-primary hover:opacity-90">
+                {isSubmitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Submitting...</> : 'Submit Feedback'}
+              </Button>
             </div>
           </form>) : (<div className="space-y-6">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="p-6 rounded-xl bg-card border border-border">
               <h3 className="font-display font-semibold mb-2 flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-success"/> Strengths
               </h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">{strengths}</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">{displayStrengths || 'No strengths noted.'}</p>
             </motion.div>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="p-6 rounded-xl bg-card border border-border">
               <h3 className="font-display font-semibold mb-2 flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 text-warning"/> Areas for Improvement
               </h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">{improvements}</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">{displayImprovements || 'No improvements noted.'}</p>
             </motion.div>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="p-6 rounded-xl bg-card border border-border">
               <h3 className="font-display font-semibold mb-2">Overall Notes</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">{notes}</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">{displayNotes || 'No additional notes.'}</p>
             </motion.div>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="p-4 rounded-xl border border-border flex items-center gap-3">
               <span className="text-sm text-muted-foreground">Recommendation:</span>
-              <span className={`px-3 py-1 rounded-lg text-sm font-medium ${recommendations.find((r) => r.value === recommendation)?.color}`}>
-                {recommendations.find((r) => r.value === recommendation)?.label}
+              <span className={`px-3 py-1 rounded-lg text-sm font-medium ${recommendations.find((r) => r.value === displayRecommendation)?.color || 'text-muted-foreground'}`}>
+                {recommendations.find((r) => r.value === displayRecommendation)?.label || 'Not set'}
               </span>
             </motion.div>
           </div>)}

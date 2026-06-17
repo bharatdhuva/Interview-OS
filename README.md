@@ -23,7 +23,7 @@ You juggle Zoom for video, Google Docs for coding, Excalidraw for diagrams, and 
 
 One single link → real-time video call starts automatically. Both interviewer and candidate code together live, draw on a shared whiteboard, run code instantly, and chat — all inside the same room.
 
-**Pro-level interviews. Zero tab switchingass.**
+**Pro-level interviews. Zero tab switching.**
 
 ---
 
@@ -32,12 +32,13 @@ One single link → real-time video call starts automatically. Both interviewer 
 | Feature | What it does |
 |---------|-------------|
 | 📹 **WebRTC P2P Video Calling** | High-quality video + audio with zero lag — no Zoom, no third-party dependency |
-| 💻 **Real-Time Collaborative Editor** | Monaco Editor + Y.js CRDT — live cursors, conflict-free editing, instant sync |
-| 🎨 **Shared Whiteboard** | Excalidraw integration — draw system designs, flowcharts, and diagrams together in real-time |
-| ⚡ **Instant Code Execution** | Judge0 integration — run code in 7+ languages (Python, Java, C++, JavaScript, etc.) with live output |
-| 🤖 **AI Hints (3 Levels)** | Candidate can request smart hints without spoiling the solution — powered by Groq / OpenAI |
+| 💻 **Real-Time Collaborative Editor** | Monaco Editor with Socket.IO real-time sync — live cursors, instant code sharing |
+| 🎨 **Shared Whiteboard** | Excalidraw integration with E2E encryption — draw system designs, flowcharts, and diagrams together in real-time |
+| ⚡ **Instant Code Execution** | Judge0 integration — run code in 7+ languages (Python, Java, C++, JavaScript, etc.) with live output and stdin support |
 | 💬 **Real-Time Chat** | Built-in chat inside every interview room — no external tool needed |
 | 📝 **Structured Feedback** | Interviewer submits detailed feedback at the end. Candidate gets notified and can view it instantly |
+| 🔒 **Proctoring System** | Tab-switch detection, fullscreen monitoring, 3-strike auto-termination |
+| ⏪ **Session Replay** | Time-travel replay of code and whiteboard activity for post-interview review |
 
 ---
 
@@ -46,14 +47,15 @@ One single link → real-time video call starts automatically. Both interviewer 
 | Layer | Technology |
 |-------|-----------|
 | **Frontend** | React.js + javascript + Tailwind CSS |
-| **Editor** | Monaco Editor + Y.js CRDT |
-| **Whiteboard** | Excalidraw |
+| **Editor** | Monaco Editor + Socket.IO real-time sync |
+| **Whiteboard** | Excalidraw (E2E encrypted) |
 | **Video & Real-time** | WebRTC + Socket.IO |
 | **Backend** | Node.js + Express.js |
 | **Database** | MongoDB |
 | **Code Execution** | Judge0 API |
 | **AI** | Groq / OpenAI |
-| **Auth** | JWT |
+| **Auth** | JWT (access + refresh token rotation) |
+| **Payments** | Stripe (subscriptions + billing portal) |
 
 ---
 
@@ -64,7 +66,6 @@ One single link → real-time video call starts automatically. Both interviewer 
 - Node.js 18+
 - MongoDB (local or MongoDB Atlas)
 - Judge0 API key *(optional for code execution)*
-- Groq or OpenAI API key *(optional for AI hints)*
 
 ### Installation
 
@@ -78,7 +79,7 @@ cd Interview-OS
 **2. Backend setup**
 
 ```bash
-cd server
+cd backend
 npm install
 cp .env.example .env
 # Add your keys in .env
@@ -88,12 +89,12 @@ npm run dev
 **3. Frontend setup** *(open a new terminal)*
 
 ```bash
-cd client
+cd frontend
 npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) — create a room and start interviewing!
+Open [http://localhost:8080](http://localhost:8080) — create a room and start interviewing!
 
 ### Quick Local Run (verified steps)
 
@@ -129,12 +130,18 @@ MONGO_URI=
 
 # Auth
 JWT_SECRET=
+JWT_REFRESH_SECRET=
 
 # Code Execution
 JUDGE0_API_URL=
+JUDGE0_API_KEY=
 
-# AI Hints
-GROQ_API_KEY=          # or OPENAI_API_KEY
+# Client URL (frontend)
+CLIENT_URL=http://localhost:8080
+
+# Stripe (optional)
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
 ```
 
 ---
@@ -143,9 +150,21 @@ GROQ_API_KEY=          # or OPENAI_API_KEY
 
 ```
 Interview-OS/
-├── server/           # Node.js + Express + Socket.IO + MongoDB
-├── client/           # React + TypeScript + Tailwind CSS
-├── .env.example
+├── backend/          # Node.js + Express + Socket.IO + MongoDB
+│   └── src/
+│       ├── controllers/   # Route handlers
+│       ├── models/        # Mongoose schemas
+│       ├── routes/        # Express routers
+│       ├── sockets/       # Socket.IO event handlers
+│       ├── middleware/    # Auth, validation, rate-limiting
+│       └── utils/         # JWT, email, logging
+├── frontend/         # React + JavaScript + Tailwind CSS
+│   └── src/
+│       ├── pages/         # Route pages (auth, dashboard, room, feedback)
+│       ├── components/    # Reusable UI components
+│       ├── hooks/         # Custom React hooks (proctoring, toast)
+│       ├── store/         # Zustand auth store
+│       └── lib/           # API client, crypto, validations
 ├── .gitignore
 └── README.md
 ```
@@ -155,14 +174,16 @@ Interview-OS/
 ## 🗺️ Roadmap
 
 - [x] WebRTC P2P Video Calling
-- [x] Y.js Real-time Collaborative Editor
-- [x] Excalidraw Shared Whiteboard
-- [x] Judge0 Code Execution
-- [x] AI Hints System (3 Levels)
+- [x] Real-time Collaborative Editor (Monaco + Socket.IO)
+- [x] Excalidraw Shared Whiteboard (E2E encrypted)
+- [x] Judge0 Code Execution (7 languages + stdin)
 - [x] Real-time Chat + Structured Feedback
-- [ ] Interview Recording
-- [ ] Code Snapshot & Diff View
-- [ ] Admin Dashboard
+- [x] Proctoring System (tab-switch, fullscreen, 3-strike auto-end)
+- [x] Session Replay (time-travel code + whiteboard playback)
+- [x] Code Snapshots (persisted per session)
+- [x] Admin Dashboard (users, rooms, analytics, force-end)
+- [x] Stripe Billing (subscriptions, webhooks, billing portal)
+- [x] Multi-Tenant Organizations (invite, seat limits, role management)
 - [ ] Chrome Extension
 
 ---
