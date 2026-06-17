@@ -18,6 +18,7 @@ import CandidateDashboard from "./pages/dashboard/CandidateDashboard";
 import InterviewerDashboard from "./pages/dashboard/InterviewerDashboard";
 import InterviewRoom from "./pages/room/InterviewRoom";
 import FeedbackPage from "./pages/feedback/FeedbackPage";
+import SessionReplayPage from "./pages/room/SessionReplayPage";
 import NotFound from "./pages/NotFound";
 import OnboardingPage from "./pages/auth/OnboardingPage";
 import SiteLoader from "./components/SiteLoader";
@@ -113,6 +114,7 @@ const AppRoutes = () => {
         <Route path="/dashboard/candidate" element={<ProtectedRoute><CandidateDashboard /></ProtectedRoute>}/>
         <Route path="/dashboard/interviewer" element={<ProtectedRoute><InterviewerDashboard /></ProtectedRoute>}/>
         <Route path="/room/:roomId" element={<ProtectedRoute><InterviewRoom /></ProtectedRoute>}/>
+        <Route path="/room/:roomId/replay" element={<ProtectedRoute><SessionReplayPage /></ProtectedRoute>}/>
         <Route path="/feedback/:roomId" element={<ProtectedRoute><FeedbackPage /></ProtectedRoute>}/>
         <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>}/>
         <Route path="*" element={<NotFound />}/>

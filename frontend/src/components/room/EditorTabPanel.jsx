@@ -38,7 +38,9 @@ export default function EditorTabPanel({
   handleDeleteFile,
   handleCreateFile,
   lastSavedAt
-}) { const [stdin, setStdin] = useState('');
+}) { 
+  const [stdin, setStdin] = useState('');
+  const [consoleTab, setConsoleTab] = useState("output");
   return (
     <div className="flex-1 flex flex-col min-h-0 overflow-hidden pb-20">
       {/* Toolbar */}
@@ -223,38 +225,68 @@ export default function EditorTabPanel({
                 <ResizableHandle withHandle className="h-1 bg-border/40 hover:bg-primary/50 transition-all cursor-row-resize z-40" />
                 
                 <ResizablePanel defaultSize={30} minSize={15} className="flex flex-col min-h-0">
-                  <div className="w-full h-full bg-card/50 flex flex-col overflow-hidden select-none">
-            <div className="h-8 px-4 flex items-center justify-between border-b border-border bg-background/30">
-              <div className="flex items-center gap-2">
-                <Terminal className="w-3.5 h-3.5 text-primary" />
-                <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
-                  Output Console
-                </span>
-              </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 px-2 text-[10px] hover:bg-secondary active:scale-95 transition-all"
-                  onClick={() => setOutput("")}
-                >
-                  Clear
-                </Button>
-                {/* Stdin input area */}
-                <textarea
-                  value={stdin}
-                  onChange={(e) => setStdin(e.target.value)}
-                  placeholder="Standard Input (optional)"
-                  className="w-full h-20 p-2 mt-2 bg-background border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary text-xs resize-none"
-                />
-            </div>
-            <pre className="flex-1 p-4 pb-24 font-mono text-xs overflow-auto bg-black/[0.03] dark:bg-black/30 text-foreground/95 leading-relaxed selection:bg-primary/20">
-              {output || (
-                <span className="text-muted-foreground/40 italic">
-                  Execute code to see results...
-                </span>
-              )}
-            </pre>
-            </div>
+                  <div className="w-full h-full bg-card/50 flex flex-col overflow-hidden">
+                    <div className="h-10 px-4 flex items-center justify-between border-b border-border bg-background/30 shrink-0 select-none">
+                      <div className="flex items-center gap-1.5">
+                        <Terminal className="w-3.5 h-3.5 text-primary" />
+                        <button
+                          onClick={() => setConsoleTab("output")}
+                          className={`px-3 py-1 rounded-lg text-[10px] uppercase font-bold tracking-wider transition-all duration-200 border ${
+                            consoleTab === "output"
+                              ? "bg-primary/10 text-primary border-primary/20"
+                              : "text-muted-foreground hover:text-foreground hover:bg-secondary/40 border-transparent"
+                          }`}
+                        >
+                          Output
+                        </button>
+                        <button
+                          onClick={() => setConsoleTab("stdin")}
+                          className={`px-3 py-1 rounded-lg text-[10px] uppercase font-bold tracking-wider transition-all duration-200 border ${
+                            consoleTab === "stdin"
+                              ? "bg-primary/10 text-primary border-primary/20"
+                              : "text-muted-foreground hover:text-foreground hover:bg-secondary/40 border-transparent"
+                          }`}
+                        >
+                          Stdin
+                        </button>
+                      </div>
+                      
+                      {consoleTab === "output" && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-[10px] hover:bg-secondary active:scale-95 transition-all"
+                          onClick={() => setOutput("")}
+                        >
+                          Clear
+                        </Button>
+                      )}
+                    </div>
+                    
+                    <div className="flex-1 min-h-0 overflow-hidden relative flex flex-col">
+                      {consoleTab === "output" ? (
+                        <pre className="flex-1 p-4 pb-20 font-mono text-xs overflow-auto bg-black/[0.03] dark:bg-black/30 text-foreground/95 leading-relaxed selection:bg-primary/20 select-text">
+                          {output || (
+                            <span className="text-muted-foreground/40 italic">
+                              Execute code to see results...
+                            </span>
+                          )}
+                        </pre>
+                      ) : (
+                        <div className="flex-1 flex flex-col p-4 bg-black/[0.03] dark:bg-black/30 min-h-0">
+                          <div className="text-[10px] text-muted-foreground font-semibold mb-2 select-none">
+                            Provide standard input (stdin) parameters to be passed to your execution thread.
+                          </div>
+                          <textarea
+                            value={stdin}
+                            onChange={(e) => setStdin(e.target.value)}
+                            placeholder="Type standard input (stdin) here..."
+                            className="flex-1 w-full p-3 bg-background border border-border rounded-xl focus:outline-none focus:ring-1 focus:ring-primary text-xs font-mono resize-none shadow-inner leading-relaxed text-foreground select-text"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </ResizablePanel>
               </ResizablePanelGroup>
             </div>

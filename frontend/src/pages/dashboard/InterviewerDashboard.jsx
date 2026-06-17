@@ -456,9 +456,16 @@ export default function InterviewerDashboard() {
                           {room.status === 'scheduled' && (<Button size="sm" onClick={() => handleStartRoom(room)} className="bg-gradient-primary hover:opacity-90 active:scale-95 transition-all" disabled={startingRoomId === room.id}>
                               {startingRoomId === room.id ? 'Starting...' : 'Start'} <ArrowRight className="ml-1 w-3.5 h-3.5"/>
                             </Button>)}
-                          {room.status === 'completed' && (<Button size="sm" variant="outline" className="active:scale-95 transition-all" onClick={() => navigate(`/feedback/${room.roomId}`)}>
-                              Feedback
-                            </Button>)}
+                          {room.status === 'completed' && (
+                            <div className="flex gap-2">
+                              <Button size="sm" variant="outline" className="active:scale-95 transition-all" onClick={() => navigate(`/feedback/${room.roomId}`)}>
+                                Feedback
+                              </Button>
+                              <Button size="sm" variant="secondary" className="active:scale-95 transition-all bg-secondary/80 border border-border/40 hover:bg-primary/10 hover:text-primary" onClick={() => navigate(`/room/${room.roomId}/replay`)}>
+                                Replay
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

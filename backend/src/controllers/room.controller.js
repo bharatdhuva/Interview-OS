@@ -23,12 +23,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cancelRoom = exports.updateRoom = exports.endSession = exports.startSession = exports.joinRoomViaToken = exports.getRoomById = exports.listMyRooms = exports.createRoom = void 0;
+exports.getReplayFrames = exports.cancelRoom = exports.updateRoom = exports.endSession = exports.startSession = exports.joinRoomViaToken = exports.getRoomById = exports.listMyRooms = exports.createRoom = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const crypto_1 = __importDefault(require("crypto"));
 const room_model_1 = require("../models/room.model");
 const user_model_1 = require("../models/user.model");
 const session_model_1 = require("../models/session.model");
+const replayFrame_model_1 = require("../models/replayFrame.model");
 const jwt_1 = require("../utils/jwt");
 const logger_1 = __importDefault(require("../utils/logger"));
 const room_validation_1 = require("../middleware/validation/room.validation");
@@ -318,3 +319,43 @@ const cancelRoom = async (req, res) => {
     }
 };
 exports.cancelRoom = cancelRoom;
+
+/**
+ * GET /api/v1/rooms/:roomId/replay
+ *
+ * Retrieves all replay frames recorded for this room.
+ * Accessible to any authorized room participant (interviewer, candidate, admin).
+ */
+const getReplayFrames = async (req, res) => {
+    try {
+        const roomId = req.params.roomId;
+        const query = mongoose_1.default.Types.ObjectId.isValid(roomId) ? { _id: roomId } : { roomId };
+        if (req.user.organization) {
+            query.organization = req.user.organization;
+        }
+        const room = await room_model_1.InterviewRoom.findOne(query);
+        if (!room) {
+            res.status(404).json({ success: false, message: 'Room not found' });
+            return;
+        }
+        const interviewerId = room.interviewer?._id?.toString() || room.interviewer?.toString();
+        const candidateId = room.candidate?._id?.toString() || room.candidate?.toString();
+        const isInterviewer = interviewerId === req.user.id;
+        const isCandidate = candidateId === req.user.id;
+        const isAdmin = req.user.role === 'admin';
+        if (!isInterviewer && !isCandidate && !isAdmin) {
+            res.status(403).json({ success: false, message: 'Not authorized to access this room\'s replay' });
+            return;
+        }
+        const frames = await replayFrame_model_1.ReplayFrame.find({ roomId: room.roomId })
+            .sort({ timestamp: 1 })
+            .lean();
+        res.status(200).json({ success: true, data: frames });
+    }
+    catch (error) {
+        logger_1.default.error('Error fetching replay frames', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+exports.getReplayFrames = getReplayFrames;
+

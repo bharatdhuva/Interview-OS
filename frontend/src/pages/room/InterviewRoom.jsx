@@ -1146,6 +1146,25 @@ export default function InterviewRoom() {
       }
     };
 
+    const onCodeInit = ({ code, language }) => {
+      if (!code) return;
+      try {
+        const parsed = JSON.parse(code);
+        if (parsed && typeof parsed === "object") {
+          setFiles(parsed);
+        }
+        if (language) setLanguage(language);
+      } catch (e) {
+        setFiles(prev => {
+          const currentActive = Object.keys(prev)[0] || "main.js";
+          return {
+            ...prev,
+            [currentActive]: code
+          };
+        });
+      }
+    };
+
     socket.on("connect", onConnect);
     socket.on("room:user-list", onUserList);
     socket.on("chat:message", onChatMessage);
@@ -1157,6 +1176,7 @@ export default function InterviewRoom() {
     socket.on("webrtc:call-end", onCallEnd);
     socket.on("room:media-toggle", onMediaToggle);
     socket.on("room:control", onRoomControl);
+    socket.on("code:init", onCodeInit);
 
     return () => {
       if (socket.connected) {
@@ -1180,6 +1200,7 @@ export default function InterviewRoom() {
       socket.off("webrtc:call-end", onCallEnd);
       socket.off("room:media-toggle", onMediaToggle);
       socket.off("room:control", onRoomControl);
+      socket.off("code:init", onCodeInit);
       socket.disconnect();
       socketRef.current = null;
       setActiveSocket(null);
@@ -1229,6 +1250,13 @@ export default function InterviewRoom() {
         if (triggeredBy === "manual") {
           toast({ title: "Code saved", description: `Saved at ${now}` });
         }
+        // Emit a code state snapshot to keep the server/replay database updated
+        socketRef.current?.emit("code:snapshot", {
+          roomId,
+          code: JSON.stringify(files),
+          language,
+          timestamp: Date.now(),
+        });
       } catch {
         if (triggeredBy === "manual") {
           toast({

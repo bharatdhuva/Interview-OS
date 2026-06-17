@@ -101,6 +101,21 @@ function initSocket(io) {
       } catch (error) {
         logger.error("Failed to load chat history on join", error);
       }
+
+      // Fetch and send latest code snapshot to the newly joined/re-connected user
+      try {
+        const latestCodeFrame = await ReplayFrame.findOne({ roomId, type: "code" })
+          .sort({ timestamp: -1 })
+          .lean();
+        if (latestCodeFrame && latestCodeFrame.payload) {
+          socket.emit("code:init", {
+            code: latestCodeFrame.payload.code,
+            language: latestCodeFrame.payload.language,
+          });
+        }
+      } catch (error) {
+        logger.error("Failed to load code state on join", error);
+      }
     });
 
     socket.on("room:leave", ({ roomId, userId }) => {
