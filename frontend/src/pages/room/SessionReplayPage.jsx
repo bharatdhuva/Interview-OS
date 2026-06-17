@@ -526,7 +526,8 @@ export default function SessionReplayPage() {
               </div>
             )}
           </div>
-        </main>
+        </aside>
+      </main>
 
       {/* Replay Control Bar at bottom */}
       <footer className="h-20 border-t border-border bg-card/90 backdrop-blur-md px-6 flex flex-col justify-center shrink-0 gap-2 select-none">
