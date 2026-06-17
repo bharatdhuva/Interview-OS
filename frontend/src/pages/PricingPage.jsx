@@ -121,7 +121,7 @@ export default function PricingPage() {
               className={[
                 'rounded-2xl border p-6 flex flex-col',
                 plan.highlighted
-                  ? 'border-primary/50 bg-gradient-to-b from-primary/10 to-card shadow-[0_10px_40px_rgba(99,102,241,0.2)]'
+                  ? 'border-primary/50 bg-gradient-to-b from-primary/10 to-card shadow-glow'
                   : 'border-border bg-card',
               ].join(' ')}
             >

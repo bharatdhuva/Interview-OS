@@ -20,8 +20,8 @@ const getPasswordStrength = (pw) => {
   const map = {
     1: { label: "Weak", color: "#ba1a1a" },
     2: { label: "Fair", color: "#fbbf24" },
-    3: { label: "Good", color: "#6366f1" },
-    4: { label: "Strong", color: "#2a6b2c" },
+    3: { label: "Good", color: "#88d982" },
+    4: { label: "Strong", color: "#0d631b" },
   };
   const clamped = Math.max(1, Math.min(4, score));
   return { level: clamped, ...map[clamped] };
