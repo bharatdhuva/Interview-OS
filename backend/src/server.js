@@ -28,9 +28,26 @@ const PORT = process.env.PORT || 8090;
 // Wrap the Express app in a Node.js HTTP server so Socket.IO can share the port
 const server = http_1.default.createServer(app_1.default);
 // Initialise Socket.IO with CORS settings that mirror the REST API
+const allowedOrigins = [
+    process.env.CLIENT_URL,
+    'http://localhost:8080',
+    'http://localhost:3000',
+    'http://localhost:5173',
+].filter(Boolean);
+
 const io = new socket_io_1.Server(server, {
     cors: {
-        origin: process.env.CLIENT_URL || 'http://localhost:8080',
+        origin: (origin, callback) => {
+            if (!origin) {
+                return callback(null, true);
+            }
+            const isAllowed = allowedOrigins.includes(origin) || 
+                (process.env.NODE_ENV === 'production' && origin.endsWith('.vercel.app'));
+            if (isAllowed) {
+                return callback(null, true);
+            }
+            return callback(new Error('Not allowed by CORS'));
+        },
         methods: ['GET', 'POST'],
         credentials: true,
     },

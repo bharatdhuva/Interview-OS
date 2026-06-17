@@ -1,7 +1,7 @@
 {
   "version": 2,
   "installCommand": "npm install --prefix frontend",
-  "buildCommand": "npm run build --prefix frontend",
+  "buildCommand": "VITE_API_URL=https://interviewos-api.render.com/api/v1 VITE_GOOGLE_CLIENT_ID=137235712014-pek2h9a7i1ejpld0847ge4jv8e0d6ha4.apps.googleusercontent.com npm run build --prefix frontend",
   "outputDirectory": "frontend/dist",
   "cleanUrls": true,
   "env": {

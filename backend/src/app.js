@@ -35,10 +35,28 @@ const app = (0, express_1.default)();
 // helmet() sets a collection of secure HTTP response headers in one call:
 //   Content-Security-Policy, X-Frame-Options, X-XSS-Protection, HSTS, etc.
 app.use((0, helmet_1.default)());
-// CORS — only allow the configured client origin; cookies travel with each
-// credentialed request so `credentials: true` must match the front-end setting.
+// CORS — allow the configured client origin, common dev environment ports,
+// and dynamically allow all Vercel deployment subdomains in production.
+const allowedOrigins = [
+    process.env.CLIENT_URL,
+    'http://localhost:8080',
+    'http://localhost:3000',
+    'http://localhost:5173',
+].filter(Boolean);
+
 app.use((0, cors_1.default)({
-    origin: process.env.CLIENT_URL || 'http://localhost:8080',
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps, curl, postman)
+        if (!origin) {
+            return callback(null, true);
+        }
+        const isAllowed = allowedOrigins.includes(origin) || 
+            (process.env.NODE_ENV === 'production' && origin.endsWith('.vercel.app'));
+        if (isAllowed) {
+            return callback(null, true);
+        }
+        return callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
 }));
 // ─── Rate Limiting ────────────────────────────────────────────────────────────

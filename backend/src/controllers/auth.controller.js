@@ -25,11 +25,11 @@ const logger_1 = __importDefault(require("../utils/logger"));
 const auth_validation_1 = require("../middleware/validation/auth.validation");
 // ─── Refresh-cookie configuration ────────────────────────────────────────────
 // httpOnly prevents JS access; Secure ensures HTTPS-only in production;
-// SameSite=Strict blocks cross-site request forgery.
+// SameSite=None in production allows cross-site requests (frontend on Vercel, backend on Render).
 const REFRESH_COOKIE_OPTIONS = {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
 };
 /** Helper: set the refresh token as a cookie on the response. */
@@ -184,13 +184,13 @@ const logout = async (req, res) => {
                 $pull: { refreshTokens: refreshToken },
             });
         }
-        res.clearCookie('refreshToken');
+        res.clearCookie('refreshToken', REFRESH_COOKIE_OPTIONS);
         res.status(200).json({ success: true, message: 'Logged out successfully' });
     }
     catch (error) {
         // Even if token verification fails, clear the cookie and report success
         logger_1.default.error('Logout error', error);
-        res.clearCookie('refreshToken');
+        res.clearCookie('refreshToken', REFRESH_COOKIE_OPTIONS);
         res.status(200).json({ success: true, message: 'Logged out successfully' });
     }
 };
@@ -625,13 +625,7 @@ const refresh = async (req, res) => {
         await user.save();
 
         // Set new refresh token cookie
-        const REFRESH_COOKIE_OPTIONS_REFRESH = {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
-        };
-        res.cookie('refreshToken', newRefreshToken, REFRESH_COOKIE_OPTIONS_REFRESH);
+        res.cookie('refreshToken', newRefreshToken, REFRESH_COOKIE_OPTIONS);
 
         res.status(200).json({
             success: true,
