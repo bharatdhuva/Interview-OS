@@ -25,9 +25,9 @@ const features = [
     },
 ];
 const avatarGradients = [
-    "linear-gradient(135deg, #6366f1, #8b5cf6)",
-    "linear-gradient(135deg, #8b5cf6, #06b6d4)",
-    "linear-gradient(135deg, #06b6d4, #6366f1)",
+    "linear-gradient(135deg, #0d631b, #88d982)",
+    "linear-gradient(135deg, #88d982, #a3f69c)",
+    "linear-gradient(135deg, #a3f69c, #0d631b)",
     "linear-gradient(135deg, #f59e0b, #ef4444)",
     "linear-gradient(135deg, #10b981, #06b6d4)",
 ];
@@ -45,7 +45,7 @@ const AuthLayout = ({ children, variant }) => {
             right: -80,
             width: 320,
             height: 320,
-            background: "radial-gradient(circle, rgba(99,102,241,0.18), transparent 70%)",
+            background: "radial-gradient(circle, rgba(13,99,27,0.18), transparent 70%)",
             borderRadius: "50%",
             animation: "floatOrb1 9s ease-in-out infinite",
         }}/>
@@ -55,7 +55,7 @@ const AuthLayout = ({ children, variant }) => {
             left: -60,
             width: 260,
             height: 260,
-            background: "radial-gradient(circle, rgba(139,92,246,0.14), transparent 70%)",
+            background: "radial-gradient(circle, rgba(163,246,156,0.12), transparent 70%)",
             borderRadius: "50%",
             animation: "floatOrb2 12s ease-in-out infinite",
         }}/>
@@ -67,7 +67,7 @@ const AuthLayout = ({ children, variant }) => {
         {/* Top specular line */}
         <div className="absolute top-0 left-0 right-0" style={{
             height: 1,
-            background: "linear-gradient(90deg, transparent, rgba(99,102,241,0.5), transparent)",
+            background: "linear-gradient(90deg, transparent, rgba(136,217,130,0.4), transparent)",
         }}/>
 
         {/* Animated SVG background */}
@@ -75,7 +75,7 @@ const AuthLayout = ({ children, variant }) => {
 
         {/* Logo */}
         <div className="absolute top-8 left-10 z-10 flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "linear-gradient(135deg, #6366f1, #7c3aed)" }}>
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "linear-gradient(135deg, #0d631b, #2e7d32)" }}>
             <Code2 size={16} color="white"/>
           </div>
           <span className="text-[15px] font-bold tracking-tight" style={{ color: "#ededf0" }}>
@@ -165,11 +165,11 @@ const AuthLayout = ({ children, variant }) => {
             alignItems: 'center',
             justifyContent: 'center',
         }}>
-        {/* Subtle indigo glow */}
+        {/* Subtle green glow */}
         <div className="absolute top-0 right-0 pointer-events-none" style={{
             width: 400,
             height: 400,
-            background: "rgba(99,102,241,0.06)",
+            background: "rgba(13,99,27,0.06)",
             filter: "blur(100px)",
             borderRadius: "50%",
             transform: "translate(20%, -20%)",
@@ -185,8 +185,8 @@ const AuthLayout = ({ children, variant }) => {
           {/* Mobile logo */}
           <div className="flex lg:hidden items-center justify-center gap-2 mb-8">
             <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{
-            background: "linear-gradient(135deg, #6366f1, #7c3aed)",
-        }}>
+              background: "linear-gradient(135deg, #0d631b, #2e7d32)",
+            }}>
               <Code2 size={16} color="white"/>
             </div>
             <span className="text-[15px] font-bold tracking-tight" style={{ color: "#ededf0" }}>
