@@ -24,6 +24,7 @@ const logger_1 = __importDefault(require("../utils/logger"));
 const codeSnapshot_model_1 = require("../models/codeSnapshot.model");
 const session_model_1 = require("../models/session.model");
 const room_model_1 = require("../models/room.model");
+const { ReplayFrame } = require("../models/replayFrame.model");
 /**
  * Maps language name strings (as sent by the editor) to Judge0 language IDs.
  * @see https://ce.judge0.com/languages
@@ -129,6 +130,22 @@ const executeCode = async (req, res) => {
         await session_model_1.InterviewSession.findByIdAndUpdate(resolvedSession._id, {
             $push: { codeSnapshots: snapshot._id },
         });
+
+        // Save execution to replay frames
+        try {
+            await ReplayFrame.create({
+                roomId: room.roomId,
+                type: "execution",
+                timestamp: Date.now(),
+                payload: {
+                    language,
+                    code,
+                    executionResult,
+                }
+            });
+        } catch (rfError) {
+            logger_1.default.error('Failed to create ReplayFrame for execution', rfError);
+        }
         res.status(200).json({
             success: true,
             data: { snapshotId: snapshot._id, ...executionResult },

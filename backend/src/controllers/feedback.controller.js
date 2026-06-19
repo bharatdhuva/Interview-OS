@@ -19,6 +19,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.shareFeedbackWithCandidate = exports.getFeedbackForRoom = exports.submitFeedback = void 0;
+const mongoose_1 = __importDefault(require("mongoose"));
 const feedback_model_1 = require("../models/feedback.model");
 const room_model_1 = require("../models/room.model");
 const session_model_1 = require("../models/session.model");
@@ -35,7 +36,8 @@ const feedback_validation_1 = require("../middleware/validation/feedback.validat
 const submitFeedback = async (req, res) => {
     try {
         const validatedData = feedback_validation_1.submitFeedbackSchema.parse(req.body);
-        const room = await room_model_1.InterviewRoom.findById(validatedData.roomId);
+        const roomQuery = mongoose_1.default.Types.ObjectId.isValid(validatedData.roomId) ? { _id: validatedData.roomId } : { roomId: validatedData.roomId };
+        const room = await room_model_1.InterviewRoom.findOne(roomQuery);
         if (!room) {
             res.status(404).json({ success: false, message: 'Room not found' });
             return;
@@ -49,7 +51,7 @@ const submitFeedback = async (req, res) => {
         const session = await session_model_1.InterviewSession.findById(validatedData.sessionId);
         const proctoringViolations = session?.violationLog?.length ? session.violationLog : null;
         const feedback = await feedback_model_1.Feedback.create({
-            room: validatedData.roomId,
+            room: room._id,
             session: validatedData.sessionId,
             interviewer: req.user.id,
             candidate: room.candidate,
@@ -77,7 +79,14 @@ exports.submitFeedback = submitFeedback;
  */
 const getFeedbackForRoom = async (req, res) => {
     try {
-        const feedback = await feedback_model_1.Feedback.findOne({ room: req.params.roomId })
+        const roomId = req.params.roomId;
+        const roomQuery = mongoose_1.default.Types.ObjectId.isValid(roomId) ? { _id: roomId } : { roomId };
+        const room = await room_model_1.InterviewRoom.findOne(roomQuery);
+        if (!room) {
+            res.status(404).json({ success: false, message: 'Room not found' });
+            return;
+        }
+        const feedback = await feedback_model_1.Feedback.findOne({ room: room._id })
             .populate('interviewer', 'name avatar')
             .populate('candidate', 'name avatar');
         if (!feedback) {
@@ -112,7 +121,14 @@ exports.getFeedbackForRoom = getFeedbackForRoom;
  */
 const shareFeedbackWithCandidate = async (req, res) => {
     try {
-        const feedback = await feedback_model_1.Feedback.findOne({ room: req.params.roomId });
+        const roomId = req.params.roomId;
+        const roomQuery = mongoose_1.default.Types.ObjectId.isValid(roomId) ? { _id: roomId } : { roomId };
+        const room = await room_model_1.InterviewRoom.findOne(roomQuery);
+        if (!room) {
+            res.status(404).json({ success: false, message: 'Room not found' });
+            return;
+        }
+        const feedback = await feedback_model_1.Feedback.findOne({ room: room._id });
         if (!feedback) {
             res.status(404).json({ success: false, message: 'Feedback not found' });
             return;

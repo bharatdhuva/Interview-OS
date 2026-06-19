@@ -143,6 +143,22 @@ const getRoomById = async (req, res) => {
             res.status(403).json({ success: false, message: 'Not authorized to access this room' });
             return;
         }
+
+        // Auto-start session for scheduled rooms when the interviewer accesses it
+        if (isInterviewer && room.status === 'scheduled') {
+            try {
+                room.status = 'active';
+                await room.save();
+                await session_model_1.InterviewSession.create({
+                    room: room._id,
+                    startTime: new Date(),
+                });
+                logger_1.default.info(`Session auto-started for room ${room.roomId} / ${room._id}`);
+            } catch (startError) {
+                logger_1.default.error(`Failed to auto-start session for room ${room._id}`, startError);
+            }
+        }
+
         res.status(200).json({ success: true, data: room });
     }
     catch (error) {
@@ -188,7 +204,9 @@ exports.joinRoomViaToken = joinRoomViaToken;
  */
 const startSession = async (req, res) => {
     try {
-        const room = await room_model_1.InterviewRoom.findById(req.params.roomId);
+        const roomId = req.params.roomId;
+        const query = mongoose_1.default.Types.ObjectId.isValid(roomId) ? { _id: roomId } : { roomId };
+        const room = await room_model_1.InterviewRoom.findOne(query);
         if (!room) {
             res.status(404).json({ success: false, message: 'Room not found' });
             return;
@@ -223,7 +241,9 @@ exports.startSession = startSession;
  */
 const endSession = async (req, res) => {
     try {
-        const room = await room_model_1.InterviewRoom.findById(req.params.roomId);
+        const roomId = req.params.roomId;
+        const query = mongoose_1.default.Types.ObjectId.isValid(roomId) ? { _id: roomId } : { roomId };
+        const room = await room_model_1.InterviewRoom.findOne(query);
         if (!room) {
             res.status(404).json({ success: false, message: 'Room not found' });
             return;
@@ -265,7 +285,9 @@ exports.endSession = endSession;
 const updateRoom = async (req, res) => {
     try {
         const validatedData = room_validation_1.updateRoomSchema.parse(req.body);
-        const room = await room_model_1.InterviewRoom.findById(req.params.roomId);
+        const roomId = req.params.roomId;
+        const query = mongoose_1.default.Types.ObjectId.isValid(roomId) ? { _id: roomId } : { roomId };
+        const room = await room_model_1.InterviewRoom.findOne(query);
         if (!room) {
             res.status(404).json({ success: false, message: 'Room not found' });
             return;
@@ -296,7 +318,9 @@ exports.updateRoom = updateRoom;
  */
 const cancelRoom = async (req, res) => {
     try {
-        const room = await room_model_1.InterviewRoom.findById(req.params.roomId);
+        const roomId = req.params.roomId;
+        const query = mongoose_1.default.Types.ObjectId.isValid(roomId) ? { _id: roomId } : { roomId };
+        const room = await room_model_1.InterviewRoom.findOne(query);
         if (!room) {
             res.status(404).json({ success: false, message: 'Room not found' });
             return;
