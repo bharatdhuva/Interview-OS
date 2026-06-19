@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -11,7 +11,7 @@ import AuthNavbar from "@/components/AuthNavbar";
 
 const resetPasswordSchema = z.object({
   email: z.string().email("Invalid email address"),
-  token: z.string().min(1, "Reset token is required"),
+  token: z.string().length(6, "OTP must be exactly 6 digits"),
   newPassword: z
     .string()
     .min(8, "Password must be at least 8 characters")
@@ -46,7 +46,10 @@ const getPasswordStrength = (pw) => {
 };
 
 const ResetPasswordPage = () => {
-  const { token } = useParams();
+  const { search } = useLocation();
+  const queryParams = useMemo(() => new URLSearchParams(search), [search]);
+  const emailParam = queryParams.get("email") || "";
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -60,8 +63,8 @@ const ResetPasswordPage = () => {
     resolver: zodResolver(resetPasswordSchema),
     mode: "onTouched",
     defaultValues: {
-      email: "",
-      token: token || "",
+      email: emailParam,
+      token: "",
       newPassword: "",
       confirmPassword: "",
     },
@@ -161,10 +164,10 @@ const ResetPasswordPage = () => {
               </div>
               <pre className="font-mono text-sm leading-relaxed text-[#40493d]">
                 <span className="text-[#0d631b] font-bold">curl</span> -X POST \{"\n"}
-                {"  "}https://api.interviewos.io/auth/reset-password/confirm \{"\n"}
+                {"  "}https://api.interviewos.io/auth/reset-password \{"\n"}
                 {"  "}-H <span className="text-[#2a6b2c]">'Content-Type: application/json'</span> \{"\n"}
-                {"  "}-d <span className="text-[#2a6b2c]">'&#123; "email": "{emailValue || "email@domain.com"}" &#125;'</span>{"\n\n"}
-                <span className="opacity-40"># Password constraints verified</span>
+                {"  "}-d <span className="text-[#2a6b2c]">'&#123; "email": "{emailValue || "email@domain.com"}", "token": "••••••" &#125;'</span>{"\n\n"}
+                <span className="opacity-40"># OTP and Password updated</span>
               </pre>
             </div>
           </div>
@@ -201,6 +204,26 @@ const ResetPasswordPage = () => {
                   {errors.email && touchedFields.email && (
                     <p className="text-xs text-red-600 font-semibold mt-1" role="alert">
                       {errors.email.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* OTP Code */}
+                <div className="flex flex-col">
+                  <label className="text-xs font-semibold text-muted-foreground mb-1.5" htmlFor="reset-otp">
+                    6-Digit OTP Code
+                  </label>
+                  <input
+                    id="reset-otp"
+                    type="text"
+                    maxLength={6}
+                    placeholder="••••••"
+                    {...register("token")}
+                    className="w-full px-4 py-2.5 rounded-xl border border-outline-variant/30 focus:border-primary focus:ring-1 focus:ring-primary bg-white transition-all outline-none text-sm text-foreground tracking-[0.3em] font-semibold text-center"
+                  />
+                  {errors.token && (
+                    <p className="text-xs text-red-600 font-semibold mt-1" role="alert">
+                      {errors.token.message}
                     </p>
                   )}
                 </div>

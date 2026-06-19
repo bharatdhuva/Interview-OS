@@ -106,7 +106,7 @@ const AppRoutes = () => {
                 <Route path="/register" element={<RegisterPage />}/>
                 <Route path="/verify-email" element={<VerifyEmailPage />}/>
                 <Route path="/forgot-password" element={<ForgotPasswordPage />}/>
-                <Route path="/reset-password/:token" element={<ResetPasswordPage />}/>
+                <Route path="/reset-password" element={<ResetPasswordPage />}/>
         <Route path="/dashboard/candidate" element={<ProtectedRoute><CandidateDashboard /></ProtectedRoute>}/>
         <Route path="/dashboard/interviewer" element={<ProtectedRoute><InterviewerDashboard /></ProtectedRoute>}/>
         <Route path="/room/:roomId" element={<ProtectedRoute><InterviewRoom /></ProtectedRoute>}/>

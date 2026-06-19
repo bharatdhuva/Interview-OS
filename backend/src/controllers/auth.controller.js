@@ -538,17 +538,16 @@ const forgotPassword = async (req, res) => {
         const TokenService = require('../utils/tokenService');
         const resetToken = await TokenService.createPasswordResetToken(user);
 
-        // Send password reset email
+        // Send password reset OTP email
         const emailService = require('../utils/emailService');
-        const resetUrl = `${process.env.CLIENT_URL}/reset-password?email=${encodeURIComponent(email)}&token=${resetToken}`;
 
-        await emailService.sendPasswordResetEmail(email, resetToken, resetUrl).catch((err) => {
-            logger_1.default.error('Failed to send password reset email', err);
+        await emailService.sendPasswordResetEmail(email, resetToken).catch((err) => {
+            logger_1.default.error('Failed to send password reset OTP email', err);
         });
 
         res.status(200).json({
             success: true,
-            message: 'Password reset email has been sent. Check your inbox.',
+            message: 'Password reset OTP has been sent. Check your inbox.',
         });
     } catch (error) {
         if (error.name === 'ZodError') {

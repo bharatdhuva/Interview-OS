@@ -42,9 +42,12 @@ const ForgotPasswordPage = () => {
       });
       setSubmitted(true);
       toast({
-        title: "Check your email! 📧",
-        description: "We've sent a password reset link.",
+        title: "OTP Sent! 📧",
+        description: "We've sent a 6-digit password reset code to your email.",
       });
+      setTimeout(() => {
+        navigate(`/reset-password?email=${encodeURIComponent(data.email)}`);
+      }, 1500);
     } catch (err) {
       const msg = err?.response?.data?.message || "Failed to process request. Please try again.";
       setServerError(msg);
@@ -119,10 +122,10 @@ const ForgotPasswordPage = () => {
               </div>
               <pre className="font-mono text-sm leading-relaxed text-[#40493d]">
                 <span className="text-[#0d631b] font-bold">curl</span> -X POST \{"\n"}
-                {"  "}https://api.interviewos.io/auth/reset-password \{"\n"}
+                {"  "}https://api.interviewos.io/auth/forgot-password \{"\n"}
                 {"  "}-H <span className="text-[#2a6b2c]">'Content-Type: application/json'</span> \{"\n"}
                 {"  "}-d <span className="text-[#2a6b2c]">'&#123; "email": "{emailValue || "you@example.com"}" &#125;'</span>{"\n\n"}
-                <span className="opacity-40"># Sent link token via NodeMailer</span>
+                <span className="opacity-40"># Sent 6-digit OTP code via email</span>
               </pre>
             </div>
           </div>

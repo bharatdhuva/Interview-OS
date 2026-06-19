@@ -171,12 +171,11 @@ class EmailService {
   }
 
   /**
-   * Send password reset email
+   * Send password reset OTP email
    * @param {string} email - Recipient email
-   * @param {string} resetToken - One-time reset token
-   * @param {string} resetUrl - Full reset link
+   * @param {string} otp - 6-digit numeric OTP code
    */
-  async sendPasswordResetEmail(email, resetToken, resetUrl) {
+  async sendPasswordResetEmail(email, otp) {
     const htmlContent = `
       <!DOCTYPE html>
       <html>
@@ -184,9 +183,10 @@ class EmailService {
           <style>
             body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+            .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
             .content { background: white; padding: 30px; border: 1px solid #e5e7eb; }
-            .button { background: #f59e0b; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block; margin: 20px 0; }
+            .otp-container { background: #f0fdf4; border: 2px dashed #10b981; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0; }
+            .otp-code { font-family: 'Courier New', Courier, monospace; font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #047857; margin: 0; }
             .footer { background: #f9fafb; padding: 20px; text-align: center; font-size: 12px; color: #6b7280; }
           </style>
         </head>
@@ -196,13 +196,14 @@ class EmailService {
               <h1>Reset Your Password</h1>
             </div>
             <div class="content">
-              <p>We received a request to reset your InterviewOS password. If you didn't make this request, you can ignore this email.</p>
-              <a href="${resetUrl}" class="button">Reset Password</a>
-              <p style="color: #6b7280;">Or paste this link in your browser:</p>
-              <p style="word-break: break-all; background: #f3f4f6; padding: 10px; border-radius: 4px; color: #4b5563;">
-                ${resetUrl}
-              </p>
-              <p style="color: #dc2626; font-size: 14px; font-weight: 600;">⚠️ This link expires in 1 hour for security reasons.</p>
+              <p>We received a request to reset your InterviewOS password. Use the following 6-digit One-Time Password (OTP) to complete your request:</p>
+              
+              <div class="otp-container">
+                <p class="otp-code">${otp}</p>
+              </div>
+              
+              <p style="color: #dc2626; font-size: 14px; font-weight: 600;">⚠️ This code expires in 10 minutes for security reasons.</p>
+              <p style="color: #6b7280; font-size: 13px;">If you didn't request a password reset, you can safely ignore this email.</p>
             </div>
             <div class="footer">
               <p>©️ InterviewOS | The smarter way to conduct technical interviews.</p>
@@ -214,9 +215,9 @@ class EmailService {
 
     return this.sendEmail({
       to: email,
-      subject: 'Reset your InterviewOS password',
+      subject: 'Reset your InterviewOS password — OTP Code 🔐',
       html: htmlContent,
-      text: `Reset your password: ${resetUrl}`,
+      text: `Your InterviewOS password reset OTP is: ${otp}. This code expires in 10 minutes.`,
     });
   }
 

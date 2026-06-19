@@ -50,7 +50,7 @@ exports.forgotPasswordSchema = zod_1.z.object({
 /** Schema for POST /api/v1/auth/reset-password */
 exports.resetPasswordSchema = zod_1.z.object({
     email: zod_1.z.string().email(),
-    token: zod_1.z.string().min(32),
+    token: zod_1.z.string().length(6, "OTP must be exactly 6 digits"),
     newPassword: zod_1.z.string().min(6),
 });
 /** Schema for POST /api/v1/auth/onboard */

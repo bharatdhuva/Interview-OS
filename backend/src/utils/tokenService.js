@@ -26,6 +26,20 @@ class TokenService {
    * @param {Date} expiresAt - Token expiration date (default: 24 hours from now)
    * @returns {string} The verification token
    */
+  /**
+   * Generate a random 6-digit numeric OTP code
+   * @returns {string} 6-digit numeric string
+   */
+  static generateOTP() {
+    return crypto.randomInt(100000, 999999).toString();
+  }
+
+  /**
+   * Create email verification token and store it in user document
+   * @param {Object} user - Mongoose user document
+   * @param {Date} expiresAt - Token expiration date (default: 24 hours from now)
+   * @returns {string} The verification token
+   */
   static async createEmailVerificationToken(user, expiresAt = null) {
     const token = this.generateToken();
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
@@ -71,23 +85,23 @@ class TokenService {
   }
 
   /**
-   * Create password reset token
+   * Create password reset OTP (One-Time Password) code
    * @param {Object} user - Mongoose user document
-   * @param {Date} expiresAt - Token expiration date (default: 1 hour from now)
-   * @returns {string} The reset token
+   * @param {Date} expiresAt - Expiration date (default: 10 minutes from now)
+   * @returns {string} The 6-digit OTP code
    */
   static async createPasswordResetToken(user, expiresAt = null) {
-    const token = this.generateToken();
+    const token = this.generateOTP();
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
     user.passwordReset = {
       token: hashedToken,
-      expiresAt: expiresAt || new Date(Date.now() + 60 * 60 * 1000), // 1 hour
+      expiresAt: expiresAt || new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
     };
 
     await user.save();
-    logger.info(`Password reset token created for user ${user._id}`);
-    return token; // Return plain token, not hashed
+    logger.info(`Password reset OTP created for user ${user._id}`);
+    return token; // Return plain OTP code, not hashed
   }
 
   /**
