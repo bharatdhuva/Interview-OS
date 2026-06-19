@@ -262,6 +262,8 @@ const googleSignIn = async (req, res) => {
                 isOnboarded: false,
                 isEmailVerified: true, // Google has already verified the email
             });
+            // Send welcome email directly
+            sendWelcomeEmailSafely(user).catch(() => undefined);
         }
         else if (!user.googleId) {
             // Existing email/password account — link Google ID to it
@@ -367,6 +369,8 @@ const githubSignIn = async (req, res) => {
                 isOnboarded: false,
                 isEmailVerified: true,
             });
+            // Send welcome email directly
+            sendWelcomeEmailSafely(user).catch(() => undefined);
         }
         else {
             // Link GitHub ID if not already linked
