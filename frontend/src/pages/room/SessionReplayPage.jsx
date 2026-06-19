@@ -294,11 +294,16 @@ export default function SessionReplayPage() {
         } else if (f.type === "execution") {
           title = "Code Executed";
           icon = <Terminal className="w-3.5 h-3.5 text-primary" />;
-          description = `Console run triggered.`;
+          const statusText = f.payload?.executionResult?.stderr ? "Failed" : "Success";
+          description = `Console run triggered (${statusText}).`;
         } else if (f.type === "violation") {
           title = "Proctoring Violation";
           icon = <AlertTriangle className="w-3.5 h-3.5 text-rose-500" />;
           description = f.payload?.reason || `Strike generated.`;
+        } else if (f.type === "chat") {
+          title = "Chat Message";
+          icon = <MessageSquare className="w-3.5 h-3.5 text-cyan-400" />;
+          description = `${f.payload?.userName || "Participant"}: ${f.payload?.message || ""}`;
         }
 
         return {
