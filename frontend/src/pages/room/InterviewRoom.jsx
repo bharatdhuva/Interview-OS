@@ -1491,7 +1491,12 @@ export default function InterviewRoom() {
     setShowEndSessionConfirm(true);
   };
 
-  const handleOfficialEndSession = () => {
+  const handleOfficialEndSession = async () => {
+    try {
+      await api.post(`/rooms/${roomId}/end`);
+    } catch (err) {
+      console.error("Failed to end session on backend", err);
+    }
     socketRef.current?.emit("room:control", {
       roomId,
       action: "session-ended",

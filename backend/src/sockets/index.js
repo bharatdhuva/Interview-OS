@@ -53,7 +53,9 @@ function normalizeTimestamp(value) {
   if (typeof value === "number") return value;
   if (!value) return Date.now();
   const converted = Number(value);
-  return Number.isFinite(converted) ? converted : Date.now();
+  if (Number.isFinite(converted)) return converted;
+  const parsedDate = Date.parse(value);
+  return Number.isFinite(parsedDate) ? parsedDate : Date.now();
 }
 
 function initSocket(io) {
@@ -242,6 +244,17 @@ function initSocket(io) {
             });
           }
         }
+        // Save chat to replay frames
+        await ReplayFrame.create({
+          roomId,
+          type: "chat",
+          timestamp: normalizeTimestamp(timestamp),
+          payload: {
+            message,
+            userName: userName || "Participant",
+            userId,
+          }
+        });
       } catch (error) {
         logger.error("Failed to save chat message", error);
       }
@@ -322,6 +335,18 @@ function initSocket(io) {
           type,
           timestamp: timestamp ? new Date(timestamp) : new Date(),
           strikeCount,
+        });
+
+        // Save violation to replay frames
+        await ReplayFrame.create({
+          roomId,
+          type: "violation",
+          timestamp: normalizeTimestamp(timestamp),
+          payload: {
+            reason: `${type.replace('_', ' ')} (strike ${strikeCount})`,
+            violationType: type,
+            strikeCount,
+          }
         });
       } catch (error) {
         logger.error("Failed to save proctoring violation", error);
