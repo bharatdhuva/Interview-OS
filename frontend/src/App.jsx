@@ -11,7 +11,6 @@ import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 import VerifyEmailPage from "./pages/auth/VerifyEmailPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
-import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 import CandidateDashboard from "./pages/dashboard/CandidateDashboard";
 import InterviewerDashboard from "./pages/dashboard/InterviewerDashboard";
 import InterviewRoom from "./pages/room/InterviewRoom";
@@ -106,7 +105,7 @@ const AppRoutes = () => {
                 <Route path="/register" element={<RegisterPage />}/>
                 <Route path="/verify-email" element={<VerifyEmailPage />}/>
                 <Route path="/forgot-password" element={<ForgotPasswordPage />}/>
-                <Route path="/reset-password" element={<ResetPasswordPage />}/>
+
         <Route path="/dashboard/candidate" element={<ProtectedRoute><CandidateDashboard /></ProtectedRoute>}/>
         <Route path="/dashboard/interviewer" element={<ProtectedRoute><InterviewerDashboard /></ProtectedRoute>}/>
         <Route path="/room/:roomId" element={<ProtectedRoute><InterviewRoom /></ProtectedRoute>}/>
