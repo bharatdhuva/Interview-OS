@@ -78,28 +78,7 @@ const userSchema = new mongoose_1.Schema({
         expiresAt: { type: Date },
     },
     refreshTokens: [{ type: String }], // array of active refresh tokens
-    organization: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Organization', index: true },
-    orgRole: {
-        type: String,
-        enum: ['owner', 'admin', 'interviewer', 'candidate'],
-    },
-    subscription: {
-        stripeCustomerId: { type: String },
-        stripeSubscriptionId: { type: String },
-        plan: {
-            type: String,
-            enum: ['free', 'pro', 'team'],
-            default: 'free',
-        },
-        status: {
-            type: String,
-            enum: ['active', 'cancelled', 'past_due', 'trialing', 'incomplete', 'unpaid'],
-            default: 'active',
-        },
-        currentPeriodEnd: { type: Date },
-        cancelAtPeriodEnd: { type: Boolean, default: false },
-        trialEnd: { type: Date },
-    },
+
 }, {
     timestamps: true, // auto-manages createdAt and updatedAt
 });

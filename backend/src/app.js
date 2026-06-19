@@ -28,8 +28,6 @@ const room_route_1 = __importDefault(require("./routes/room.route"));
 const user_route_1 = __importDefault(require("./routes/user.route"));
 const feedback_route_1 = __importDefault(require("./routes/feedback.route"));
 const admin_route_1 = __importDefault(require("./routes/admin.route"));
-const billing_route_1 = __importDefault(require("./routes/billing.route"));
-const org_route_1 = __importDefault(require("./routes/org.route"));
 const app = (0, express_1.default)();
 // ─── Security Headers ─────────────────────────────────────────────────────────
 // helmet() sets a collection of secure HTTP response headers in one call:
@@ -71,14 +69,7 @@ const limiter = (0, express_rate_limit_1.default)({
 app.use('/api', limiter);
 // ─── Body Parsers ─────────────────────────────────────────────────────────────
 // Limit raised to 10 mb to support large code payloads and whiteboard snapshots.
-app.use(express_1.default.json({
-    limit: '10mb',
-    verify: (req, _res, buf) => {
-        if (req.originalUrl?.startsWith('/api/v1/billing/webhook')) {
-            req.rawBody = buf.toString();
-        }
-    },
-}));
+app.use(express_1.default.json({ limit: '10mb' }));
 app.use(express_1.default.urlencoded({ extended: true, limit: '10mb' }));
 app.use((0, cookie_parser_1.default)());
 // ─── HTTP Request Logging ─────────────────────────────────────────────────────
@@ -100,8 +91,6 @@ app.use('/api/v1/rooms/:roomId/code', execution_route_1.default); // code execut
 app.use('/api/v1/users', user_route_1.default); // profile & interview history
 app.use('/api/v1/feedback', feedback_route_1.default); // submit / view / share feedback
 app.use('/api/v1/admin', admin_route_1.default); // admin-only management endpoints
-app.use('/api/v1/billing', billing_route_1.default); // Stripe billing & subscription endpoints
-app.use('/api/v1/org', org_route_1.default); // multi-tenant organization endpoints
 // ─── Global Error Handler ─────────────────────────────────────────────────────
 // Any error passed to next(err) lands here.  Returns a uniform JSON envelope
 // so no raw stack traces or HTML error pages leak to the client.

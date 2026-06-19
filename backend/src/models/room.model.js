@@ -58,7 +58,6 @@ const interviewRoomSchema = new mongoose_1.Schema({
     roomId: { type: String, unique: true, index: true, default: () => crypto_1.default.randomUUID() },
     title: { type: String, required: true },
     description: { type: String },
-    organization: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Organization', index: true },
     // Populated references to User documents
     interviewer: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true },
     candidate: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User' },
@@ -93,5 +92,4 @@ const interviewRoomSchema = new mongoose_1.Schema({
     timestamps: true,
 });
 interviewRoomSchema.index({ interviewer: 1, createdAt: -1 });
-interviewRoomSchema.index({ organization: 1, scheduledAt: -1 });
 exports.InterviewRoom = mongoose_1.default.model('InterviewRoom', interviewRoomSchema);

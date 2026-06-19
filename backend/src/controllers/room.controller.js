@@ -57,7 +57,6 @@ const createRoom = async (req, res) => {
         const room = await room_model_1.InterviewRoom.create({
             title: validatedData.title,
             description: validatedData.description,
-            organization: req.user.organization,
             interviewer: interviewerId,
             candidate: candidate._id,
             scheduledAt: validatedData.scheduledAt,
@@ -92,9 +91,6 @@ const listMyRooms = async (req, res) => {
         const userId = req.user.id;
         const role = req.user.role;
         const query = role === 'interviewer' ? { interviewer: userId } : { candidate: userId };
-        if (req.user.organization) {
-            query.organization = req.user.organization;
-        }
         const rooms = await room_model_1.InterviewRoom.find(query)
             .populate('interviewer', 'name email avatar')
             .populate('candidate', 'name email avatar')
@@ -119,9 +115,6 @@ const getRoomById = async (req, res) => {
         const roomId = req.params.roomId;
         // Accept both Mongo ObjectId and UUID roomId (used as Socket.IO channel)
         const query = mongoose_1.default.Types.ObjectId.isValid(roomId) ? { _id: roomId } : { roomId };
-        if (req.user.organization) {
-            query.organization = req.user.organization;
-        }
         const room = await room_model_1.InterviewRoom.findOne(query)
             .populate('interviewer', 'name email avatar')
             .populate('candidate', 'name email avatar');
@@ -354,9 +347,6 @@ const getReplayFrames = async (req, res) => {
     try {
         const roomId = req.params.roomId;
         const query = mongoose_1.default.Types.ObjectId.isValid(roomId) ? { _id: roomId } : { roomId };
-        if (req.user.organization) {
-            query.organization = req.user.organization;
-        }
         const room = await room_model_1.InterviewRoom.findOne(query);
         if (!room) {
             res.status(404).json({ success: false, message: 'Room not found' });
