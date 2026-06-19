@@ -46,15 +46,23 @@ const WhiteboardPanel = ({ roomId, isDark, socket, whiteboardKey }) => {
 
   // Sync state with socket (init and update listeners)
   useEffect(() => {
-    if (!socket || !excalidrawAPI || !roomId) return; // whiteboardKey is optional; handled below
+    if (!socket || !excalidrawAPI || !roomId) return;
 
     setSyncStatus("connecting");
-    if (whiteboardKey) {
+
+    const fetchState = () => {
+      if (whiteboardKey) {
         socket.emit("whiteboard:get-state", { roomId });
       } else {
-        // No encryption key – assume empty board
         setSyncStatus("synced");
       }
+    };
+
+    // Request initial state
+    fetchState();
+
+    // Re-request state on socket connection or reconnection
+    socket.on("connect", fetchState);
 
     const onWhiteboardInit = async ({ elements }) => {
         if (!whiteboardKey) {
@@ -129,6 +137,7 @@ const WhiteboardPanel = ({ roomId, isDark, socket, whiteboardKey }) => {
     }, 1500);
 
     return () => {
+      socket.off("connect", fetchState);
       socket.off("whiteboard:init", onWhiteboardInit);
       socket.off("whiteboard:update", onWhiteboardUpdate);
       clearTimeout(fallbackTimer);
