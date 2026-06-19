@@ -179,9 +179,19 @@ function initSocket(io) {
             elements: latestFrame.payload.elements,
             appState: latestFrame.payload.appState || null,
           });
+        } else {
+          // Send empty initialization payload immediately so the client transitions to synced
+          socket.emit("whiteboard:init", {
+            elements: null,
+            appState: null,
+          });
         }
       } catch (error) {
         logger.error("Failed to fetch whiteboard state", error);
+        socket.emit("whiteboard:init", {
+          elements: null,
+          appState: null,
+        });
       }
     });
 
@@ -299,7 +309,7 @@ function initSocket(io) {
 
     socket.on("room:control", ({ roomId, action, targetUserId, value }) => {
       if (!roomId) return;
-      io.to(roomId).emit("room:control", { action, targetUserId, value });
+      socket.to(roomId).emit("room:control", { action, targetUserId, value });
     });
 
     socket.on("proctor:violation", async ({ roomId, userId, type, timestamp, strikeCount }) => {
