@@ -784,7 +784,7 @@ export default function InterviewRoom() {
           setWhiteboardKey(room.whiteboardKey);
         } else {
           // Fallback key for development/testing to prevent perpetual loading
-          setWhiteboardKey('fallback-key');
+          setWhiteboardKey('0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef');
         }
         const interviewerId = room?.interviewer?._id || room?.interviewer;
         const candidateId = room?.candidate?._id || room?.candidate;
@@ -825,7 +825,7 @@ export default function InterviewRoom() {
         }
       } catch {
         setRoomTitle("Interview Room");
-        setWhiteboardKey('fallback-key');
+        setWhiteboardKey('0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef');
       }
     };
     loadRoom();
