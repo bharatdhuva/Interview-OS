@@ -33,6 +33,7 @@ const replayFrame_model_1 = require("../models/replayFrame.model");
 const jwt_1 = require("../utils/jwt");
 const logger_1 = __importDefault(require("../utils/logger"));
 const room_validation_1 = require("../middleware/validation/room.validation");
+const emailService = require('../utils/emailService');
 /**
  * POST /api/v1/rooms  (interviewer | admin only)
  *
@@ -72,6 +73,36 @@ const createRoom = async (req, res) => {
         // Token expires when the scheduled session window closes
         room.inviteExpiresAt = new Date(new Date(validatedData.scheduledAt).getTime() + validatedData.durationMinutes * 60000);
         await room.save();
+
+        // Trigger emails to both interviewer and candidate asynchronously
+        try {
+            const formattedDate = new Date(validatedData.scheduledAt).toLocaleDateString();
+            const formattedTime = new Date(validatedData.scheduledAt).toLocaleTimeString();
+            const roomLink = `${process.env.CLIENT_URL || 'http://localhost:8080'}/room/${room.roomId}`;
+
+            // Send to Candidate
+            emailService.sendInterviewScheduledEmail(candidate.email, {
+                candidateName: candidate.name,
+                interviewerName: req.user.name || 'Interviewer',
+                roomLink,
+                date: formattedDate,
+                time: formattedTime,
+                role: 'candidate',
+            }).catch(err => logger_1.default.error('Failed to send scheduled email to candidate', err));
+
+            // Send to Interviewer
+            emailService.sendInterviewScheduledEmail(req.user.email, {
+                candidateName: candidate.name,
+                interviewerName: req.user.name || 'Interviewer',
+                roomLink,
+                date: formattedDate,
+                time: formattedTime,
+                role: 'interviewer',
+            }).catch(err => logger_1.default.error('Failed to send scheduled email to interviewer', err));
+        } catch (emailErr) {
+            logger_1.default.error('Failed to initiate scheduled emails', emailErr);
+        }
+
         res.status(201).json({ success: true, data: room });
     }
     catch (error) {

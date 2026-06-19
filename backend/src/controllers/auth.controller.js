@@ -50,6 +50,15 @@ const sendWelcomeEmailSafely = async (user) => {
         logger_1.default.error('Failed to send welcome email', error);
     }
 };
+const sendPasswordResetSuccessEmailSafely = async (user) => {
+    try {
+        const emailService = require('../utils/emailService');
+        await emailService.sendPasswordResetSuccessEmail(user.email, user.name);
+    }
+    catch (error) {
+        logger_1.default.error('Failed to send password reset confirmation email', error);
+    }
+};
 // ─── Handlers ────────────────────────────────────────────────────────────────
 /**
  * POST /api/v1/auth/register
@@ -586,6 +595,9 @@ const resetPassword = async (req, res) => {
 
         // Clear the reset token
         await TokenService.clearPasswordResetToken(user);
+
+        // Send password reset success email
+        sendPasswordResetSuccessEmailSafely(user).catch(() => undefined);
 
         res.status(200).json({
             success: true,

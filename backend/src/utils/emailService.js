@@ -1,7 +1,7 @@
 /**
  * utils/emailService.js
  *
- * Email sending service using SendGrid or Nodemailer fallback.
+ * Email sending service using Brevo API or Nodemailer fallback.
  * 
  * Handles all transactional emails for the platform:
  * - Email verification
@@ -275,6 +275,51 @@ class EmailService {
       subject: `Interview Scheduled — ${date} at ${time}`,
       html: htmlContent,
       text: `Interview scheduled: ${date} at ${time}. Join: ${roomLink}`,
+    });
+  }
+
+  /**
+   * Send password reset success email confirmation
+   * @param {string} email - Recipient email
+   * @param {string} name - User's name
+   */
+  async sendPasswordResetSuccessEmail(email, name) {
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+            .content { background: white; padding: 30px; border: 1px solid #e5e7eb; }
+            .footer { background: #f9fafb; padding: 20px; text-align: center; font-size: 12px; color: #6b7280; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>Password Changed Successfully 🔒</h1>
+            </div>
+            <div class="content">
+              <p>Hi ${name},</p>
+              <p>This is a confirmation that the password for your InterviewOS account (<strong>${email}</strong>) has been successfully changed.</p>
+              <p>If you made this change, you don't need to take any action.</p>
+              <p style="color: #dc2626; font-weight: 600;">⚠️ If you did not request this password change, please contact our support team immediately.</p>
+            </div>
+            <div class="footer">
+              <p>©️ InterviewOS | The smarter way to conduct technical interviews.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    return this.sendEmail({
+      to: email,
+      subject: 'InterviewOS Password Changed Successfully 🔒',
+      html: htmlContent,
+      text: `Your InterviewOS password was successfully changed. If you did not make this change, please contact support immediately.`,
     });
   }
 
