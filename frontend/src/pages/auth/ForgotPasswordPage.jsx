@@ -4,7 +4,7 @@ import { Mail, ArrowRight, Loader2, CheckCircle, AlertCircle, ArrowLeft, Lock, E
 import { motion, AnimatePresence } from "framer-motion";
 import api from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import AuthNavbar from "@/components/AuthNavbar";
+import AuthNavbar from "@/components/layout/AuthNavbar";
 
 /* Password strength calculation */
 const getPasswordStrength = (pw) => {

@@ -18,7 +18,7 @@ import FeedbackPage from "./pages/feedback/FeedbackPage";
 import SessionReplayPage from "./pages/room/SessionReplayPage";
 import NotFound from "./pages/NotFound";
 import OnboardingPage from "./pages/auth/OnboardingPage";
-import SiteLoader from "./components/SiteLoader";
+import SiteLoader from "./components/layout/SiteLoader";
 import { subscribeToApiActivity } from "./lib/api";
 const queryClient = new QueryClient();
 const ProtectedRoute = ({ children }) => {

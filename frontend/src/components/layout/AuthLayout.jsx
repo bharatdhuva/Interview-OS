@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Code2, Video, Sparkles, Shield } from "lucide-react";
-import AnimatedBackground from "@/components/AnimatedBackground";
+import AnimatedBackground from "./AnimatedBackground";
 const features = [
     {
         icon: Code2,

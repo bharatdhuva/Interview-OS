@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useGoogleLogin } from "@react-oauth/google";
 import api from "@/lib/api";
 import { Loader2, Eye, EyeOff } from "lucide-react";
-import AuthNavbar from "@/components/AuthNavbar";
+import AuthNavbar from "@/components/layout/AuthNavbar";
 
 
 /* ─── Password strength ─── */

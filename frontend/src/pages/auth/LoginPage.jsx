@@ -7,7 +7,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useGoogleLogin } from "@react-oauth/google";
 import api from "@/lib/api";
 import { loginSchema } from "@/lib/validations";
-import AuthNavbar from "@/components/AuthNavbar";
+import AuthNavbar from "@/components/layout/AuthNavbar";
 
 
 const LoginPage = () => {
