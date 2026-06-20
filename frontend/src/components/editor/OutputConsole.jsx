@@ -1,5 +1,5 @@
 import { Terminal, X, Copy, Check } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { useState, useCallback } from 'react';
 import { MAX_EXECUTIONS_PER_SESSION } from './constants';
 export default function OutputConsole({ output, isRunning, executionCount, onClear, }) {

@@ -1,4 +1,3 @@
-"use strict";
 /**
  * utils/logger.ts
  *
@@ -14,12 +13,8 @@
  * To add file or cloud logging, push additional transports into the
  * `transports` array (e.g. winston-daily-rotate-file, winston-cloudwatch).
  */
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const winston_1 = __importDefault(require("winston"));
-const logger = winston_1.default.createLogger({
+const winston = require("winston");
+const logger = winston.createLogger({
     // Default log level — messages below this severity are ignored.
     // Override per-environment by setting LOG_LEVEL in .env.
     level: process.env.LOG_LEVEL || 'info',
@@ -27,12 +22,12 @@ const logger = winston_1.default.createLogger({
     //  1. Prepend ISO timestamp
     //  2. Include stack trace when an Error object is logged
     //  3. Serialise as JSON (structured logging for production)
-    format: winston_1.default.format.combine(winston_1.default.format.timestamp(), winston_1.default.format.errors({ stack: true }), winston_1.default.format.json()),
+    format: winston.format.combine(winston.format.timestamp(), winston.format.errors({ stack: true }), winston.format.json()),
     transports: [
         // Console transport — colourised + single-line format for readability
-        new winston_1.default.transports.Console({
-            format: winston_1.default.format.combine(winston_1.default.format.colorize(), winston_1.default.format.simple()),
+        new winston.transports.Console({
+            format: winston.format.combine(winston.format.colorize(), winston.format.simple()),
         }),
     ],
 });
-exports.default = logger;
+module.exports = logger;

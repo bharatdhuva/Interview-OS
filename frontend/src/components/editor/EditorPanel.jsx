@@ -1,10 +1,10 @@
 import { useCallback, useEffect } from 'react';
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle, } from '@/components/ui/resizable';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle, } from '@/components/ui/Resizable';
 import CodeEditor from './CodeEditor';
 import OutputConsole from './OutputConsole';
 import EditorToolbar from './EditorToolbar';
 import { useCodeEditor } from './useCodeEditor';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/useToast';
 export default function EditorPanel({ roomId, sessionId, isDark, readOnly = false, }) {
     const { toast } = useToast();
     const onSaveSuccess = useCallback((triggeredBy) => {

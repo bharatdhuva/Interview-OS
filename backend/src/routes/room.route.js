@@ -1,4 +1,3 @@
-"use strict";
 /**
  * routes/room.route.ts
  *
@@ -15,26 +14,25 @@
  * POST   /:roomId/end              — end session (interviewer only)
  * POST   /:roomId/cancel           — cancel room (interviewer | admin)
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = require("express");
-const room_controller_1 = require("../controllers/room.controller");
-const auth_middleware_1 = require("../middleware/auth.middleware");
-const router = (0, express_1.Router)();
+const express = require("express");
+const roomController = require("../controllers/room.controller");
+const authMiddleware = require("../middleware/auth.middleware");
+const router = express.Router();
 // Resolve invite token before the global protect middleware so unauthenticated
 // candidates can be redirected to login with the room context preserved.
 // (Still requires a valid token — protect is applied here explicitly.)
-router.get('/join/:inviteToken', auth_middleware_1.protect, room_controller_1.joinRoomViaToken);
+router.get('/join/:inviteToken', authMiddleware.protect, roomController.joinRoomViaToken);
 // Apply authentication to all remaining routes
-router.use(auth_middleware_1.protect);
-router.post('/', (0, auth_middleware_1.authorize)('interviewer', 'admin'), room_controller_1.createRoom);
-router.get('/', room_controller_1.listMyRooms);
-router.get('/:roomId', room_controller_1.getRoomById);
-router.patch('/:roomId', (0, auth_middleware_1.authorize)('interviewer', 'admin'), room_controller_1.updateRoom);
-router.post('/:roomId/start', (0, auth_middleware_1.authorize)('interviewer'), room_controller_1.startSession);
-router.post('/:roomId/end', (0, auth_middleware_1.authorize)('interviewer'), room_controller_1.endSession);
-router.post('/:roomId/cancel', (0, auth_middleware_1.authorize)('interviewer', 'admin'), room_controller_1.cancelRoom);
+router.use(authMiddleware.protect);
+router.post('/', authMiddleware.authorize('interviewer', 'admin'), roomController.createRoom);
+router.get('/', roomController.listMyRooms);
+router.get('/:roomId', roomController.getRoomById);
+router.patch('/:roomId', authMiddleware.authorize('interviewer', 'admin'), roomController.updateRoom);
+router.post('/:roomId/start', authMiddleware.authorize('interviewer'), roomController.startSession);
+router.post('/:roomId/end', authMiddleware.authorize('interviewer'), roomController.endSession);
+router.post('/:roomId/cancel', authMiddleware.authorize('interviewer', 'admin'), roomController.cancelRoom);
 
 // Fetch session replay frames (accessible by participants)
-router.get('/:roomId/replay', room_controller_1.getReplayFrames);
+router.get('/:roomId/replay', roomController.getReplayFrames);
 
-exports.default = router;
+module.exports = router;

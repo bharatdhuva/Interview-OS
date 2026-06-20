@@ -9,7 +9,7 @@
  */
 
 const crypto = require('crypto');
-const logger = require('./logger').default;
+const logger = require('./logger');
 
 class TokenService {
   /**

@@ -1,4 +1,3 @@
-"use strict";
 /**
  * routes/auth.route.ts
  *
@@ -13,23 +12,22 @@
  * Protected (Bearer access token required):
  *  GET  /me        — return the current user’s profile
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = require("express");
-const auth_controller_1 = require("../controllers/auth.controller");
-const auth_middleware_1 = require("../middleware/auth.middleware");
-const router = (0, express_1.Router)();
+const express = require("express");
+const authController = require("../controllers/auth.controller");
+const authMiddleware = require("../middleware/auth.middleware");
+const router = express.Router();
 // ─ Public endpoints ────────────────────────────────────────────────────────
-router.post('/register', auth_controller_1.register);
-router.post('/login', auth_controller_1.login);
-router.post('/google', auth_controller_1.googleSignIn);
-router.post('/github', auth_controller_1.githubSignIn);
-router.post('/logout', auth_controller_1.logout);
-router.post('/verify-email', auth_controller_1.verifyEmail);
-router.post('/resend-verification-email', auth_controller_1.resendVerificationEmail);
-router.post('/forgot-password', auth_controller_1.forgotPassword);
-router.post('/reset-password', auth_controller_1.resetPassword);
-router.post('/refresh', auth_controller_1.refresh);
+router.post('/register', authController.register);
+router.post('/login', authController.login);
+router.post('/google', authController.googleSignIn);
+router.post('/github', authController.githubSignIn);
+router.post('/logout', authController.logout);
+router.post('/verify-email', authController.verifyEmail);
+router.post('/resend-verification-email', authController.resendVerificationEmail);
+router.post('/forgot-password', authController.forgotPassword);
+router.post('/reset-password', authController.resetPassword);
+router.post('/refresh', authController.refresh);
 // ─ Protected endpoints ────────────────────────────────────────────────────
-router.get('/me', auth_middleware_1.protect, auth_controller_1.getMe);
-router.post('/onboard', auth_middleware_1.protect, auth_controller_1.onboardUser);
-exports.default = router;
+router.get('/me', authMiddleware.protect, authController.getMe);
+router.post('/onboard', authMiddleware.protect, authController.onboardUser);
+module.exports = router;

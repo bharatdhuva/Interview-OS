@@ -1,4 +1,3 @@
-"use strict";
 /**
  * app.ts
  *
@@ -11,28 +10,23 @@
  *  - Provide a health-check endpoint for Docker / load-balancer probes
  *  - Attach the centralised error-handling middleware last in the chain
  */
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = __importDefault(require("express"));
-const cors_1 = __importDefault(require("cors"));
-const morgan_1 = __importDefault(require("morgan"));
-const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
-const helmet_1 = __importDefault(require("helmet"));
-const cookie_parser_1 = __importDefault(require("cookie-parser"));
-const logger_1 = __importDefault(require("./utils/logger"));
-const auth_route_1 = __importDefault(require("./routes/auth.route"));
-const execution_route_1 = __importDefault(require("./routes/execution.route"));
-const room_route_1 = __importDefault(require("./routes/room.route"));
-const user_route_1 = __importDefault(require("./routes/user.route"));
-const feedback_route_1 = __importDefault(require("./routes/feedback.route"));
-const admin_route_1 = __importDefault(require("./routes/admin.route"));
-const app = (0, express_1.default)();
+const express = require("express");
+const cors = require("cors");
+const morgan = require("morgan");
+const expressRateLimit = require("express-rate-limit");
+const helmet = require("helmet");
+const cookieParser = require("cookie-parser");
+const logger = require("./utils/logger");
+const authRoute = require("./routes/auth.route");
+const executionRoute = require("./routes/execution.route");
+const roomRoute = require("./routes/room.route");
+const userRoute = require("./routes/user.route");
+const feedbackRoute = require("./routes/feedback.route");
+const app = express();
 // ─── Security Headers ─────────────────────────────────────────────────────────
 // helmet() sets a collection of secure HTTP response headers in one call:
 //   Content-Security-Policy, X-Frame-Options, X-XSS-Protection, HSTS, etc.
-app.use((0, helmet_1.default)());
+app.use(helmet());
 // CORS — allow the configured client origin, common dev environment ports,
 // and dynamically allow all Vercel deployment subdomains in production.
 const allowedOrigins = [
@@ -42,7 +36,7 @@ const allowedOrigins = [
     'http://localhost:5173',
 ].filter(Boolean);
 
-app.use((0, cors_1.default)({
+app.use(cors({
     origin: (origin, callback) => {
         // Allow requests with no origin (like mobile apps, curl, postman)
         if (!origin) {
@@ -60,7 +54,7 @@ app.use((0, cors_1.default)({
 // ─── Rate Limiting ────────────────────────────────────────────────────────────
 // Prevents brute-force / DoS attacks by capping requests-per-IP per window.
 // Values are read from .env so they can be tuned without code changes.
-const limiter = (0, express_rate_limit_1.default)({
+const limiter = expressRateLimit({
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10), // default 15 min
     max: parseInt(process.env.RATE_LIMIT_MAX || '100', 10), // default 100 req / window
     message: 'Too many requests from this IP, please try again later.',
@@ -69,14 +63,14 @@ const limiter = (0, express_rate_limit_1.default)({
 app.use('/api', limiter);
 // ─── Body Parsers ─────────────────────────────────────────────────────────────
 // Limit raised to 10 mb to support large code payloads and whiteboard snapshots.
-app.use(express_1.default.json({ limit: '10mb' }));
-app.use(express_1.default.urlencoded({ extended: true, limit: '10mb' }));
-app.use((0, cookie_parser_1.default)());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(cookieParser());
 // ─── HTTP Request Logging ─────────────────────────────────────────────────────
 // Morgan writes combined-format logs; the stream pipes them into Winston so all
 // log output goes through one consistent transport (console / file / etc.).
-app.use((0, morgan_1.default)('combined', {
-    stream: { write: (message) => logger_1.default.info(message.trim()) },
+app.use(morgan('combined', {
+    stream: { write: (message) => logger.info(message.trim()) },
 }));
 // ─── Health Check ─────────────────────────────────────────────────────────────
 // Simple liveness probe — returns 200 when the process is up and running.
@@ -85,20 +79,19 @@ app.get('/api/v1/health', (_req, res) => {
     res.status(200).json({ status: 'ok', message: 'Server is healthy' });
 });
 // ─── Feature Routers ──────────────────────────────────────────────────────────
-app.use('/api/v1/auth', auth_route_1.default); // register, login, logout, /me
-app.use('/api/v1/rooms', room_route_1.default); // CRUD + session lifecycle
-app.use('/api/v1/rooms/:roomId/code', execution_route_1.default); // code execution (mergeParams)
-app.use('/api/v1/users', user_route_1.default); // profile & interview history
-app.use('/api/v1/feedback', feedback_route_1.default); // submit / view / share feedback
-app.use('/api/v1/admin', admin_route_1.default); // admin-only management endpoints
+app.use('/api/v1/auth', authRoute); // register, login, logout, /me
+app.use('/api/v1/rooms', roomRoute); // CRUD + session lifecycle
+app.use('/api/v1/rooms/:roomId/code', executionRoute); // code execution (mergeParams)
+app.use('/api/v1/users', userRoute); // profile & interview history
+app.use('/api/v1/feedback', feedbackRoute); // submit / view / share feedback
 // ─── Global Error Handler ─────────────────────────────────────────────────────
 // Any error passed to next(err) lands here.  Returns a uniform JSON envelope
 // so no raw stack traces or HTML error pages leak to the client.
 app.use((err, _req, res, _next) => {
-    logger_1.default.error(err.stack);
+    logger.error(err.stack);
     res.status(err.status || 500).json({
         success: false,
         message: err.message || 'Internal Server Error',
     });
 });
-exports.default = app;
+module.exports = app;

@@ -12,7 +12,7 @@
  * - And more (12 email types as per spec)
  */
 
-const logger = require('./logger').default;
+const logger = require('./logger');
 const nodemailer = require('nodemailer');
 const axios = require('axios');
 

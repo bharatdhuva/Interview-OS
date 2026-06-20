@@ -1,4 +1,3 @@
-"use strict";
 /**
  * controllers/execution.controller.ts
  *
@@ -13,17 +12,12 @@
  *  6. Persist a CodeSnapshot and link it to the session.
  *  7. Return execution output to the client.
  */
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.executeCode = void 0;
-const axios_1 = __importDefault(require("axios"));
-const mongoose_1 = __importDefault(require("mongoose"));
-const logger_1 = __importDefault(require("../utils/logger"));
-const codeSnapshot_model_1 = require("../models/codeSnapshot.model");
-const session_model_1 = require("../models/session.model");
-const room_model_1 = require("../models/room.model");
+const axios = require("axios");
+const mongoose = require("mongoose");
+const logger = require("../utils/logger");
+const codeSnapshotModel = require("../models/codeSnapshot.model");
+const sessionModel = require("../models/session.model");
+const roomModel = require("../models/room.model");
 const { ReplayFrame } = require("../models/replayFrame.model");
 /**
  * Maps language name strings (as sent by the editor) to Judge0 language IDs.
@@ -55,17 +49,17 @@ const executeCode = async (req, res) => {
             return;
         }
         // Verify the room exists
-        const roomQuery = mongoose_1.default.Types.ObjectId.isValid(requestedRoomId)
+        const roomQuery = mongoose.Types.ObjectId.isValid(requestedRoomId)
             ? { _id: requestedRoomId }
             : { roomId: requestedRoomId };
-        const room = await room_model_1.InterviewRoom.findOne(roomQuery);
+        const room = await roomModel.InterviewRoom.findOne(roomQuery);
         if (!room) {
             res.status(404).json({ success: false, message: 'Room not found' });
             return;
         }
         const resolvedSession = sessionId
-            ? await session_model_1.InterviewSession.findById(sessionId)
-            : await session_model_1.InterviewSession.findOne({ room: room._id, endTime: { $exists: false } }).sort({ startTime: -1 });
+            ? await sessionModel.InterviewSession.findById(sessionId)
+            : await sessionModel.InterviewSession.findOne({ room: room._id, endTime: { $exists: false } }).sort({ startTime: -1 });
         if (!resolvedSession) {
             res.status(400).json({ success: false, message: 'No active session found for this room' });
             return;
@@ -93,7 +87,7 @@ const executeCode = async (req, res) => {
         const judgeApiUrl = process.env.JUDGE0_API_URL || 'https://judge0-ce.p.rapidapi.com';
         const apiKey = process.env.JUDGE0_API_KEY;
         if (!apiKey) {
-            logger_1.default.error('JUDGE0_API_KEY is missing in environment variables');
+            logger.error('JUDGE0_API_KEY is missing in environment variables');
             res.status(500).json({ success: false, message: 'Code execution service unavailable' });
             return;
         }
@@ -109,7 +103,7 @@ const executeCode = async (req, res) => {
             'X-RapidAPI-Host': new URL(judgeApiUrl).hostname,
         };
         // Use wait=true so Judge0 returns the result directly (no polling needed)
-        const submitResponse = await axios_1.default.post(`${judgeApiUrl}/submissions?base64_encoded=false&wait=true`, submissionParams, { headers, timeout: 10000 });
+        const submitResponse = await axios.post(`${judgeApiUrl}/submissions?base64_encoded=false&wait=true`, submissionParams, { headers, timeout: 10000 });
         const result = submitResponse.data;
         const executionResult = {
             stdout: result.stdout || '',
@@ -118,7 +112,7 @@ const executeCode = async (req, res) => {
             memory: result.memory || 0,
         };
         // Persist the code + result as a snapshot for the session timeline
-        const snapshot = await codeSnapshot_model_1.CodeSnapshot.create({
+        const snapshot = await codeSnapshotModel.CodeSnapshot.create({
             room: room._id,
             session: resolvedSession._id,
             language,
@@ -127,7 +121,7 @@ const executeCode = async (req, res) => {
             executionResult,
         });
         // Link the snapshot to the session’s codeSnapshots array
-        await session_model_1.InterviewSession.findByIdAndUpdate(resolvedSession._id, {
+        await sessionModel.InterviewSession.findByIdAndUpdate(resolvedSession._id, {
             $push: { codeSnapshots: snapshot._id },
         });
 
@@ -144,7 +138,7 @@ const executeCode = async (req, res) => {
                 }
             });
         } catch (rfError) {
-            logger_1.default.error('Failed to create ReplayFrame for execution', rfError);
+            logger.error('Failed to create ReplayFrame for execution', rfError);
         }
         res.status(200).json({
             success: true,
@@ -152,7 +146,7 @@ const executeCode = async (req, res) => {
         });
     }
     catch (error) {
-        logger_1.default.error('Execute code error', error.response?.data || error.message);
+        logger.error('Execute code error', error.response?.data || error.message);
         res.status(500).json({ success: false, message: 'Failed to execute code' });
     }
 };

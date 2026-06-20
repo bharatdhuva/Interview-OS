@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Mail, ArrowRight, Loader2, CheckCircle, AlertCircle, ArrowLeft, Lock, Eye, EyeOff, KeyRound } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "@/lib/api";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/useToast";
 import AuthNavbar from "@/components/layout/AuthNavbar";
 
 /* Password strength calculation */

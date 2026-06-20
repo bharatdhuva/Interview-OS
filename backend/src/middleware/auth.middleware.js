@@ -1,4 +1,3 @@
-"use strict";
 /**
  * middleware/auth.middleware.ts
  *
@@ -9,14 +8,9 @@
  * `authorize` — factory that returns a middleware enforcing role-based access
  *               control; must be chained AFTER `protect`.
  */
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.authorize = exports.protect = void 0;
-const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const user_model_1 = require("../models/user.model");
-const logger_1 = __importDefault(require("../utils/logger"));
+const jsonwebtoken = require("jsonwebtoken");
+const userModel = require("../models/user.model");
+const logger = require("../utils/logger");
 /**
  * Protect middleware — validates the Bearer access token.
  *
@@ -39,9 +33,9 @@ const protect = async (req, res, next) => {
             return;
         }
         // Verify and decode; throws if token is expired or signature is invalid
-        const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_ACCESS_SECRET);
+        const decoded = jsonwebtoken.verify(token, process.env.JWT_ACCESS_SECRET);
         // Fetch user fresh from DB — excludes sensitive fields
-        req.user = await user_model_1.User.findById(decoded.id).select('-passwordHash -refreshTokens');
+        req.user = await userModel.User.findById(decoded.id).select('-passwordHash -refreshTokens');
         if (!req.user) {
             res.status(401).json({ success: false, message: 'User belonging to token no longer exists' });
             return;
@@ -49,7 +43,7 @@ const protect = async (req, res, next) => {
         next();
     }
     catch (error) {
-        logger_1.default.error('Auth middleware error', error);
+        logger.error('Auth middleware error', error);
         res.status(401).json({ success: false, message: 'Not authorized to access this route' });
     }
 };

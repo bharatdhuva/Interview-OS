@@ -3,10 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, isFuture, differenceInMinutes } from 'date-fns';
 import { Calendar, Clock, ArrowRight, Video, Code2, MessageSquare, History, User, LogOut, Terminal, CreditCard } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
 import { useAuthStore } from '@/store/authStore';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/useToast';
 import api from '@/lib/api';
 
 const normalizeUser = (value, fallbackRole) => {

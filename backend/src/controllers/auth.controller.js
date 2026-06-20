@@ -1,4 +1,3 @@
-"use strict";
 /**
  * controllers/auth.controller.ts
  *
@@ -11,18 +10,13 @@
  *
  * All input is validated with Zod schemas before any DB work is done.
  */
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.onboardUser = exports.githubSignIn = exports.googleSignIn = exports.getMe = exports.logout = exports.login = exports.register = void 0;
-const bcrypt_1 = __importDefault(require("bcrypt"));
-const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const axios_1 = __importDefault(require("axios"));
-const user_model_1 = require("../models/user.model");
-const jwt_1 = require("../utils/jwt");
-const logger_1 = __importDefault(require("../utils/logger"));
-const auth_validation_1 = require("../middleware/validation/auth.validation");
+const bcrypt = require("bcrypt");
+const jsonwebtoken = require("jsonwebtoken");
+const axios = require("axios");
+const userModel = require("../models/user.model");
+const jwt = require("../utils/jwt");
+const logger = require("../utils/logger");
+const authValidation = require("../middleware/validation/auth.validation");
 // ─── Refresh-cookie configuration ────────────────────────────────────────────
 // httpOnly prevents JS access; Secure ensures HTTPS-only in production;
 // SameSite=None in production allows cross-site requests (frontend on Vercel, backend on Render).
@@ -47,7 +41,7 @@ const sendWelcomeEmailSafely = async (user) => {
         await emailService.sendWelcomeEmail(user.email, user.name);
     }
     catch (error) {
-        logger_1.default.error('Failed to send welcome email', error);
+        logger.error('Failed to send welcome email', error);
     }
 };
 const sendPasswordResetSuccessEmailSafely = async (user) => {
@@ -56,7 +50,7 @@ const sendPasswordResetSuccessEmailSafely = async (user) => {
         await emailService.sendPasswordResetSuccessEmail(user.email, user.name);
     }
     catch (error) {
-        logger_1.default.error('Failed to send password reset confirmation email', error);
+        logger.error('Failed to send password reset confirmation email', error);
     }
 };
 // ─── Handlers ────────────────────────────────────────────────────────────────
@@ -69,9 +63,9 @@ const sendPasswordResetSuccessEmailSafely = async (user) => {
  */
 const register = async (req, res) => {
     try {
-        const { name, email, password, role } = auth_validation_1.registerSchema.parse(req.body);
+        const { name, email, password, role } = authValidation.registerSchema.parse(req.body);
         // Prevent duplicate accounts, unless it's a placeholder candidate account
-        const existingUser = await user_model_1.User.findOne({ email });
+        const existingUser = await userModel.User.findOne({ email });
         const isPlaceholder = existingUser && 
                              existingUser.passwordHash === 'placeholder' && 
                              !existingUser.googleId && 
@@ -81,7 +75,7 @@ const register = async (req, res) => {
             return;
         }
         // Hash the password before persisting (salt rounds = 12)
-        const passwordHash = await bcrypt_1.default.hash(password, 12);
+        const passwordHash = await bcrypt.hash(password, 12);
         let user;
         if (isPlaceholder) {
             existingUser.name = name;
@@ -90,7 +84,7 @@ const register = async (req, res) => {
             existingUser.isOnboarded = false;
             user = await existingUser.save();
         } else {
-            user = await user_model_1.User.create({
+            user = await userModel.User.create({
                 name,
                 email,
                 passwordHash,
@@ -110,7 +104,7 @@ const register = async (req, res) => {
         try {
             await emailService.sendVerificationEmail(email, verificationToken, verificationUrl);
         } catch (emailError) {
-            logger_1.default.error('Failed to send verification email after registration', emailError);
+            logger.error('Failed to send verification email after registration', emailError);
         }
         */
 
@@ -118,8 +112,8 @@ const register = async (req, res) => {
         sendWelcomeEmailSafely(user).catch(() => undefined);
 
         // Generate tokens and persist the refresh token
-        const accessToken = (0, jwt_1.generateAccessToken)(user.id, user.role);
-        const refreshToken = (0, jwt_1.generateRefreshToken)(user.id);
+        const accessToken = jwt.generateAccessToken(user.id, user.role);
+        const refreshToken = jwt.generateRefreshToken(user.id);
         user.refreshTokens.push(refreshToken);
         await user.save();
         setRefreshCookie(res, refreshToken);
@@ -142,7 +136,7 @@ const register = async (req, res) => {
             res.status(400).json({ success: false, message: 'Validation Error', errors: error.errors });
             return;
         }
-        logger_1.default.error('Register error', error);
+        logger.error('Register error', error);
         res.status(500).json({ success: false, message: 'Server error during registration' });
     }
 };
@@ -155,21 +149,21 @@ exports.register = register;
  */
 const login = async (req, res) => {
     try {
-        const { email, password } = auth_validation_1.loginSchema.parse(req.body);
+        const { email, password } = authValidation.loginSchema.parse(req.body);
         // Look up user and verify password hash
-        const user = await user_model_1.User.findOne({ email });
+        const user = await userModel.User.findOne({ email });
         if (!user || !user.passwordHash) {
             // Return a generic message to avoid user enumeration
             res.status(401).json({ success: false, message: 'Invalid credentials' });
             return;
         }
-        const isMatch = await bcrypt_1.default.compare(password, user.passwordHash);
+        const isMatch = await bcrypt.compare(password, user.passwordHash);
         if (!isMatch) {
             res.status(401).json({ success: false, message: 'Invalid credentials' });
             return;
         }
-        const accessToken = (0, jwt_1.generateAccessToken)(user.id, user.role);
-        const refreshToken = (0, jwt_1.generateRefreshToken)(user.id);
+        const accessToken = jwt.generateAccessToken(user.id, user.role);
+        const refreshToken = jwt.generateRefreshToken(user.id);
         user.refreshTokens.push(refreshToken);
         await user.save();
         setRefreshCookie(res, refreshToken);
@@ -184,7 +178,7 @@ const login = async (req, res) => {
             res.status(400).json({ success: false, message: 'Validation Error', errors: error.errors });
             return;
         }
-        logger_1.default.error('Login error', error);
+        logger.error('Login error', error);
         res.status(500).json({ success: false, message: 'Server error during login' });
     }
 };
@@ -201,8 +195,8 @@ const logout = async (req, res) => {
         const { refreshToken } = req.cookies;
         if (refreshToken) {
             // Verify the token to get the user ID, then remove it from the pool
-            const decoded = jsonwebtoken_1.default.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-            await user_model_1.User.findByIdAndUpdate(decoded.id, {
+            const decoded = jsonwebtoken.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+            await userModel.User.findByIdAndUpdate(decoded.id, {
                 $pull: { refreshTokens: refreshToken },
             });
         }
@@ -211,7 +205,7 @@ const logout = async (req, res) => {
     }
     catch (error) {
         // Even if token verification fails, clear the cookie and report success
-        logger_1.default.error('Logout error', error);
+        logger.error('Logout error', error);
         res.clearCookie('refreshToken', REFRESH_COOKIE_OPTIONS);
         res.status(200).json({ success: true, message: 'Logged out successfully' });
     }
@@ -240,9 +234,9 @@ exports.getMe = getMe;
  */
 const googleSignIn = async (req, res) => {
     try {
-        const { token } = auth_validation_1.googleAuthSchema.parse(req.body);
+        const { token } = authValidation.googleAuthSchema.parse(req.body);
         // Verify with Google — this also validates the token hasn't been tampered with
-        const googleRes = await axios_1.default.get('https://www.googleapis.com/oauth2/v3/userinfo', {
+        const googleRes = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
             headers: { Authorization: `Bearer ${token}` },
         });
         if (!googleRes.data?.email) {
@@ -250,10 +244,10 @@ const googleSignIn = async (req, res) => {
             return;
         }
         const { email, name, sub: googleId, picture } = googleRes.data;
-        let user = await user_model_1.User.findOne({ email });
+        let user = await userModel.User.findOne({ email });
         if (!user) {
             // First time Google sign-in — auto-register the user
-            user = await user_model_1.User.create({
+            user = await userModel.User.create({
                 name: name || 'Google User',
                 email,
                 googleId,
@@ -273,8 +267,8 @@ const googleSignIn = async (req, res) => {
                 user.avatar = picture;
             await user.save();
         }
-        const accessToken = (0, jwt_1.generateAccessToken)(user.id, user.role);
-        const refreshToken = (0, jwt_1.generateRefreshToken)(user.id);
+        const accessToken = jwt.generateAccessToken(user.id, user.role);
+        const refreshToken = jwt.generateRefreshToken(user.id);
         user.refreshTokens.push(refreshToken);
         await user.save();
         setRefreshCookie(res, refreshToken);
@@ -297,7 +291,7 @@ const googleSignIn = async (req, res) => {
             res.status(400).json({ success: false, message: 'Validation Error', errors: error.errors });
             return;
         }
-        logger_1.default.error('Google Sign-In error', {
+        logger.error('Google Sign-In error', {
             message: error.message,
             stack: error.stack,
             response: error.response?.data,
@@ -314,10 +308,10 @@ exports.googleSignIn = googleSignIn;
  */
 const githubSignIn = async (req, res) => {
     try {
-        const { code } = auth_validation_1.githubAuthSchema.parse(req.body);
+        const { code } = authValidation.githubAuthSchema.parse(req.body);
         
         // Exchange code for access token
-        const tokenRes = await axios_1.default.post('https://github.com/login/oauth/access_token', {
+        const tokenRes = await axios.post('https://github.com/login/oauth/access_token', {
             client_id: process.env.GITHUB_CLIENT_ID,
             client_secret: process.env.GITHUB_CLIENT_SECRET,
             code,
@@ -332,7 +326,7 @@ const githubSignIn = async (req, res) => {
         }
 
         // Fetch user profile
-        const userRes = await axios_1.default.get('https://api.github.com/user', {
+        const userRes = await axios.get('https://api.github.com/user', {
             headers: {
                 Authorization: `token ${githubAccessToken}`,
                 'User-Agent': 'InterviewOS',
@@ -340,7 +334,7 @@ const githubSignIn = async (req, res) => {
         });
 
         // Fetch user email addresses
-        const emailsRes = await axios_1.default.get('https://api.github.com/user/emails', {
+        const emailsRes = await axios.get('https://api.github.com/user/emails', {
             headers: {
                 Authorization: `token ${githubAccessToken}`,
                 'User-Agent': 'InterviewOS',
@@ -356,11 +350,11 @@ const githubSignIn = async (req, res) => {
         }
 
         const { id: githubId, name, login, avatar_url } = userRes.data;
-        let user = await user_model_1.User.findOne({ email });
+        let user = await userModel.User.findOne({ email });
 
         if (!user) {
             // First time GitHub sign-in — auto-register the user
-            user = await user_model_1.User.create({
+            user = await userModel.User.create({
                 name: name || login || 'GitHub User',
                 email,
                 githubId: String(githubId),
@@ -392,8 +386,8 @@ const githubSignIn = async (req, res) => {
             }
         }
 
-        const accessToken = (0, jwt_1.generateAccessToken)(user.id, user.role);
-        const refreshToken = (0, jwt_1.generateRefreshToken)(user.id);
+        const accessToken = jwt.generateAccessToken(user.id, user.role);
+        const refreshToken = jwt.generateRefreshToken(user.id);
         user.refreshTokens.push(refreshToken);
         await user.save();
         setRefreshCookie(res, refreshToken);
@@ -416,7 +410,7 @@ const githubSignIn = async (req, res) => {
             res.status(400).json({ success: false, message: 'Validation Error', errors: error.errors });
             return;
         }
-        logger_1.default.error('GitHub Sign-In error', {
+        logger.error('GitHub Sign-In error', {
             message: error.message,
             stack: error.stack,
             response: error.response?.data,
@@ -434,8 +428,8 @@ exports.githubSignIn = githubSignIn;
  */
 const verifyEmail = async (req, res) => {
     try {
-        const { email, token } = auth_validation_1.verifyEmailSchema.parse(req.body);
-        const user = await user_model_1.User.findOne({ email });
+        const { email, token } = authValidation.verifyEmailSchema.parse(req.body);
+        const user = await userModel.User.findOne({ email });
 
         if (!user) {
             res.status(404).json({ success: false, message: 'User not found' });
@@ -466,7 +460,7 @@ const verifyEmail = async (req, res) => {
             res.status(400).json({ success: false, message: 'Validation Error', errors: error.errors });
             return;
         }
-        logger_1.default.error('Email verification error', error);
+        logger.error('Email verification error', error);
         res.status(500).json({ success: false, message: 'Server error during email verification' });
     }
 };
@@ -480,8 +474,8 @@ exports.verifyEmail = verifyEmail;
  */
 const resendVerificationEmail = async (req, res) => {
     try {
-        const { email } = auth_validation_1.resendVerificationSchema.parse(req.body);
-        const user = await user_model_1.User.findOne({ email });
+        const { email } = authValidation.resendVerificationSchema.parse(req.body);
+        const user = await userModel.User.findOne({ email });
 
         if (!user) {
             // Don't reveal whether email exists (security)
@@ -503,7 +497,7 @@ const resendVerificationEmail = async (req, res) => {
         const verificationUrl = `${process.env.CLIENT_URL}/verify-email?email=${encodeURIComponent(email)}&token=${verificationToken}`;
 
         await emailService.sendVerificationEmail(email, verificationToken, verificationUrl).catch((err) => {
-            logger_1.default.error('Failed to send verification email', err);
+            logger.error('Failed to send verification email', err);
         });
 
         res.status(200).json({
@@ -515,7 +509,7 @@ const resendVerificationEmail = async (req, res) => {
             res.status(400).json({ success: false, message: 'Validation Error', errors: error.errors });
             return;
         }
-        logger_1.default.error('Resend verification email error', error);
+        logger.error('Resend verification email error', error);
         res.status(500).json({ success: false, message: 'Server error while sending verification email' });
     }
 };
@@ -529,8 +523,8 @@ exports.resendVerificationEmail = resendVerificationEmail;
  */
 const forgotPassword = async (req, res) => {
     try {
-        const { email } = auth_validation_1.forgotPasswordSchema.parse(req.body);
-        const user = await user_model_1.User.findOne({ email });
+        const { email } = authValidation.forgotPasswordSchema.parse(req.body);
+        const user = await userModel.User.findOne({ email });
 
         if (!user) {
             // Don't reveal whether email exists (security)
@@ -546,7 +540,7 @@ const forgotPassword = async (req, res) => {
         const emailService = require('../utils/emailService');
 
         await emailService.sendPasswordResetEmail(email, resetToken).catch((err) => {
-            logger_1.default.error('Failed to send password reset OTP email', err);
+            logger.error('Failed to send password reset OTP email', err);
         });
 
         res.status(200).json({
@@ -558,7 +552,7 @@ const forgotPassword = async (req, res) => {
             res.status(400).json({ success: false, message: 'Validation Error', errors: error.errors });
             return;
         }
-        logger_1.default.error('Forgot password error', error);
+        logger.error('Forgot password error', error);
         res.status(500).json({ success: false, message: 'Server error while processing password reset' });
     }
 };
@@ -572,8 +566,8 @@ exports.forgotPassword = forgotPassword;
  */
 const resetPassword = async (req, res) => {
     try {
-        const { email, token, newPassword } = auth_validation_1.resetPasswordSchema.parse(req.body);
-        const user = await user_model_1.User.findOne({ email });
+        const { email, token, newPassword } = authValidation.resetPasswordSchema.parse(req.body);
+        const user = await userModel.User.findOne({ email });
 
         if (!user) {
             res.status(404).json({ success: false, message: 'User not found' });
@@ -590,7 +584,7 @@ const resetPassword = async (req, res) => {
         }
 
         // Hash new password and save
-        const newPasswordHash = await bcrypt_1.default.hash(newPassword, 12);
+        const newPasswordHash = await bcrypt.hash(newPassword, 12);
         user.passwordHash = newPasswordHash;
 
         // Clear all refresh tokens (force re-login on all devices)
@@ -611,7 +605,7 @@ const resetPassword = async (req, res) => {
             res.status(400).json({ success: false, message: 'Validation Error', errors: error.errors });
             return;
         }
-        logger_1.default.error('Reset password error', error);
+        logger.error('Reset password error', error);
         res.status(500).json({ success: false, message: 'Server error while resetting password' });
     }
 };
@@ -635,8 +629,8 @@ const refresh = async (req, res) => {
         }
 
         // Verify the refresh token
-        const decoded = jsonwebtoken_1.default.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-        const user = await user_model_1.User.findById(decoded.id);
+        const decoded = jsonwebtoken.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+        const user = await userModel.User.findById(decoded.id);
 
         if (!user || !user.refreshTokens.includes(refreshToken)) {
             res.status(401).json({ success: false, message: 'Invalid refresh token' });
@@ -644,8 +638,8 @@ const refresh = async (req, res) => {
         }
 
         // Generate new access token and refresh token (rotation)
-        const newAccessToken = (0, jwt_1.generateAccessToken)(user.id, user.role);
-        const newRefreshToken = (0, jwt_1.generateRefreshToken)(user.id);
+        const newAccessToken = jwt.generateAccessToken(user.id, user.role);
+        const newRefreshToken = jwt.generateRefreshToken(user.id);
 
         // Update refresh tokens: remove old, add new
         user.refreshTokens = user.refreshTokens.filter((t) => t !== refreshToken);
@@ -663,7 +657,7 @@ const refresh = async (req, res) => {
             },
         });
     } catch (error) {
-        logger_1.default.error('Token refresh error', error);
+        logger.error('Token refresh error', error);
         res.status(401).json({ success: false, message: 'Failed to refresh token' });
     }
 };
@@ -676,8 +670,8 @@ exports.refresh = refresh;
  */
 const onboardUser = async (req, res) => {
     try {
-        const { role } = auth_validation_1.onboardSchema.parse(req.body);
-        const user = await user_model_1.User.findById(req.user.id);
+        const { role } = authValidation.onboardSchema.parse(req.body);
+        const user = await userModel.User.findById(req.user.id);
         if (!user) {
             res.status(404).json({ success: false, message: 'User not found' });
             return;
@@ -702,7 +696,7 @@ const onboardUser = async (req, res) => {
             res.status(400).json({ success: false, message: 'Validation Error', errors: error.errors });
             return;
         }
-        logger_1.default.error('Onboarding error', error);
+        logger.error('Onboarding error', error);
         res.status(500).json({ success: false, message: 'Server error during onboarding' });
     }
 };

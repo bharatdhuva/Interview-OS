@@ -2,13 +2,13 @@ import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Star, Terminal, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/Button';
+import { Slider } from '@/components/ui/Slider';
+import { Textarea } from '@/components/ui/Textarea';
+import { Label } from '@/components/ui/Label';
 import { useAuthStore } from '@/store/authStore';
 import api from '@/lib/api';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/useToast';
 import { feedbackSchema } from '@/lib/validations';
 const recommendations = [
     { value: 'strong_yes', label: 'Strong Yes', color: 'bg-success/10 text-success border-success/20' },

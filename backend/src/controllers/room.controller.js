@@ -1,4 +1,3 @@
-"use strict";
 /**
  * controllers/room.controller.ts
  *
@@ -19,20 +18,15 @@
  *             → completed (endSession)
  *             → cancelled (cancelRoom)
  */
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.getReplayFrames = exports.cancelRoom = exports.updateRoom = exports.endSession = exports.startSession = exports.joinRoomViaToken = exports.getRoomById = exports.listMyRooms = exports.createRoom = void 0;
-const mongoose_1 = __importDefault(require("mongoose"));
-const crypto_1 = __importDefault(require("crypto"));
-const room_model_1 = require("../models/room.model");
-const user_model_1 = require("../models/user.model");
-const session_model_1 = require("../models/session.model");
-const replayFrame_model_1 = require("../models/replayFrame.model");
-const jwt_1 = require("../utils/jwt");
-const logger_1 = __importDefault(require("../utils/logger"));
-const room_validation_1 = require("../middleware/validation/room.validation");
+const mongoose = require("mongoose");
+const crypto = require("crypto");
+const roomModel = require("../models/room.model");
+const userModel = require("../models/user.model");
+const sessionModel = require("../models/session.model");
+const replayFrameModel = require("../models/replayFrame.model");
+const jwt = require("../utils/jwt");
+const logger = require("../utils/logger");
+const roomValidation = require("../middleware/validation/room.validation");
 const emailService = require('../utils/emailService');
 /**
  * POST /api/v1/rooms  (interviewer | admin only)
@@ -44,18 +38,18 @@ const emailService = require('../utils/emailService');
  */
 const createRoom = async (req, res) => {
     try {
-        const validatedData = room_validation_1.createRoomSchema.parse(req.body);
+        const validatedData = roomValidation.createRoomSchema.parse(req.body);
         const interviewerId = req.user.id;
-        let candidate = await user_model_1.User.findOne({ email: validatedData.candidateEmail });
+        let candidate = await userModel.User.findOne({ email: validatedData.candidateEmail });
         if (!candidate) {
-            candidate = await user_model_1.User.create({
+            candidate = await userModel.User.create({
                 email: validatedData.candidateEmail,
                 role: 'candidate',
                 name: validatedData.candidateEmail.split('@')[0],
                 passwordHash: 'placeholder',
             });
         }
-        const room = await room_model_1.InterviewRoom.create({
+        const room = await roomModel.InterviewRoom.create({
             title: validatedData.title,
             description: validatedData.description,
             interviewer: interviewerId,
@@ -69,7 +63,7 @@ const createRoom = async (req, res) => {
             difficultyLevel: validatedData.difficultyLevel,
         });
         // Generate a signed invite token that encodes the room ID for the candidate
-        room.inviteToken = (0, jwt_1.generateInviteToken)(room._id);
+        room.inviteToken = jwt.generateInviteToken(room._id);
         // Token expires when the scheduled session window closes
         room.inviteExpiresAt = new Date(new Date(validatedData.scheduledAt).getTime() + validatedData.durationMinutes * 60000);
         await room.save();
@@ -88,7 +82,7 @@ const createRoom = async (req, res) => {
                 date: formattedDate,
                 time: formattedTime,
                 role: 'candidate',
-            }).catch(err => logger_1.default.error('Failed to send scheduled email to candidate', err));
+            }).catch(err => logger.error('Failed to send scheduled email to candidate', err));
 
             // Send to Interviewer
             emailService.sendInterviewScheduledEmail(req.user.email, {
@@ -98,15 +92,15 @@ const createRoom = async (req, res) => {
                 date: formattedDate,
                 time: formattedTime,
                 role: 'interviewer',
-            }).catch(err => logger_1.default.error('Failed to send scheduled email to interviewer', err));
+            }).catch(err => logger.error('Failed to send scheduled email to interviewer', err));
         } catch (emailErr) {
-            logger_1.default.error('Failed to initiate scheduled emails', emailErr);
+            logger.error('Failed to initiate scheduled emails', emailErr);
         }
 
         res.status(201).json({ success: true, data: room });
     }
     catch (error) {
-        logger_1.default.error('Error creating room', error);
+        logger.error('Error creating room', error);
         res.status(400).json({ success: false, message: error.message || 'Failed to create room' });
     }
 };
@@ -122,14 +116,14 @@ const listMyRooms = async (req, res) => {
         const userId = req.user.id;
         const role = req.user.role;
         const query = role === 'interviewer' ? { interviewer: userId } : { candidate: userId };
-        const rooms = await room_model_1.InterviewRoom.find(query)
+        const rooms = await roomModel.InterviewRoom.find(query)
             .populate('interviewer', 'name email avatar')
             .populate('candidate', 'name email avatar')
             .sort({ scheduledAt: -1 });
         res.status(200).json({ success: true, count: rooms.length, data: rooms });
     }
     catch (error) {
-        logger_1.default.error('Error fetching rooms', error);
+        logger.error('Error fetching rooms', error);
         res.status(500).json({ success: false, message: 'Server error' });
     }
 };
@@ -145,8 +139,8 @@ const getRoomById = async (req, res) => {
     try {
         const roomId = req.params.roomId;
         // Accept both Mongo ObjectId and UUID roomId (used as Socket.IO channel)
-        const query = mongoose_1.default.Types.ObjectId.isValid(roomId) ? { _id: roomId } : { roomId };
-        const room = await room_model_1.InterviewRoom.findOne(query)
+        const query = mongoose.Types.ObjectId.isValid(roomId) ? { _id: roomId } : { roomId };
+        const room = await roomModel.InterviewRoom.findOne(query)
             .populate('interviewer', 'name email avatar')
             .populate('candidate', 'name email avatar');
         if (!room) {
@@ -154,8 +148,8 @@ const getRoomById = async (req, res) => {
             return;
         }
         if (!room.whiteboardKey) {
-            const secureKey = crypto_1.default.randomBytes(32).toString('hex');
-            await room_model_1.InterviewRoom.updateOne({ _id: room._id }, { whiteboardKey: secureKey });
+            const secureKey = crypto.randomBytes(32).toString('hex');
+            await roomModel.InterviewRoom.updateOne({ _id: room._id }, { whiteboardKey: secureKey });
             room.whiteboardKey = secureKey;
         }
         const interviewerId = room.interviewer?._id?.toString() || room.interviewer?.toString();
@@ -173,20 +167,20 @@ const getRoomById = async (req, res) => {
             try {
                 room.status = 'active';
                 await room.save();
-                await session_model_1.InterviewSession.create({
+                await sessionModel.InterviewSession.create({
                     room: room._id,
                     startTime: new Date(),
                 });
-                logger_1.default.info(`Session auto-started for room ${room.roomId} / ${room._id}`);
+                logger.info(`Session auto-started for room ${room.roomId} / ${room._id}`);
             } catch (startError) {
-                logger_1.default.error(`Failed to auto-start session for room ${room._id}`, startError);
+                logger.error(`Failed to auto-start session for room ${room._id}`, startError);
             }
         }
 
         res.status(200).json({ success: true, data: room });
     }
     catch (error) {
-        logger_1.default.error('Error fetching room details', error);
+        logger.error('Error fetching room details', error);
         res.status(500).json({ success: false, message: 'Server error' });
     }
 };
@@ -201,7 +195,7 @@ exports.getRoomById = getRoomById;
 const joinRoomViaToken = async (req, res) => {
     try {
         const { inviteToken } = req.params;
-        const room = await room_model_1.InterviewRoom.findOne({ inviteToken })
+        const room = await roomModel.InterviewRoom.findOne({ inviteToken })
             .populate('interviewer', 'name email avatar')
             .populate('candidate', 'name email avatar');
         if (!room) {
@@ -215,7 +209,7 @@ const joinRoomViaToken = async (req, res) => {
         res.status(200).json({ success: true, data: room });
     }
     catch (error) {
-        logger_1.default.error('Error joining room', error);
+        logger.error('Error joining room', error);
         res.status(500).json({ success: false, message: 'Server error' });
     }
 };
@@ -229,8 +223,8 @@ exports.joinRoomViaToken = joinRoomViaToken;
 const startSession = async (req, res) => {
     try {
         const roomId = req.params.roomId;
-        const query = mongoose_1.default.Types.ObjectId.isValid(roomId) ? { _id: roomId } : { roomId };
-        const room = await room_model_1.InterviewRoom.findOne(query);
+        const query = mongoose.Types.ObjectId.isValid(roomId) ? { _id: roomId } : { roomId };
+        const room = await roomModel.InterviewRoom.findOne(query);
         if (!room) {
             res.status(404).json({ success: false, message: 'Room not found' });
             return;
@@ -245,14 +239,14 @@ const startSession = async (req, res) => {
         }
         room.status = 'active';
         await room.save();
-        const session = await session_model_1.InterviewSession.create({
+        const session = await sessionModel.InterviewSession.create({
             room: room._id,
             startTime: new Date(),
         });
         res.status(200).json({ success: true, data: session });
     }
     catch (error) {
-        logger_1.default.error('Error starting session', error);
+        logger.error('Error starting session', error);
         res.status(500).json({ success: false, message: 'Server error' });
     }
 };
@@ -266,8 +260,8 @@ exports.startSession = startSession;
 const endSession = async (req, res) => {
     try {
         const roomId = req.params.roomId;
-        const query = mongoose_1.default.Types.ObjectId.isValid(roomId) ? { _id: roomId } : { roomId };
-        const room = await room_model_1.InterviewRoom.findOne(query);
+        const query = mongoose.Types.ObjectId.isValid(roomId) ? { _id: roomId } : { roomId };
+        const room = await roomModel.InterviewRoom.findOne(query);
         if (!room) {
             res.status(404).json({ success: false, message: 'Room not found' });
             return;
@@ -282,7 +276,7 @@ const endSession = async (req, res) => {
         }
         room.status = 'completed';
         await room.save();
-        const session = await session_model_1.InterviewSession.findOne({
+        const session = await sessionModel.InterviewSession.findOne({
             room: room._id,
             endTime: { $exists: false },
         }).sort({ startTime: -1 });
@@ -294,7 +288,7 @@ const endSession = async (req, res) => {
         res.status(200).json({ success: true, data: session });
     }
     catch (error) {
-        logger_1.default.error('Error ending session', error);
+        logger.error('Error ending session', error);
         res.status(500).json({ success: false, message: 'Server error' });
     }
 };
@@ -308,10 +302,10 @@ exports.endSession = endSession;
  */
 const updateRoom = async (req, res) => {
     try {
-        const validatedData = room_validation_1.updateRoomSchema.parse(req.body);
+        const validatedData = roomValidation.updateRoomSchema.parse(req.body);
         const roomId = req.params.roomId;
-        const query = mongoose_1.default.Types.ObjectId.isValid(roomId) ? { _id: roomId } : { roomId };
-        const room = await room_model_1.InterviewRoom.findOne(query);
+        const query = mongoose.Types.ObjectId.isValid(roomId) ? { _id: roomId } : { roomId };
+        const room = await roomModel.InterviewRoom.findOne(query);
         if (!room) {
             res.status(404).json({ success: false, message: 'Room not found' });
             return;
@@ -329,7 +323,7 @@ const updateRoom = async (req, res) => {
         res.status(200).json({ success: true, data: room });
     }
     catch (error) {
-        logger_1.default.error('Error updating room', error);
+        logger.error('Error updating room', error);
         res.status(400).json({ success: false, message: error.message || 'Failed to update room' });
     }
 };
@@ -343,8 +337,8 @@ exports.updateRoom = updateRoom;
 const cancelRoom = async (req, res) => {
     try {
         const roomId = req.params.roomId;
-        const query = mongoose_1.default.Types.ObjectId.isValid(roomId) ? { _id: roomId } : { roomId };
-        const room = await room_model_1.InterviewRoom.findOne(query);
+        const query = mongoose.Types.ObjectId.isValid(roomId) ? { _id: roomId } : { roomId };
+        const room = await roomModel.InterviewRoom.findOne(query);
         if (!room) {
             res.status(404).json({ success: false, message: 'Room not found' });
             return;
@@ -362,7 +356,7 @@ const cancelRoom = async (req, res) => {
         res.status(200).json({ success: true, message: 'Room cancelled', data: room });
     }
     catch (error) {
-        logger_1.default.error('Error cancelling room', error);
+        logger.error('Error cancelling room', error);
         res.status(500).json({ success: false, message: 'Server error' });
     }
 };
@@ -377,8 +371,8 @@ exports.cancelRoom = cancelRoom;
 const getReplayFrames = async (req, res) => {
     try {
         const roomId = req.params.roomId;
-        const query = mongoose_1.default.Types.ObjectId.isValid(roomId) ? { _id: roomId } : { roomId };
-        const room = await room_model_1.InterviewRoom.findOne(query);
+        const query = mongoose.Types.ObjectId.isValid(roomId) ? { _id: roomId } : { roomId };
+        const room = await roomModel.InterviewRoom.findOne(query);
         if (!room) {
             res.status(404).json({ success: false, message: 'Room not found' });
             return;
@@ -392,13 +386,13 @@ const getReplayFrames = async (req, res) => {
             res.status(403).json({ success: false, message: 'Not authorized to access this room\'s replay' });
             return;
         }
-        const frames = await replayFrame_model_1.ReplayFrame.find({ roomId: room.roomId })
+        const frames = await replayFrameModel.ReplayFrame.find({ roomId: room.roomId })
             .sort({ timestamp: 1 })
             .lean();
         res.status(200).json({ success: true, data: frames });
     }
     catch (error) {
-        logger_1.default.error('Error fetching replay frames', error);
+        logger.error('Error fetching replay frames', error);
         res.status(500).json({ success: false, message: 'Server error' });
     }
 };

@@ -55,7 +55,6 @@ One single link → real-time video call starts automatically. Both interviewer 
 | **Code Execution** | Judge0 API |
 | **AI** | Groq / OpenAI |
 | **Auth** | JWT (access + refresh token rotation) |
-| **Payments** | Stripe (subscriptions + billing portal) |
 
 ---
 
@@ -138,10 +137,6 @@ JUDGE0_API_KEY=
 
 # Client URL (frontend)
 CLIENT_URL=http://localhost:8080
-
-# Stripe (optional)
-STRIPE_SECRET_KEY=
-STRIPE_WEBHOOK_SECRET=
 ```
 
 ---
@@ -181,9 +176,6 @@ Interview-OS/
 - [x] Proctoring System (tab-switch, fullscreen, 3-strike auto-end)
 - [x] Session Replay (time-travel code + whiteboard playback)
 - [x] Code Snapshots (persisted per session)
-- [x] Admin Dashboard (users, rooms, analytics, force-end)
-- [x] Stripe Billing (subscriptions, webhooks, billing portal)
-- [x] Multi-Tenant Organizations (invite, seat limits, role management)
 - [ ] Chrome Extension
 
 ---

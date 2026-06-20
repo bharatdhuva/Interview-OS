@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/useToast';
 export const useProctor = ({ roomId, onViolation, onEndSession, maxViolations = 3, isEnabled = true } = {}) => {
     const [violationCount, setViolationCount] = useState(0);
     const { toast } = useToast();

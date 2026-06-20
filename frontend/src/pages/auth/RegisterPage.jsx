@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/useToast";
 import { useGoogleLogin } from "@react-oauth/google";
 import api from "@/lib/api";
 import { Loader2, Eye, EyeOff } from "lucide-react";

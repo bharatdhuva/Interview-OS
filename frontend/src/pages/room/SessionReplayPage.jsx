@@ -19,11 +19,11 @@ import {
   ChevronRight,
   Info
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
+import { Button } from "@/components/ui/Button";
+import { Slider } from "@/components/ui/Slider";
 import { decryptData } from "@/lib/crypto";
 import api from "@/lib/api";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/useToast";
 
 export default function SessionReplayPage() {
   const { roomId } = useParams();

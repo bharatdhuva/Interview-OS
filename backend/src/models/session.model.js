@@ -1,4 +1,3 @@
-"use strict";
 /**
  * models/session.model.ts
  *
@@ -15,44 +14,9 @@
  *  - codeSnapshots  : refs to CodeSnapshot documents created during the session
  *  - whiteboardSnapshot : persisted Excalidraw state (Mixed schema for flexibility)
  */
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.InterviewSession = void 0;
-const mongoose_1 = __importStar(require("mongoose"));
-const interviewSessionSchema = new mongoose_1.Schema({
-    room: { type: mongoose_1.Schema.Types.ObjectId, ref: 'InterviewRoom', required: true },
+const mongoose = require("mongoose");
+const interviewSessionSchema = new mongoose.Schema({
+    room: { type: mongoose.Schema.Types.ObjectId, ref: 'InterviewRoom', required: true },
     startTime: { type: Date, default: Date.now },
     endTime: { type: Date },
     durationSeconds: { type: Number }, // set when endTime is recorded
@@ -60,14 +24,14 @@ const interviewSessionSchema = new mongoose_1.Schema({
     finalCode: { type: String },
     finalLanguage: { type: String },
     // References to individual code execution snapshots
-    codeSnapshots: [{ type: mongoose_1.Schema.Types.ObjectId, ref: 'CodeSnapshot' }],
+    codeSnapshots: [{ type: mongoose.Schema.Types.ObjectId, ref: 'CodeSnapshot' }],
     // Persisted Excalidraw canvas (Mixed allows arbitrary JSON shape)
-    whiteboardSnapshot: { type: mongoose_1.Schema.Types.Mixed },
+    whiteboardSnapshot: { type: mongoose.Schema.Types.Mixed },
     recordingUrl: { type: String },
     // Audit log of socket connection events
     connectionLog: [
         {
-            userId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User' },
+            userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
             event: { type: String, enum: ['joined', 'left', 'disconnected', 'reconnected'] },
             timestamp: { type: Date, default: Date.now },
         },
@@ -101,4 +65,4 @@ const interviewSessionSchema = new mongoose_1.Schema({
 }, {
     timestamps: true,
 });
-exports.InterviewSession = mongoose_1.default.model('InterviewSession', interviewSessionSchema);
+exports.InterviewSession = mongoose.model('InterviewSession', interviewSessionSchema);

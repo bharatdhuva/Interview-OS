@@ -1,4 +1,3 @@
-"use strict";
 /**
  * routes/user.route.ts
  *
@@ -12,15 +11,14 @@
  * GET    /:id/interviews    — completed interview history for the given user
  *                             (own history or admin can request any user’s)
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = require("express");
-const user_controller_1 = require("../controllers/user.controller");
-const auth_middleware_1 = require("../middleware/auth.middleware");
-const router = (0, express_1.Router)();
+const express = require("express");
+const userController = require("../controllers/user.controller");
+const authMiddleware = require("../middleware/auth.middleware");
+const router = express.Router();
 // All user routes require authentication
-router.use(auth_middleware_1.protect);
-router.get('/profile', user_controller_1.getProfile);
-router.patch('/profile', user_controller_1.updateProfile);
-router.patch('/password', user_controller_1.changePassword);
-router.get('/:id/interviews', user_controller_1.getInterviewHistory);
-exports.default = router;
+router.use(authMiddleware.protect);
+router.get('/profile', userController.getProfile);
+router.patch('/profile', userController.updateProfile);
+router.patch('/password', userController.changePassword);
+router.get('/:id/interviews', userController.getInterviewHistory);
+module.exports = router;

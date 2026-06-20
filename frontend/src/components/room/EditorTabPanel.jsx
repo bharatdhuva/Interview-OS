@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import Editor from "@monaco-editor/react";
 import { Code2, Play, Save, Brain, X, Terminal } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 import CustomSelect from "@/components/ui/CustomSelect";
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/Resizable";
 
 
 const languages = [

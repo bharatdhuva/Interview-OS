@@ -1,5 +1,5 @@
 import { Play, Save, RotateCcw, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import LanguageSelector from './LanguageSelector';
 export default function EditorToolbar({ language, onLanguageChange, onRun, onSave, onReset, isRunning, isSaving, lastSavedAt, }) {
     return (<div className="h-11 border-b border-border flex items-center justify-between px-3 bg-background/40 backdrop-blur-sm shrink-0">

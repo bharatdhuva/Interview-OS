@@ -1,4 +1,3 @@
-"use strict";
 /**
  * server.ts
  *
@@ -12,21 +11,17 @@
  *  4. Register all Socket.IO event handlers.
  *  5. Connect to MongoDB; only start listening once the DB is ready.
  */
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
 // ⚠️  env import must remain first — all other modules read process.env at load time
 require("./config/env");
-const http_1 = __importDefault(require("http"));
-const socket_io_1 = require("socket.io");
-const app_1 = __importDefault(require("./app"));
-const db_1 = require("./config/db");
-const logger_1 = __importDefault(require("./utils/logger"));
-const index_1 = require("./sockets/index");
+const http = require("http");
+const socketIo = require("socket.io");
+const app = require("./app");
+const db = require("./config/db");
+const logger = require("./utils/logger");
+const index = require("./sockets/index");
 const PORT = process.env.PORT || 8090;
 // Wrap the Express app in a Node.js HTTP server so Socket.IO can share the port
-const server = http_1.default.createServer(app_1.default);
+const server = http.createServer(app);
 // Initialise Socket.IO with CORS settings that mirror the REST API
 const allowedOrigins = [
     process.env.CLIENT_URL,
@@ -35,7 +30,7 @@ const allowedOrigins = [
     'http://localhost:5173',
 ].filter(Boolean);
 
-const io = new socket_io_1.Server(server, {
+const io = new socketIo.Server(server, {
     cors: {
         origin: (origin, callback) => {
             if (!origin) {
@@ -53,16 +48,16 @@ const io = new socket_io_1.Server(server, {
     },
 });
 // Register all real-time event handlers (chat, code, whiteboard, rtc, proctor)
-(0, index_1.initSocket)(io);
+index.initSocket(io);
 // Connect to MongoDB first; only bind the HTTP port on success.
 // If the DB is unreachable we exit immediately so the process manager restarts.
-(0, db_1.connectDB)()
+db.connectDB()
     .then(() => {
     server.listen(PORT, () => {
-        logger_1.default.info(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+        logger.info(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
     });
 })
     .catch((err) => {
-    logger_1.default.error('Failed to connect to database', err);
+    logger.error('Failed to connect to database', err);
     process.exit(1); // non-recoverable — let systemd / Docker restart the container
 });

@@ -2,7 +2,7 @@ const { ChatMessage } = require("../models/chatMessage.model");
 const { InterviewRoom } = require("../models/room.model");
 const { ReplayFrame } = require("../models/replayFrame.model");
 const { Violation } = require("../models/violation.model");
-const logger = require("../utils/logger").default;
+const logger = require("../utils/logger");
 const mongoose = require("mongoose");
 
 const socketRoomMap = new Map();

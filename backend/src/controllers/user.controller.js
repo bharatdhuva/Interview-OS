@@ -1,4 +1,3 @@
-"use strict";
 /**
  * controllers/user.controller.ts
  *
@@ -12,16 +11,11 @@
  *  PATCH  /api/v1/users/password           — changePassword
  *  GET    /api/v1/users/:id/interviews     — getInterviewHistory
  */
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.getInterviewHistory = exports.changePassword = exports.updateProfile = exports.getProfile = void 0;
-const bcrypt_1 = __importDefault(require("bcrypt"));
-const user_model_1 = require("../models/user.model");
-const room_model_1 = require("../models/room.model");
-const logger_1 = __importDefault(require("../utils/logger"));
-const user_validation_1 = require("../middleware/validation/user.validation");
+const bcrypt = require("bcrypt");
+const userModel = require("../models/user.model");
+const roomModel = require("../models/room.model");
+const logger = require("../utils/logger");
+const userValidation = require("../middleware/validation/user.validation");
 /**
  * GET /api/v1/users/profile
  *
@@ -29,11 +23,11 @@ const user_validation_1 = require("../middleware/validation/user.validation");
  */
 const getProfile = async (req, res) => {
     try {
-        const user = await user_model_1.User.findById(req.user.id).select('-passwordHash -refreshTokens');
+        const user = await userModel.User.findById(req.user.id).select('-passwordHash -refreshTokens');
         res.status(200).json({ success: true, data: user });
     }
     catch (error) {
-        logger_1.default.error('Error fetching profile', error);
+        logger.error('Error fetching profile', error);
         res.status(500).json({ success: false, message: 'Server error' });
     }
 };
@@ -46,12 +40,12 @@ exports.getProfile = getProfile;
  */
 const updateProfile = async (req, res) => {
     try {
-        const validatedData = user_validation_1.updateProfileSchema.parse(req.body);
-        const user = await user_model_1.User.findByIdAndUpdate(req.user.id, validatedData, { new: true, runValidators: true }).select('-passwordHash -refreshTokens');
+        const validatedData = userValidation.updateProfileSchema.parse(req.body);
+        const user = await userModel.User.findByIdAndUpdate(req.user.id, validatedData, { new: true, runValidators: true }).select('-passwordHash -refreshTokens');
         res.status(200).json({ success: true, data: user });
     }
     catch (error) {
-        logger_1.default.error('Error updating profile', error);
+        logger.error('Error updating profile', error);
         res.status(400).json({ success: false, message: error.message || 'Failed to update profile' });
     }
 };
@@ -65,24 +59,24 @@ exports.updateProfile = updateProfile;
  */
 const changePassword = async (req, res) => {
     try {
-        const validatedData = user_validation_1.changePasswordSchema.parse(req.body);
-        const user = await user_model_1.User.findById(req.user.id);
+        const validatedData = userValidation.changePasswordSchema.parse(req.body);
+        const user = await userModel.User.findById(req.user.id);
         if (!user) {
             res.status(404).json({ success: false, message: 'User not found' });
             return;
         }
         // Confirm the supplied current password matches the stored hash
-        const isMatch = await bcrypt_1.default.compare(validatedData.currentPassword, user.passwordHash);
+        const isMatch = await bcrypt.compare(validatedData.currentPassword, user.passwordHash);
         if (!isMatch) {
             res.status(400).json({ success: false, message: 'Incorrect current password' });
             return;
         }
-        user.passwordHash = await bcrypt_1.default.hash(validatedData.newPassword, 12);
+        user.passwordHash = await bcrypt.hash(validatedData.newPassword, 12);
         await user.save();
         res.status(200).json({ success: true, message: 'Password updated successfully' });
     }
     catch (error) {
-        logger_1.default.error('Error changing password', error);
+        logger.error('Error changing password', error);
         res.status(400).json({ success: false, message: error.message || 'Failed to change password' });
     }
 };
@@ -102,7 +96,7 @@ const getInterviewHistory = async (req, res) => {
             res.status(403).json({ success: false, message: 'Not authorized' });
             return;
         }
-        const rooms = await room_model_1.InterviewRoom.find({
+        const rooms = await roomModel.InterviewRoom.find({
             $or: [{ interviewer: req.params.id }, { candidate: req.params.id }],
             status: 'completed',
         })
@@ -112,7 +106,7 @@ const getInterviewHistory = async (req, res) => {
         res.status(200).json({ success: true, count: rooms.length, data: rooms });
     }
     catch (error) {
-        logger_1.default.error('Error fetching interview history', error);
+        logger.error('Error fetching interview history', error);
         res.status(500).json({ success: false, message: 'Server error' });
     }
 };
