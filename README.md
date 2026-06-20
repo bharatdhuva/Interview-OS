@@ -95,30 +95,6 @@ npm run dev
 
 Open [http://localhost:8080](http://localhost:8080) — create a room and start interviewing!
 
-### Quick Local Run (verified steps)
-
-1. Backend (runs on port 8090):
-
-```bash
-cd backend
-npm install
-# copy .env.example to .env and fill values as needed
-cp .env.example .env
-npm run dev
-```
-
-2. Frontend (runs on port 8080):
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Notes:
-- Do not commit your `.env` — it is ignored by the repo. I created a local `.env` to start the backend.
-- To have commits counted for your GitHub account, ensure `git config user.email` matches an email on your GitHub account, then commit and push to the repository.
-
 ---
 
 ## 🔑 Environment Variables
