@@ -142,17 +142,23 @@ Interview-OS/
 
 ---
 
-## 🗺️ Roadmap
+## 🗺️ Roadmap & Future Scope
 
-- [x] WebRTC P2P Video Calling
-- [x] Real-time Collaborative Editor (Monaco + Socket.IO)
-- [x] Excalidraw Shared Whiteboard (E2E encrypted)
-- [x] Judge0 Code Execution (7 languages + stdin)
-- [x] Real-time Chat + Structured Feedback
-- [x] Proctoring System (tab-switch, fullscreen, 3-strike auto-end)
-- [x] Session Replay (time-travel code + whiteboard playback)
-- [x] Code Snapshots (persisted per session)
-- [ ] Chrome Extension
+### Completed Core Features:
+- [x] **WebRTC P2P Video Calling**: High-quality P2P video and audio stream communication without Zoom dependencies.
+- [x] **Real-time Collaborative Editor**: Monaco Editor integrated with Socket.IO for real-time cursor sync.
+- [x] **Excalidraw Shared Whiteboard**: E2E encrypted canvas to draw system designs and flowcharts collaboratively.
+- [x] **Judge0 Code Execution**: Run code in 7+ languages (JS, Python, C++, Java, etc.) with custom stdin and live console logs.
+- [x] **Anti-Cheat Proctoring**: Tab-switch tracking, browser visibility checks, and fullscreen enforcement with a 3-strike auto-end system.
+- [x] **Session Replay**: Time-travel playback of code changes and whiteboard checkpoints for post-interview reviews.
+- [x] **Real-time Chat & Feedback**: Built-in chat inside interview rooms and structured feedback summaries.
+
+### 🔮 Future Scaling & Architectural Scope:
+- [ ] **Horizontal WebSocket Scaling**: Integrate a **Redis Pub/Sub adapter** to allow Socket.IO rooms to communicate across multiple instances behind a load balancer.
+- [ ] **AI-Powered Evaluation**: Build an LLM evaluation agent (OpenAI/Groq) that analyzes final code snapshots, chat logs, and compiles structural reports (efficiency, Big O complexity, communication style).
+- [ ] **CRDT Collaboration (Yjs)**: Implement Conflict-free Replicated Data Types (CRDTs) to handle high-frequency simultaneous typing and conflict resolution in the Monaco Editor.
+- [ ] **System Design Templates**: Add pre-built drag-and-drop structural components (databases, servers, cache, queues) to the Excalidraw canvas.
+- [ ] **Speech-to-Text Transcription**: Integrate the browser's native Web Speech API to auto-transcribe calls and build searchable meeting transcripts.
 
 ---
 
