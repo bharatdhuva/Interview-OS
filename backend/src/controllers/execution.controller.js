@@ -134,12 +134,11 @@ const executeCode = async (req, res) => {
             res.status(400).json({ success: false, message: `Unsupported language: ${language}` });
             return;
         }
-        const judgeApiUrl = process.env.JUDGE0_API_URL || 'https://ce.judge0.com';
+        let judgeApiUrl = process.env.JUDGE0_API_URL || 'https://ce.judge0.com';
         const apiKey = process.env.JUDGE0_API_KEY;
         if (isRapidApiJudge0(judgeApiUrl) && !apiKey) {
-            logger.error('JUDGE0_API_KEY is missing in environment variables');
-            res.status(500).json({ success: false, message: 'Code execution service unavailable' });
-            return;
+            logger.warn('JUDGE0_API_URL points to RapidAPI but JUDGE0_API_KEY is missing; falling back to public Judge0 CE endpoint');
+            judgeApiUrl = 'https://ce.judge0.com';
         }
         // Build the Judge0 submission payload
         const submissionParams = {
