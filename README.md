@@ -108,8 +108,8 @@ JWT_SECRET=
 JWT_REFRESH_SECRET=
 
 # Code Execution
-JUDGE0_API_URL=
-JUDGE0_API_KEY=
+JUDGE0_API_URL=https://ce.judge0.com
+JUDGE0_API_KEY= # only required for RapidAPI/custom secured Judge0 deployments
 
 # Client URL (frontend)
 CLIENT_URL=http://localhost:8080

@@ -134,7 +134,7 @@ const executeCode = async (req, res) => {
             res.status(400).json({ success: false, message: `Unsupported language: ${language}` });
             return;
         }
-        const judgeApiUrl = process.env.JUDGE0_API_URL || 'https://judge0-ce.p.rapidapi.com';
+        const judgeApiUrl = process.env.JUDGE0_API_URL || 'https://ce.judge0.com';
         const apiKey = process.env.JUDGE0_API_KEY;
         if (isRapidApiJudge0(judgeApiUrl) && !apiKey) {
             logger.error('JUDGE0_API_KEY is missing in environment variables');
