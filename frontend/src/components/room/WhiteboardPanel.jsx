@@ -65,7 +65,12 @@ const WhiteboardPanel = ({ roomId, isDark, socket, whiteboardKey }) => {
 
   // Sync state with socket (init and update listeners)
   useEffect(() => {
-    if (!socket || !excalidrawAPI || !roomId) return;
+    if (!excalidrawAPI || !roomId) return;
+
+    if (!socket) {
+      setSyncStatus("synced");
+      return;
+    }
 
     setSyncStatus("connecting");
 
@@ -276,7 +281,7 @@ const WhiteboardPanel = ({ roomId, isDark, socket, whiteboardKey }) => {
   };
 
   return (
-    <div className="w-full h-full relative border border-border rounded-xl overflow-hidden bg-background">
+    <div className="whiteboard-root w-full h-full min-h-[480px] relative border border-border rounded-xl overflow-hidden bg-background flex flex-col">
       {/* Floating Status Bar */}
       <div className="absolute top-4 right-4 z-50 flex items-center gap-2 px-3 py-1.5 rounded-full border bg-background/80 backdrop-blur-md text-xs font-medium shadow-lg select-none border-border">
         {syncStatus === "connecting" && (
@@ -300,22 +305,24 @@ const WhiteboardPanel = ({ roomId, isDark, socket, whiteboardKey }) => {
         )}
       </div>
 
-      <Excalidraw
-        excalidrawAPI={(api) => setExcalidrawAPI(api)}
-        onChange={handleChange}
-        theme={isDark ? "dark" : "light"}
-        gridModeEnabled={true}
-        UIOptions={{
-          canvasActions: {
-            saveToActiveFile: false,
-            loadScene: false,
-            export: {
-              saveFileToDisk: true,
+      <div className="flex-1 min-h-0 w-full relative">
+        <Excalidraw
+          excalidrawAPI={(api) => setExcalidrawAPI(api)}
+          onChange={handleChange}
+          theme={isDark ? "dark" : "light"}
+          gridModeEnabled={true}
+          UIOptions={{
+            canvasActions: {
+              saveToActiveFile: false,
+              loadScene: false,
+              export: {
+                saveFileToDisk: true,
+              },
+              themeSelection: false,
             },
-            themeSelection: false,
-          },
-        }}
-      />
+          }}
+        />
+      </div>
     </div>
   );
 };

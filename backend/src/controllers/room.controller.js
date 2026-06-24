@@ -202,6 +202,11 @@ const joinRoomViaToken = async (req, res) => {
             res.status(404).json({ success: false, message: 'Invalid or expired invite token' });
             return;
         }
+        if (!room.whiteboardKey) {
+            const secureKey = crypto.randomBytes(32).toString('hex');
+            await roomModel.InterviewRoom.updateOne({ _id: room._id }, { whiteboardKey: secureKey });
+            room.whiteboardKey = secureKey;
+        }
         if (room.inviteExpiresAt && new Date() > room.inviteExpiresAt) {
             res.status(400).json({ success: false, message: 'Invite token has expired' });
             return;

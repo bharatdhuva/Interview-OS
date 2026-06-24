@@ -684,4 +684,12 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 
 input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   background: hsl(var(--primary) / 0.15);
+}
+
+/* Excalidraw needs an explicit height chain in flex layouts (common prod issue) */
+.whiteboard-root,
+.whiteboard-root .excalidraw,
+.whiteboard-root .excalidraw-container {
+  height: 100%;
+  min-height: 0;
 }

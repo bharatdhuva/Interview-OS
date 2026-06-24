@@ -31,6 +31,7 @@ const allowedOrigins = [
 ].filter(Boolean);
 
 const io = new socketIo.Server(server, {
+    maxHttpBufferSize: parseInt(process.env.SOCKET_MAX_HTTP_BUFFER_SIZE || '10485760', 10),
     cors: {
         origin: (origin, callback) => {
             if (!origin) {

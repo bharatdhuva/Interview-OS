@@ -919,7 +919,7 @@ export default function InterviewRoom() {
   }, [roleOverride, roomId, user?.id, user?._id]);
 
   useEffect(() => {
-    if (!roomId || !localMediaReady) return;
+    if (!roomId) return;
 
     const socket = io(getSocketServerUrl(), {
       transports: ["websocket", "polling"],
@@ -940,6 +940,15 @@ export default function InterviewRoom() {
         camOn: camOnRef.current,
       });
       announceReadyIfPossible();
+    };
+
+    const onConnectError = (error) => {
+      console.error("Room socket connection failed", error);
+      toast({
+        title: "Realtime connection failed",
+        description: "Whiteboard, chat, and participant updates are reconnecting.",
+        variant: "destructive",
+      });
     };
 
     const onUserList = ({ users }) => {
@@ -1270,6 +1279,7 @@ export default function InterviewRoom() {
     };
 
     socket.on("connect", onConnect);
+    socket.on("connect_error", onConnectError);
     socket.on("room:user-list", onUserList);
     socket.on("chat:message", onChatMessage);
     socket.on("chat:history", onChatHistory);
@@ -1294,6 +1304,7 @@ export default function InterviewRoom() {
         });
       }
       socket.off("connect", onConnect);
+      socket.off("connect_error", onConnectError);
       socket.off("room:user-list", onUserList);
       socket.off("chat:message", onChatMessage);
       socket.off("chat:history", onChatHistory);
@@ -1322,7 +1333,6 @@ export default function InterviewRoom() {
     roomLocked,
     navigate,
     toast,
-    localMediaReady,
   ]);
 
   const elapsedSeconds = Math.max(0, totalDurationSeconds - timer);
@@ -2179,25 +2189,23 @@ export default function InterviewRoom() {
 
                 {/* TAB: Whiteboard view */}
                 {activeTab === "whiteboard" && (
-                  <div className="flex-1 bg-background pb-20 relative overflow-hidden">
+                  <div className="flex-1 min-h-0 h-full bg-background pb-20 relative overflow-hidden">
                     <React.Suspense fallback={
-                      <div className="flex-1 flex items-center justify-center select-none text-xs text-muted-foreground">
+                      <div className="absolute inset-0 flex items-center justify-center select-none text-xs text-muted-foreground">
                         <div className="flex flex-col items-center gap-2">
                           <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
                           <span>Loading Whiteboard...</span>
                         </div>
                       </div>
                     }>
-                      {whiteboardKey ? (
-                        <WhiteboardPanel isDark={isDark} roomId={roomId} socket={activeSocket} whiteboardKey={whiteboardKey} />
-                      ) : (
-                        <div className="flex-1 flex flex-col items-center justify-center select-none text-xs text-muted-foreground">
-                          <div className="flex flex-col items-center gap-2">
-                            <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-                            <span>Loading Encryption Keys...</span>
-                          </div>
-                        </div>
-                      )}
+                      <div className="absolute inset-0 bottom-20 p-3 min-h-0">
+                        <WhiteboardPanel
+                          isDark={isDark}
+                          roomId={roomId}
+                          socket={activeSocket}
+                          whiteboardKey={whiteboardKey || null}
+                        />
+                      </div>
                     </React.Suspense>
                   </div>
                 )}

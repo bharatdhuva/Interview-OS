@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "VITE_API_URL=https://interview-os-backend-2waa.onrender.com/api/v1 VITE_GOOGLE_CLIENT_ID=137235712014-pek2h9a7i1ejpld0847ge4jv8e0d6ha4.apps.googleusercontent.com npm run build",
+  "buildCommand": "VITE_API_URL=https://interview-os-backend-2waa.onrender.com/api/v1 VITE_SOCKET_URL=https://interview-os-backend-2waa.onrender.com VITE_GOOGLE_CLIENT_ID=137235712014-pek2h9a7i1ejpld0847ge4jv8e0d6ha4.apps.googleusercontent.com npm run build",
   "outputDirectory": "dist",
   "rewrites": [
     {
@@ -45,7 +45,8 @@
     }
   ],
   "env": {
-    "VITE_API_URL": "https://interview-os-backend-2waa.onrender.com/api/v1"
+    "VITE_API_URL": "https://interview-os-backend-2waa.onrender.com/api/v1",
+    "VITE_SOCKET_URL": "https://interview-os-backend-2waa.onrender.com"
   },
   "regions": ["iad1"],
   "git": {
