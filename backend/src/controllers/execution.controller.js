@@ -32,6 +32,58 @@ const languageMap = {
     go: 95,
     rust: 73,
 };
+
+const isRapidApiJudge0 = (judgeApiUrl) => {
+    try {
+        return new URL(judgeApiUrl).hostname.endsWith('rapidapi.com');
+    }
+    catch {
+        return false;
+    }
+};
+
+const buildJudge0Headers = (judgeApiUrl) => {
+    const apiKey = process.env.JUDGE0_API_KEY;
+    const headers = {
+        'Content-Type': 'application/json',
+    };
+
+    if (apiKey) {
+        headers['X-RapidAPI-Key'] = apiKey;
+        headers['X-RapidAPI-Host'] = new URL(judgeApiUrl).hostname;
+    }
+
+    return headers;
+};
+
+const resolveActiveSession = async ({ room, sessionId }) => {
+    if (sessionId && mongoose.Types.ObjectId.isValid(sessionId)) {
+        const requestedSession = await sessionModel.InterviewSession.findOne({
+            _id: sessionId,
+            room: room._id,
+            endTime: { $exists: false },
+        });
+        if (requestedSession) {
+            return requestedSession;
+        }
+    }
+
+    let activeSession = await sessionModel.InterviewSession.findOne({
+        room: room._id,
+        endTime: { $exists: false },
+    }).sort({ startTime: -1 });
+
+    if (!activeSession && room.status === 'active') {
+        activeSession = await sessionModel.InterviewSession.create({
+            room: room._id,
+            startTime: new Date(),
+        });
+        logger.info(`Recovered missing active session for room ${room.roomId} / ${room._id}`);
+    }
+
+    return activeSession;
+};
+
 /**
  * POST /api/v1/rooms/:roomId/code/execute
  *
@@ -57,13 +109,6 @@ const executeCode = async (req, res) => {
             res.status(404).json({ success: false, message: 'Room not found' });
             return;
         }
-        const resolvedSession = sessionId
-            ? await sessionModel.InterviewSession.findById(sessionId)
-            : await sessionModel.InterviewSession.findOne({ room: room._id, endTime: { $exists: false } }).sort({ startTime: -1 });
-        if (!resolvedSession) {
-            res.status(400).json({ success: false, message: 'No active session found for this room' });
-            return;
-        }
         // Only room participants (or admins) may execute code
         const userId = req.user.id;
         const isParticipant = room.interviewer.toString() === userId ||
@@ -78,6 +123,11 @@ const executeCode = async (req, res) => {
             res.status(400).json({ success: false, message: 'Code execution is only allowed during an active session' });
             return;
         }
+        const resolvedSession = await resolveActiveSession({ room, sessionId });
+        if (!resolvedSession) {
+            res.status(400).json({ success: false, message: 'No active session found for this room' });
+            return;
+        }
         // Resolve the language name to a Judge0 language ID
         const languageId = languageMap[language.toLowerCase()];
         if (!languageId) {
@@ -86,7 +136,7 @@ const executeCode = async (req, res) => {
         }
         const judgeApiUrl = process.env.JUDGE0_API_URL || 'https://judge0-ce.p.rapidapi.com';
         const apiKey = process.env.JUDGE0_API_KEY;
-        if (!apiKey) {
+        if (isRapidApiJudge0(judgeApiUrl) && !apiKey) {
             logger.error('JUDGE0_API_KEY is missing in environment variables');
             res.status(500).json({ success: false, message: 'Code execution service unavailable' });
             return;
@@ -97,11 +147,7 @@ const executeCode = async (req, res) => {
             language_id: languageId,
             stdin: req.body.stdin || '', // optional user-supplied input
         };
-        const headers = {
-            'Content-Type': 'application/json',
-            'X-RapidAPI-Key': apiKey,
-            'X-RapidAPI-Host': new URL(judgeApiUrl).hostname,
-        };
+        const headers = buildJudge0Headers(judgeApiUrl);
         // Use wait=true so Judge0 returns the result directly (no polling needed)
         const submitResponse = await axios.post(`${judgeApiUrl}/submissions?base64_encoded=false&wait=true`, submissionParams, { headers, timeout: 10000 });
         const result = submitResponse.data;
@@ -146,8 +192,12 @@ const executeCode = async (req, res) => {
         });
     }
     catch (error) {
+        const upstreamMessage = error.response?.data?.message || error.response?.data?.error || error.message;
         logger.error('Execute code error', error.response?.data || error.message);
-        res.status(500).json({ success: false, message: 'Failed to execute code' });
+        res.status(502).json({
+            success: false,
+            message: upstreamMessage ? `Code execution service error: ${upstreamMessage}` : 'Failed to execute code',
+        });
     }
 };
 exports.executeCode = executeCode;
