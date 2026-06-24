@@ -32,6 +32,25 @@ const mergeElements = (localElements, remoteElements) => {
   return result;
 };
 
+const normalizeElementsPayload = async (payload, whiteboardKey) => {
+  if (!payload) return [];
+  const data = whiteboardKey ? await decryptData(payload, whiteboardKey) : payload;
+
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.elements)) return data.elements;
+  if (typeof data === "string") {
+    try {
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed)) return parsed;
+      if (Array.isArray(parsed?.elements)) return parsed.elements;
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
+};
+
 const WhiteboardPanel = ({ roomId, isDark, socket, whiteboardKey }) => {
   const [excalidrawAPI, setExcalidrawAPI] = useState(null);
   const [syncStatus, setSyncStatus] = useState("connecting"); // "connecting" | "synced" | "syncing" | "saving" | "error"
@@ -75,10 +94,7 @@ const WhiteboardPanel = ({ roomId, isDark, socket, whiteboardKey }) => {
           return;
         }
         try {
-          const decrypted = await decryptData(elements, whiteboardKey);
-          const initEls = Array.isArray(decrypted) 
-            ? decrypted 
-            : (decrypted?.elements || []);
+          const initEls = await normalizeElementsPayload(elements, whiteboardKey);
           
           // Initialize version map
           knownVersionsRef.current.clear();

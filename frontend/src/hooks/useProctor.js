@@ -1,10 +1,22 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useToast } from '@/hooks/useToast';
-export const useProctor = ({ roomId, onViolation, onEndSession, maxViolations = 3, isEnabled = true } = {}) => {
+
+export const useProctor = ({ roomId, onViolation, onEndSession, maxViolations = 3, isEnabled = true, gracePeriodMs = 20000 } = {}) => {
     const [violationCount, setViolationCount] = useState(0);
     const { toast } = useToast();
+    const mountedAtRef = useRef(Date.now());
+    const lastViolationAtRef = useRef(0);
+    const sessionEndedRef = useRef(false);
+
     const triggerWarning = useCallback((type) => {
-        if (!isEnabled) return;
+        if (!isEnabled || sessionEndedRef.current) return;
+
+        const now = Date.now();
+        if (now - mountedAtRef.current < gracePeriodMs) return;
+        if (now - lastViolationAtRef.current < 1500) return;
+
+        lastViolationAtRef.current = now;
+
         setViolationCount((prev) => {
             const nextCount = prev + 1;
             let title = "Violation Detected";
@@ -39,6 +51,7 @@ export const useProctor = ({ roomId, onViolation, onEndSession, maxViolations = 
             if (onViolation)
                 onViolation(type, nextCount);
             if (nextCount >= maxViolations) {
+                sessionEndedRef.current = true;
                 toast({
                     title: "Session Terminated",
                     description: "Maximum violations reached. The session will now close.",
@@ -49,7 +62,8 @@ export const useProctor = ({ roomId, onViolation, onEndSession, maxViolations = 
             }
             return nextCount;
         });
-    }, [isEnabled, maxViolations, onViolation, onEndSession, toast]);
+    }, [isEnabled, maxViolations, onViolation, onEndSession, toast, gracePeriodMs]);
+
     useEffect(() => {
         if (!isEnabled) return;
         const handleFullscreenChange = () => {
@@ -62,19 +76,14 @@ export const useProctor = ({ roomId, onViolation, onEndSession, maxViolations = 
                 triggerWarning('tab_switch');
             }
         };
-        const handleBlur = () => {
-            triggerWarning('window_blur');
-        };
-        // Listeners
         document.addEventListener('fullscreenchange', handleFullscreenChange);
         document.addEventListener('visibilitychange', handleVisibilityChange);
-        window.addEventListener('blur', handleBlur);
         return () => {
             document.removeEventListener('fullscreenchange', handleFullscreenChange);
             document.removeEventListener('visibilitychange', handleVisibilityChange);
-            window.removeEventListener('blur', handleBlur);
         };
     }, [isEnabled, triggerWarning]);
+
     const enterFullscreen = useCallback(() => {
         if (!isEnabled) return;
         if (!document.fullscreenElement) {
@@ -83,6 +92,7 @@ export const useProctor = ({ roomId, onViolation, onEndSession, maxViolations = 
             });
         }
     }, [isEnabled]);
+
     return {
         violationCount,
         triggerWarning,

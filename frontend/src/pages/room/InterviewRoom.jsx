@@ -232,10 +232,17 @@ const useSpeechDetector = (stream, onSpeechToggle) => {
 
 const RemoteVideo = ({ stream, camOn }) => {
   const videoRef = useRef(null);
+  const showVideo = Boolean(
+    stream &&
+    camOn &&
+    stream.getVideoTracks().some((track) => track.enabled && track.readyState === "live")
+  );
+
   useEffect(() => {
-    if (videoRef.current && stream) {
-      videoRef.current.srcObject = stream;
-    }
+    const videoEl = videoRef.current;
+    if (!videoEl || !stream) return;
+    videoEl.srcObject = stream;
+    videoEl.play().catch(() => {});
   }, [stream]);
 
   return (
@@ -243,7 +250,7 @@ const RemoteVideo = ({ stream, camOn }) => {
       ref={videoRef}
       autoPlay
       playsInline
-      className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-200 ${camOn ? "opacity-100" : "opacity-0"}`}
+      className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-200 ${showVideo ? "opacity-100" : "opacity-0"}`}
     />
   );
 };
@@ -251,6 +258,22 @@ const RemoteVideo = ({ stream, camOn }) => {
 const VideoTile = ({ participant, isLocal, localVideoRef, hasHand }) => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   useSpeechDetector(participant.stream, setIsSpeaking);
+
+  const bindLocalVideo = useCallback((node) => {
+    if (localVideoRef) {
+      localVideoRef.current = node;
+    }
+    if (node && participant.stream) {
+      node.srcObject = participant.stream;
+      node.play().catch(() => {});
+    }
+  }, [localVideoRef, participant.stream]);
+
+  useEffect(() => {
+    if (!isLocal || !localVideoRef?.current || !participant.stream) return;
+    localVideoRef.current.srcObject = participant.stream;
+    localVideoRef.current.play().catch(() => {});
+  }, [isLocal, participant.stream, localVideoRef]);
 
   return (
     <motion.div
@@ -281,7 +304,7 @@ const VideoTile = ({ participant, isLocal, localVideoRef, hasHand }) => {
       <div className="flex-1 relative flex flex-col items-center justify-center min-h-0 h-full w-full">
         {isLocal ? (
           <video
-            ref={localVideoRef}
+            ref={bindLocalVideo}
             autoPlay
             muted
             playsInline
@@ -292,7 +315,7 @@ const VideoTile = ({ participant, isLocal, localVideoRef, hasHand }) => {
         )}
 
         {/* Soft bottom overlay gradient for readability */}
-        {participant.camOn && (
+        {participant.camOn && participant.stream && (
           <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/45 to-transparent pointer-events-none z-10" />
         )}
 
@@ -317,6 +340,22 @@ const VideoTile = ({ participant, isLocal, localVideoRef, hasHand }) => {
 
             <span className="text-[9px] font-extrabold text-primary/80 dark:text-primary/95 px-2.5 py-1 rounded-full bg-primary/10 dark:bg-primary/15 border border-primary/20 dark:border-primary/30 mt-4 uppercase tracking-widest shadow-sm select-none z-10">
               Camera Off
+            </span>
+          </div>
+        )}
+
+        {!isLocal && participant.camOn && !participant.stream && (
+          <div className="flex flex-col items-center justify-center z-10 select-none relative w-full h-full">
+            <div className="absolute w-36 h-36 rounded-full bg-primary/10 dark:bg-primary/5 blur-2xl pointer-events-none" />
+            <div className="relative flex items-center justify-center">
+              <div className="w-16 h-16 rounded-full bg-secondary/80 dark:bg-muted/90 border border-border/80 dark:border-border/30 flex items-center justify-center p-1 relative shadow-inner z-10">
+                <div className="w-full h-full rounded-full bg-gradient-to-tr from-primary/30 via-primary/15 to-primary/5 dark:from-primary/40 dark:via-primary/20 dark:to-primary/10 flex items-center justify-center text-primary text-xl font-black shadow-md border border-primary/20">
+                  <span className="font-display tracking-wide">{getInitials(participant.userName)}</span>
+                </div>
+              </div>
+            </div>
+            <span className="text-[9px] font-extrabold text-primary/80 dark:text-primary/95 px-2.5 py-1 rounded-full bg-primary/10 dark:bg-primary/15 border border-primary/20 dark:border-primary/30 mt-4 uppercase tracking-widest shadow-sm select-none z-10 animate-pulse">
+              Connecting…
             </span>
           </div>
         )}
@@ -380,6 +419,17 @@ const getSocketServerUrl = () => {
   return apiBase.replace(/\/api\/v1\/?$/, "");
 };
 
+const shouldStartNegotiation = (peer) => {
+  if (!peer) return false;
+  const { connectionState, signalingState } = peer;
+  if (connectionState === "connected" || connectionState === "connecting") return false;
+  if (signalingState !== "stable") return false;
+  if (peer.currentRemoteDescription) return false;
+  return true;
+};
+
+const normalizePeerUserId = (userId) => String(userId ?? "");
+
 export default function InterviewRoom() {
   const { roomId } = useParams();
   const roleParam = new URLSearchParams(window.location.search).get("role");
@@ -395,6 +445,7 @@ export default function InterviewRoom() {
   const [activeTab, setActiveTab] = useState("video");
   const [isDark, setIsDark] = useState(document.documentElement.classList.contains("dark"));
   const [localMediaReady, setLocalMediaReady] = useState(false);
+  const [localStream, setLocalStream] = useState(null);
 
   useEffect(() => {
     const observer = new MutationObserver(() => {
@@ -506,6 +557,7 @@ export default function InterviewRoom() {
   // Raise hand state map
   const [raisedHands, setRaisedHands] = useState({});
 
+  const identityRef = useRef(null);
   const [identity, setIdentity] = useState(() => {
     const fallbackName = user?.name || "Candidate";
     const fallbackRole = roleOverride || user?.role || "candidate";
@@ -538,6 +590,7 @@ export default function InterviewRoom() {
       role: fallbackRole,
     };
   });
+  identityRef.current = identity;
 
   const { violationCount, enterFullscreen } = useProctor({
     roomId,
@@ -605,17 +658,18 @@ export default function InterviewRoom() {
 
   // Peer Connection management helpers
   const cleanupPeerConnectionForUser = useCallback((userId) => {
-    const pc = peerConnectionsRef.current[userId];
+    const peerId = normalizePeerUserId(userId);
+    const pc = peerConnectionsRef.current[peerId];
     if (pc) {
       pc.ontrack = null;
       pc.onicecandidate = null;
       pc.close();
-      delete peerConnectionsRef.current[userId];
+      delete peerConnectionsRef.current[peerId];
     }
     setRemoteStreams((prev) => {
-      if (!prev[userId]) return prev;
+      if (!prev[peerId]) return prev;
       const next = { ...prev };
-      delete next[userId];
+      delete next[peerId];
       return next;
     });
   }, []);
@@ -640,8 +694,9 @@ export default function InterviewRoom() {
   }, [identity.userId, roomId]);
 
   const buildPeerConnection = useCallback((targetUserId) => {
-    if (peerConnectionsRef.current[targetUserId]) {
-      return peerConnectionsRef.current[targetUserId];
+    const peerId = normalizePeerUserId(targetUserId);
+    if (peerConnectionsRef.current[peerId]) {
+      return peerConnectionsRef.current[peerId];
     }
 
     const peer = new RTCPeerConnection({
@@ -658,15 +713,16 @@ export default function InterviewRoom() {
         roomId,
         candidate: event.candidate,
         fromUserId: identity.userId,
-        toUserId: targetUserId,
+        toUserId: peerId,
       });
     };
 
     peer.ontrack = (event) => {
-      const [stream] = event.streams;
+      const stream = event.streams[0] || (event.track ? new MediaStream([event.track]) : null);
+      if (!stream) return;
       setRemoteStreams((prev) => ({
         ...prev,
-        [targetUserId]: stream,
+        [peerId]: stream,
       }));
     };
 
@@ -684,69 +740,99 @@ export default function InterviewRoom() {
       });
     }
 
-    peerConnectionsRef.current[targetUserId] = peer;
+    const hasOutgoingVideo = peer.getSenders().some((sender) => sender.track?.kind === "video");
+    const hasOutgoingAudio = peer.getSenders().some((sender) => sender.track?.kind === "audio");
+    if (!hasOutgoingVideo) {
+      peer.addTransceiver("video", { direction: localStream?.getVideoTracks().length ? "sendrecv" : "recvonly" });
+    }
+    if (!hasOutgoingAudio) {
+      peer.addTransceiver("audio", { direction: localStream?.getAudioTracks().length ? "sendrecv" : "recvonly" });
+    }
+
+    peerConnectionsRef.current[peerId] = peer;
     return peer;
   }, [identity.userId, roomId]);
 
   const startOffer = useCallback(async (toUserId) => {
-    if (!toUserId || toUserId === identity.userId) return;
-    if (!localStreamRef.current) return;
+    if (!toUserId || normalizePeerUserId(toUserId) === normalizePeerUserId(identity.userId)) return;
 
     const peer = buildPeerConnection(toUserId);
-    const offer = await peer.createOffer();
-    await peer.setLocalDescription(offer);
-    socketRef.current?.emit("webrtc:offer", {
-      roomId,
-      offer,
-      fromUserId: identity.userId,
-      toUserId,
-    });
+    if (!shouldStartNegotiation(peer)) return;
+
+    try {
+      const offer = await peer.createOffer();
+      await peer.setLocalDescription(offer);
+      socketRef.current?.emit("webrtc:offer", {
+        roomId,
+        offer,
+        fromUserId: identity.userId,
+        toUserId: normalizePeerUserId(toUserId),
+      });
+    } catch (error) {
+      console.error("Failed to create WebRTC offer", error);
+    }
   }, [buildPeerConnection, identity.userId, roomId]);
 
   useEffect(() => {
+    const applyMediaState = (stream, hasVideo) => {
+      localStreamRef.current = stream;
+      setLocalStream(stream);
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = stream;
+        localVideoRef.current.play().catch(() => {});
+      }
+      const actualMic = stream.getAudioTracks().some((track) => track.enabled);
+      const actualCam = hasVideo && stream.getVideoTracks().some((track) => track.enabled);
+      setMicOn(actualMic);
+      setCamOn(actualCam);
+      if (socketRef.current?.connected) {
+        socketRef.current.emit("room:media-toggle", {
+          roomId,
+          userId: identity.userId,
+          micOn: actualMic,
+          camOn: actualCam,
+        });
+      }
+    };
+
     const startLocalMedia = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-        localStreamRef.current = stream;
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = stream;
-        }
-        const actualMic = stream.getAudioTracks().some((track) => track.enabled);
-        const actualCam = stream.getVideoTracks().some((track) => track.enabled);
-        setMicOn(actualMic);
-        setCamOn(actualCam);
-        if (socketRef.current?.connected) {
-          socketRef.current.emit("room:media-toggle", {
-            roomId,
-            userId: identity.userId,
-            micOn: actualMic,
-            camOn: actualCam,
-          });
-        }
+        applyMediaState(stream, true);
       } catch {
-        setMicOn(false);
-        setCamOn(false);
-        if (socketRef.current?.connected) {
-          socketRef.current.emit("room:media-toggle", {
-            roomId,
-            userId: identity.userId,
-            micOn: false,
-            camOn: false,
+        try {
+          const audioOnly = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+          applyMediaState(audioOnly, false);
+          toast({
+            title: "Camera unavailable",
+            description: "Microphone connected. You can still join the call and see others.",
+            variant: "destructive",
+          });
+        } catch {
+          setMicOn(false);
+          setCamOn(false);
+          if (socketRef.current?.connected) {
+            socketRef.current.emit("room:media-toggle", {
+              roomId,
+              userId: identity.userId,
+              micOn: false,
+              camOn: false,
+            });
+          }
+          toast({
+            title: "Media access denied",
+            description: "Allow microphone access to join the call. You can still watch the interviewer.",
+            variant: "destructive",
           });
         }
-        toast({
-          title: "Media access denied",
-          description: "Camera and microphone access is required for live interview calls.",
-          variant: "destructive",
-        });
       } finally {
         setLocalMediaReady(true);
         announceReadyIfPossible();
         // Send offers to any already connected users if we should initiate
         setConnectedUsers((currentList) => {
           currentList.forEach((remoteUser) => {
-            if (String(remoteUser.userId) !== String(identity.userId)) {
-              const shouldInitiate = String(identity.userId) > String(remoteUser.userId);
+            if (normalizePeerUserId(remoteUser.userId) !== normalizePeerUserId(identity.userId)) {
+              const shouldInitiate = normalizePeerUserId(identity.userId) > normalizePeerUserId(remoteUser.userId);
               if (shouldInitiate) {
                 startOffer(remoteUser.userId).catch(() => { });
               }
@@ -762,6 +848,7 @@ export default function InterviewRoom() {
     return () => {
       localStreamRef.current?.getTracks().forEach((track) => track.stop());
       localStreamRef.current = null;
+      setLocalStream(null);
       if (screenStreamRef.current) {
         screenStreamRef.current.getTracks().forEach((track) => track.stop());
         screenStreamRef.current = null;
@@ -829,7 +916,7 @@ export default function InterviewRoom() {
       }
     };
     loadRoom();
-  }, [identity.userId, roleOverride, roomId, user?.id, user?._id]);
+  }, [roleOverride, roomId, user?.id, user?._id]);
 
   useEffect(() => {
     if (!roomId || !localMediaReady) return;
@@ -843,11 +930,12 @@ export default function InterviewRoom() {
     setActiveSocket(socket);
 
     const onConnect = () => {
+      const currentIdentity = identityRef.current;
       socket.emit("room:join", {
         roomId,
-        userId: identity.userId,
-        role: identity.role,
-        userName: identity.userName,
+        userId: currentIdentity.userId,
+        role: currentIdentity.role,
+        userName: currentIdentity.userName,
         micOn: micOnRef.current,
         camOn: camOnRef.current,
       });
@@ -875,18 +963,18 @@ export default function InterviewRoom() {
       const remoteUsers = list.filter((entry) => String(entry.userId) !== String(identity.userId));
 
       // Cleanup left peers
-      const remoteUserIds = new Set(remoteUsers.map((u) => u.userId));
+      const remoteUserIds = new Set(remoteUsers.map((u) => normalizePeerUserId(u.userId)));
       Object.keys(peerConnectionsRef.current).forEach((userId) => {
-        if (!remoteUserIds.has(userId)) {
+        if (!remoteUserIds.has(normalizePeerUserId(userId))) {
           cleanupPeerConnectionForUser(userId);
         }
       });
 
-      // Peer connect
+      // Peer connect — only negotiate if not already connected (user-list also fires on mic/cam toggles)
       remoteUsers.forEach((remoteUser) => {
-        const peer = buildPeerConnection(remoteUser.userId);
+        buildPeerConnection(remoteUser.userId);
         const shouldInitiate = String(identity.userId) > String(remoteUser.userId);
-        if (shouldInitiate && peer.signalingState === "stable") {
+        if (shouldInitiate) {
           startOffer(remoteUser.userId).catch(() => { });
         }
       });
@@ -944,35 +1032,49 @@ export default function InterviewRoom() {
 
     const onOffer = async ({ offer, fromUserId }) => {
       if (!offer || !fromUserId || String(fromUserId) === String(identity.userId)) return;
-      const peer = buildPeerConnection(fromUserId);
-      await peer.setRemoteDescription(new RTCSessionDescription(offer));
+      try {
+        const peer = buildPeerConnection(fromUserId);
 
-      // Process queued candidates
-      if (peer.iceQueue && peer.iceQueue.length > 0) {
-        for (const candidate of peer.iceQueue) {
-          try {
-            await peer.addIceCandidate(new RTCIceCandidate(candidate));
-          } catch (e) {
-            console.error("Error adding queued ice candidate", e);
-          }
+        // Higher userId is the designated initiator — ignore glare from the lower-id peer
+        if (peer.signalingState === "have-local-offer" && String(identity.userId) > String(fromUserId)) {
+          return;
         }
-        peer.iceQueue = [];
-      }
+        if (peer.signalingState === "have-local-offer") {
+          await peer.setLocalDescription({ type: "rollback" });
+        }
 
-      const answer = await peer.createAnswer();
-      await peer.setLocalDescription(answer);
-      socket.emit("webrtc:answer", {
-        roomId,
-        answer,
-        fromUserId: identity.userId,
-        toUserId: fromUserId,
-      });
+        await peer.setRemoteDescription(new RTCSessionDescription(offer));
+
+        // Process queued candidates
+        if (peer.iceQueue && peer.iceQueue.length > 0) {
+          for (const candidate of peer.iceQueue) {
+            try {
+              await peer.addIceCandidate(new RTCIceCandidate(candidate));
+            } catch (e) {
+              console.error("Error adding queued ice candidate", e);
+            }
+          }
+          peer.iceQueue = [];
+        }
+
+        const answer = await peer.createAnswer();
+        await peer.setLocalDescription(answer);
+        socket.emit("webrtc:answer", {
+          roomId,
+          answer,
+          fromUserId: identity.userId,
+          toUserId: fromUserId,
+        });
+      } catch (error) {
+        console.error("Error handling WebRTC offer", error);
+      }
     };
 
     const onAnswer = async ({ answer, fromUserId }) => {
       if (!answer || !fromUserId) return;
-      const pc = peerConnectionsRef.current[fromUserId];
-      if (pc) {
+      const pc = peerConnectionsRef.current[normalizePeerUserId(fromUserId)];
+      if (!pc) return;
+      try {
         await pc.setRemoteDescription(new RTCSessionDescription(answer));
 
         // Process queued candidates
@@ -986,12 +1088,14 @@ export default function InterviewRoom() {
           }
           pc.iceQueue = [];
         }
+      } catch (error) {
+        console.error("Error handling WebRTC answer", error);
       }
     };
 
     const onIceCandidate = async ({ candidate, fromUserId }) => {
       if (!candidate || !fromUserId) return;
-      const pc = peerConnectionsRef.current[fromUserId];
+      const pc = peerConnectionsRef.current[normalizePeerUserId(fromUserId)];
       if (pc) {
         try {
           if (pc.remoteDescription && pc.remoteDescription.type) {
@@ -1213,7 +1317,6 @@ export default function InterviewRoom() {
     cleanupAllPeerConnections,
     identity.role,
     identity.userId,
-    identity.userName,
     roomId,
     startOffer,
     roomLocked,
@@ -1420,10 +1523,44 @@ export default function InterviewRoom() {
     });
   };
 
-  const handleToggleCam = () => {
-    const stream = localStreamRef.current;
-    if (!stream) return;
+  const handleToggleCam = async () => {
+    let stream = localStreamRef.current;
     const nextCam = !camOn;
+
+    if (nextCam && (!stream || stream.getVideoTracks().length === 0)) {
+      try {
+        const videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const videoTrack = videoStream.getVideoTracks()[0];
+        if (stream) {
+          stream.addTrack(videoTrack);
+        } else {
+          stream = new MediaStream([videoTrack]);
+          localStreamRef.current = stream;
+          setLocalStream(stream);
+        }
+        Object.values(peerConnectionsRef.current).forEach((pc) => {
+          const videoSender = pc.getSenders().find((s) => s.track?.kind === "video");
+          if (videoSender) {
+            videoSender.replaceTrack(videoTrack);
+          } else {
+            pc.addTrack(videoTrack, stream);
+          }
+        });
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = stream;
+          localVideoRef.current.play().catch(() => {});
+        }
+      } catch {
+        toast({
+          title: "Camera unavailable",
+          description: "Could not access your camera. Check browser permissions.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    if (!stream) return;
     stream.getVideoTracks().forEach((track) => {
       track.enabled = nextCam;
     });
@@ -1643,7 +1780,7 @@ export default function InterviewRoom() {
       userId: identity.userId,
       userName: identity.userName + " (You)",
       role: identity.role,
-      stream: localStreamRef.current,
+      stream: localStream,
       isLocal: true,
       micOn: micOn,
       camOn: camOn,
@@ -1654,7 +1791,7 @@ export default function InterviewRoom() {
         userId: u.userId,
         userName: u.userName || "Participant",
         role: u.role,
-        stream: remoteStreams[u.userId],
+        stream: remoteStreams[normalizePeerUserId(u.userId)],
         isLocal: false,
         micOn: u.micOn !== false,
         camOn: u.camOn !== false,
