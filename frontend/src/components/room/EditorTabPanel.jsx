@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import Editor from "@monaco-editor/react";
-import { Code2, Play, Save, Brain, X, Terminal } from "lucide-react";
+import { Code2, Play, Save, X, Terminal } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import CustomSelect from "@/components/ui/CustomSelect";
@@ -69,14 +69,7 @@ export default function EditorTabPanel({
               <Save className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">{isSaving ? "Saving..." : "Save"}</span>
             </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-8 text-[11px] gap-1.5 hover:bg-primary/10 hover:text-primary active:scale-95 transition-all"
-            >
-              <Brain className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">AI</span>
-            </Button>
+
             {lastSavedAt && (
               <span className="hidden md:inline text-[10px] text-muted-foreground mr-1.5">
                 Saved {lastSavedAt}

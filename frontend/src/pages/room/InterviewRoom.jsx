@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Mic,
   MicOff,
-  Brain,
   Video as VideoIcon,
   VideoOff,
   Monitor,
@@ -695,8 +694,12 @@ export default function InterviewRoom() {
 
   const buildPeerConnection = useCallback((targetUserId) => {
     const peerId = normalizePeerUserId(targetUserId);
-    if (peerConnectionsRef.current[peerId]) {
-      return peerConnectionsRef.current[peerId];
+    const existingPc = peerConnectionsRef.current[peerId];
+    if (existingPc) {
+      if (existingPc.connectionState !== "failed" && existingPc.connectionState !== "closed") {
+        return existingPc;
+      }
+      cleanupPeerConnectionForUser(peerId);
     }
 
     const peer = new RTCPeerConnection({
@@ -1852,10 +1855,38 @@ export default function InterviewRoom() {
         </div>
       );
     }
-    // 4 or more participants
+    if (len === 4) {
+      return (
+        <div className="flex-1 grid grid-cols-2 gap-4 min-h-0 w-full h-full p-4">
+          {participants.map((p) => (
+            <VideoTile key={p.userId} participant={p} isLocal={p.isLocal} localVideoRef={localVideoRef} hasHand={raisedHands[p.userId]} />
+          ))}
+        </div>
+      );
+    }
+    if (len === 5) {
+      return (
+        <div className="flex-1 flex flex-col gap-4 justify-center min-h-0 w-full h-full p-4">
+          <div className="grid grid-cols-3 gap-4 flex-1 min-h-0">
+            <VideoTile participant={participants[0]} isLocal={participants[0].isLocal} localVideoRef={localVideoRef} hasHand={raisedHands[participants[0].userId]} />
+            <VideoTile participant={participants[1]} isLocal={participants[1].isLocal} localVideoRef={localVideoRef} hasHand={raisedHands[participants[1].userId]} />
+            <VideoTile participant={participants[2]} isLocal={participants[2].isLocal} localVideoRef={localVideoRef} hasHand={raisedHands[participants[2].userId]} />
+          </div>
+          <div className="flex justify-center gap-4 flex-1 min-h-0">
+            <div className="w-[32%] min-w-[200px]">
+              <VideoTile participant={participants[3]} isLocal={participants[3].isLocal} localVideoRef={localVideoRef} hasHand={raisedHands[participants[3].userId]} />
+            </div>
+            <div className="w-[32%] min-w-[200px]">
+              <VideoTile participant={participants[4]} isLocal={participants[4].isLocal} localVideoRef={localVideoRef} hasHand={raisedHands[participants[4].userId]} />
+            </div>
+          </div>
+        </div>
+      );
+    }
+    // Fallback for > 5 participants
     return (
-      <div className="flex-1 grid grid-cols-2 grid-rows-2 gap-4 min-h-0 w-full h-full p-4">
-        {participants.slice(0, 4).map((p) => (
+      <div className="flex-1 grid grid-cols-2 md:grid-cols-3 gap-4 min-h-0 w-full h-full p-4">
+        {participants.map((p) => (
           <VideoTile key={p.userId} participant={p} isLocal={p.isLocal} localVideoRef={localVideoRef} hasHand={raisedHands[p.userId]} />
         ))}
       </div>

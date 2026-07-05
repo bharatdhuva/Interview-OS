@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Code2, Video, Sparkles, Shield } from "lucide-react";
+import { Code2, Video, Shield } from "lucide-react";
 import AnimatedBackground from "./AnimatedBackground";
 const features = [
     {
@@ -12,11 +12,6 @@ const features = [
         icon: Video,
         title: "WebRTC Video Calling",
         desc: "P2P HD video, zero plugins needed",
-    },
-    {
-        icon: Sparkles,
-        title: "AI-Powered Hints",
-        desc: "GPT-4 code review + smart feedback",
     },
     {
         icon: Shield,
@@ -109,7 +104,7 @@ const AuthLayout = ({ children, variant }) => {
             </motion.div>
 
             <motion.p initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.35 }} className="text-sm leading-relaxed" style={{ color: "#888899" }}>
-              Real-time collaboration, AI feedback,
+              Real-time collaboration
               <br />
               and HD video — all in one platform.
             </motion.p>
