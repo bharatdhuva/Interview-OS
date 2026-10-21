@@ -1,0 +1,26 @@
+name: Keep Alive Server & Database
+
+on:
+  schedule:
+    # Run every 10 minutes to prevent Render free tier from sleeping (inactivity timeout is 15m)
+    # and to ping MongoDB Atlas so the cluster is never paused.
+    - cron: '*/10 * * * *'
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+
+jobs:
+  ping:
+    name: Ping Health Endpoint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Render Backend & MongoDB Atlas
+        run: |
+          URL="https://interview-os-backend-2waa.onrender.com/api/v1/health"
+          echo "Sending keep-alive ping to $URL..."
+          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}\nTIME:%{time_total}s" "$URL")
+          echo "$RESPONSE"
+          STATUS=$(echo "$RESPONSE" | grep "HTTP_STATUS" | cut -d':' -f2)
+          if [ "$STATUS" -eq 200 ]; then
+            echo "Keep-alive ping successful. Server and DB are warm."
+          else
+            echo "Warning: Received HTTP status $STATUS"
+          fi

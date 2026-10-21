@@ -75,8 +75,28 @@ app.use(morgan('combined', {
 // ─── Health Check ─────────────────────────────────────────────────────────────
 // Simple liveness probe — returns 200 when the process is up and running.
 // Does NOT check database or external services (use a readiness probe for that).
-app.get('/api/v1/health', (_req, res) => {
-    res.status(200).json({ status: 'ok', message: 'Server is healthy' });
+app.get('/api/v1/health', async (_req, res) => {
+    try {
+        const mongoose = require('mongoose');
+        const isDbConnected = mongoose.connection.readyState === 1;
+        if (isDbConnected && mongoose.connection.db) {
+            await mongoose.connection.db.admin().ping();
+        }
+        res.status(200).json({
+            status: 'ok',
+            uptime: Math.floor(process.uptime()),
+            timestamp: new Date().toISOString(),
+            database: isDbConnected ? 'connected' : 'disconnected',
+        });
+    } catch (err) {
+        res.status(200).json({
+            status: 'degraded',
+            uptime: Math.floor(process.uptime()),
+            timestamp: new Date().toISOString(),
+            database: 'error',
+            error: err.message,
+        });
+    }
 });
 // ─── Feature Routers ──────────────────────────────────────────────────────────
 app.use('/api/v1/auth', authRoute); // register, login, logout, /me
