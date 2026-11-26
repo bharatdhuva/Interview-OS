@@ -153,7 +153,7 @@ const LoginPage = () => {
       setLoading(true);
       try {
         const res = await api.post("/auth/google", {
-          accessToken: tokenResponse.access_token,
+          token: tokenResponse.access_token,
         });
         const d = res.data.data;
         const user = {
