@@ -34,7 +34,11 @@ import {
   Settings,
   Share2,
   Mail,
-  CheckCircle2
+  CheckCircle2,
+  Sparkles,
+  Hand,
+  PanelLeftClose,
+  PanelLeftOpen
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -513,6 +517,7 @@ export default function InterviewRoom() {
   const [isSaving, setIsSaving] = useState(false);
   const [whiteboardKey, setWhiteboardKey] = useState("");
   const [showRightSidebar, setShowRightSidebar] = useState(true);
+  const [showLeftSidebar, setShowLeftSidebar] = useState(true);
 
   // Media controls state
   const [micOn, setMicOn] = useState(true);
@@ -1899,36 +1904,34 @@ export default function InterviewRoom() {
     { id: "whiteboard", label: "Whiteboard", icon: PenTool },
     { id: "problem", label: "Problem Statement", icon: FileText },
     { id: "notes", label: "Private Notes", icon: ClipboardList, interviewerOnly: true },
+    { id: "copilot", label: "AI Co-Pilot", icon: Sparkles, interviewerOnly: true, soon: true },
     { id: "settings", label: "Room Settings", icon: Settings },
   ];
 
   return (
-    <div className="room-container h-[100dvh] flex flex-col bg-background overflow-hidden selection:bg-primary/30">
+    <div className="room-container h-[100dvh] flex flex-col bg-[#fafbf9] text-[#171917] overflow-hidden selection:bg-[#00c875]/20">
       <style
         dangerouslySetInnerHTML={{
           __html: `
-            @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
-            @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
-
             .room-container {
-              font-family: 'Montserrat', sans-serif !important;
-              --primary: 130 77% 22% !important; /* #0d631b */
+              font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif !important;
+              --primary: 155 100% 27% !important; /* #008a52 */
               --primary-foreground: 0 0% 100% !important;
-              --background: 120 10% 98% !important; /* #f8faf8 */
-              --foreground: 160 5% 10% !important; /* #191c1b */
-              --card: 120 10% 98% !important; /* #f8faf8 */
-              --card-foreground: 160 5% 10% !important;
-              --popover: 120 10% 98% !important;
-              --popover-foreground: 160 5% 10% !important;
-              --secondary: 120 5% 93% !important; /* #eceeec */
-              --secondary-foreground: 121 40% 32% !important; /* #307231 */
-              --muted: 120 5% 95% !important; /* #f2f4f2 */
-              --muted-foreground: 110 9% 26% !important; /* #40493d */
-              --accent: 130 77% 22% !important;
+              --background: 100 20% 98% !important; /* #fafbf9 */
+              --foreground: 120 4% 9% !important; /* #171917 */
+              --card: 0 0% 100% !important;
+              --card-foreground: 120 4% 9% !important;
+              --popover: 0 0% 100% !important;
+              --popover-foreground: 120 4% 9% !important;
+              --secondary: 105 11% 95% !important; /* #f4f6f3 */
+              --secondary-foreground: 155 100% 27% !important;
+              --muted: 105 11% 95% !important;
+              --muted-foreground: 120 4% 45% !important;
+              --accent: 155 100% 27% !important;
               --accent-foreground: 0 0% 100% !important;
-              --border: 101 14% 76% !important; /* #bfcaba */
-              --input: 101 14% 76% !important;
-              --ring: 130 77% 22% !important;
+              --border: 110 12% 89% !important; /* #e2e7e1 */
+              --input: 110 12% 89% !important;
+              --ring: 155 100% 27% !important;
             }
 
             .dark .room-container, .room-container.dark {
@@ -1958,7 +1961,7 @@ export default function InterviewRoom() {
             .room-container span,
             .room-container div,
             .room-container a {
-              font-family: 'Montserrat', sans-serif !important;
+              font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif !important;
             }
 
             /* Custom dot grid background */
@@ -2027,103 +2030,49 @@ export default function InterviewRoom() {
       />
 
       {/* Header */}
-      <header className="sticky top-0 border-b border-border/60 bg-card/85 backdrop-blur-md flex flex-col lg:flex-row lg:items-center lg:justify-between px-6 py-2.5 lg:h-16 shrink-0 z-30 gap-3 select-none shadow-sm">
-        <div className="flex items-center gap-3 min-w-0 w-full lg:w-auto">
-          <Link to="/" className="group flex items-center gap-2.5 cursor-pointer select-none">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0d631b] to-[#2e7d32] dark:from-[#88d982] dark:to-[#307231] flex items-center justify-center shadow-md shadow-primary/10 group-hover:scale-105 transition-transform">
-              <Terminal className="w-4.5 h-4.5 text-white dark:text-[#00390a]" />
-            </div>
-            <span className="font-bold tracking-tight text-lg text-primary" style={{ fontFamily: "'Montserrat', sans-serif" }}>
-              InterviewOS
-            </span>
+      <header className="sticky top-0 border-b border-[#e2e7e1] bg-[#fafbf9]/95 backdrop-blur-md flex items-center justify-between px-4 sm:px-5 h-14 shrink-0 z-30 gap-3 select-none">
+        <div className="flex items-center gap-3 min-w-0">
+          <button
+            type="button"
+            onClick={() => setShowLeftSidebar((prev) => !prev)}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-[#5d635d] hover:text-[#171917] hover:bg-[#eef1ed] transition-colors shrink-0"
+            title={showLeftSidebar ? "Hide Left Sidebar" : "Show Left Sidebar"}
+            aria-label={showLeftSidebar ? "Hide Left Sidebar" : "Show Left Sidebar"}
+          >
+            {showLeftSidebar ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
+          </button>
+
+          <Link
+            to="/"
+            className="inline-flex items-center gap-[5px] text-[#111111] text-[18px] font-bold tracking-[-0.01em] leading-none shrink-0"
+          >
+            InterviewOS
+            <span className="inline-block w-[7px] h-[14px] bg-[#00c875]" aria-hidden="true" />
           </Link>
-          <div className="h-6 w-[1px] bg-border/60 mx-1.5 hidden sm:block" />
-          <div className="hidden sm:flex flex-col min-w-0">
-            <span className="text-xs sm:text-sm font-bold text-foreground truncate">
-              {roomTitle}
-            </span>
-            <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest mt-0.5">
-              {roomId}
-            </span>
-          </div>
+
+          <div className="h-5 w-[1px] bg-[#e2e7e1] mx-1 hidden sm:block" />
+          <span className="hidden sm:inline-block text-xs font-semibold text-[#5d635d] truncate max-w-[220px]">
+            {roomTitle}
+          </span>
         </div>
 
-        <div className="w-full lg:w-auto flex flex-wrap items-center gap-2.5 justify-end">
-          <div
-            className={`h-7 px-3 text-[11px] font-bold rounded-full border flex items-center gap-1.5 select-none transition-all duration-300 ${isOnline
-                ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
-                : "bg-destructive/15 border-destructive/20 text-destructive"
-              }`}
-            aria-live="polite"
-          >
-            <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? "bg-emerald-500 animate-pulse" : "bg-destructive"}`} />
-            {isOnline ? "Live Session" : "Disconnected"}
-          </div>
-
-          {/* Proctoring badge in header */}
-          <div
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-[11px] font-bold transition-all duration-300 ${violationCount > 0
-                ? "bg-rose-500/10 border-rose-500/25 text-rose-600 dark:text-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.15)] animate-pulse"
-                : "bg-primary/10 border-primary/20 text-primary dark:text-[#88d982]"
-              }`}
-          >
-            {violationCount > 0 ? (
-              <ShieldAlert className="w-3.5 h-3.5 text-rose-500 animate-pulse" />
-            ) : (
-              <ShieldCheck className="w-3.5 h-3.5 text-primary dark:text-[#88d982]" />
-            )}
-            <span>Proctoring:</span>{" "}
-            {violationCount > 0 ? `${violationCount} Violations` : "Secure"}
-          </div>
-
-          <div className="flex items-center gap-2 text-xs font-semibold font-mono bg-secondary/40 dark:bg-muted/70 px-3 py-1.5 rounded-xl border border-border/60 dark:border-white/5">
-            <Clock className="w-4 h-4 text-primary" />
-            <span className={timer < 300 ? "text-destructive font-bold animate-pulse" : "text-foreground"}>
+        <div className="flex items-center gap-2 justify-end shrink-0">
+          <div className="flex items-center gap-1.5 text-xs font-medium font-mono bg-white px-3 h-8 rounded-full border border-[#e2e7e1] text-[#171917]">
+            <Clock className="w-3.5 h-3.5 text-[#008a52]" />
+            <span className={timer < 300 ? "text-rose-600 font-bold animate-pulse" : "text-[#171917]"}>
               {formatTime(timer)}
             </span>
-          </div>
-
-          <div className="flex items-center gap-1 bg-secondary/40 dark:bg-muted/50 p-1 rounded-xl border border-border/50 dark:border-white/5">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="w-7 h-7 rounded hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/25 active:scale-95 transition-all duration-200"
-              onClick={handleCopyLink}
-              title="Copy Room Link"
-            >
-              <Copy className="w-3.5 h-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="w-7 h-7 rounded hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/25 active:scale-95 transition-all duration-200"
-              onClick={() => {
-                const subject = encodeURIComponent(`Join my InterviewOS Room: ${roomTitle}`);
-                const body = encodeURIComponent(`Please join the interview session here: ${window.location.href}`);
-                window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
-              }}
-              title="Invite via Email"
-            >
-              <Mail className="w-3.5 h-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="w-7 h-7 rounded hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/25 active:scale-95 transition-all duration-200"
-              onClick={handleCopyLink}
-              title="Share Room"
-            >
-              <Share2 className="w-3.5 h-3.5" />
-            </Button>
           </div>
 
           <Button
             variant="ghost"
             size="sm"
-            className={`text-xs h-8 gap-1.5 border border-border/50 hover:bg-secondary active:scale-95 transition-all duration-200 ${showRightSidebar ? "bg-secondary text-primary font-bold" : ""
+            className={`text-xs h-8 gap-1.5 rounded-full border transition-all duration-200 ${showRightSidebar
+                ? "bg-[#e3f4e8] border-[#008a52]/25 text-[#0d5216] font-medium hover:bg-[#d5eedc]"
+                : "bg-white border-[#e2e7e1] text-[#171917] hover:bg-[#f2f4f1]"
               }`}
             onClick={() => setShowRightSidebar(!showRightSidebar)}
-            title={showRightSidebar ? "Collapse Chat & Participants" : "Expand Chat & Participants"}
+            title={showRightSidebar ? "Hide Sidebar" : "Show Sidebar"}
           >
             <MessageSquare className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">{showRightSidebar ? "Hide Sidebar" : "Show Sidebar"}</span>
@@ -2132,7 +2081,7 @@ export default function InterviewRoom() {
           <Button
             variant="ghost"
             size="sm"
-            className="text-xs h-8 gap-1.5 border border-border/50 hover:bg-secondary active:scale-95 transition-all duration-200"
+            className="text-xs h-8 gap-1.5 rounded-full bg-white border border-[#e2e7e1] text-[#171917] hover:bg-[#f2f4f1] transition-all duration-200"
             onClick={enterFullscreen}
           >
             <Maximize2 className="w-3.5 h-3.5" />
@@ -2144,31 +2093,68 @@ export default function InterviewRoom() {
       {/* Main layout frame (3 panels) */}
       <div className="flex-1 flex overflow-hidden relative">
 
-        {/* PANEL 1: Left Sidebar Icon navigation (SaaS Workspace Vibe) */}
-        <nav className="w-16 border-r border-border/60 bg-card/65 dark:bg-[#111612]/65 backdrop-blur-md flex flex-col items-center py-5 gap-4.5 shrink-0 select-none">
-          {tabs
-            .filter(tab => !tab.interviewerOnly || identity.role === "interviewer")
-            .map(tab => {
-              const IconComp = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-300 relative group active:scale-90 hover:scale-105 ${isActive
-                      ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25 dark:shadow-primary/15 scale-105 border border-primary/20 dark:border-white/10"
-                      : "text-muted-foreground hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15 dark:hover:text-primary-foreground"
-                    }`}
-                  title={tab.label}
-                >
-                  <IconComp className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
-                  {isActive && (
-                    <span className="absolute left-0 top-3 bottom-3 w-1 bg-primary-foreground rounded-r-md" />
-                  )}
-                </button>
-              );
-            })}
-        </nav>
+        {/* PANEL 1: Collapsible Left Sidebar Navigation */}
+        <aside
+          className={`bg-white flex flex-col justify-between shrink-0 select-none overflow-hidden transition-all duration-200 ease-out ${showLeftSidebar ? "w-56 border-r border-[#e2e7e1]" : "w-0 border-r-0"
+            }`}
+          aria-label="Room navigation sidebar"
+        >
+          <div className="w-56 flex flex-col h-full justify-between">
+            <div className="p-3 space-y-1">
+              <div className="px-3 pt-1 pb-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#868c86]">
+                Room Workspace
+              </div>
+              {tabs
+                .filter(tab => !tab.interviewerOnly || identity.role === "interviewer")
+                .map(tab => {
+                  const IconComp = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`w-full px-3 py-2 rounded-lg flex items-center justify-between text-[13px] transition-colors duration-150 ${isActive
+                          ? "bg-[#e3f4e8] text-[#0d5216] font-medium"
+                          : "text-[#5d635d] hover:bg-[#f5f7f4] hover:text-[#171917]"
+                        }`}
+                      title={tab.label}
+                    >
+                      <span className="flex items-center gap-2.5 truncate">
+                        <IconComp className="w-4 h-4 shrink-0" strokeWidth={1.75} />
+                        <span className="truncate">{tab.label}</span>
+                      </span>
+                      {tab.soon && (
+                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[#f2f4f1] text-[#5d635d] shrink-0">
+                          Soon
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+            </div>
+
+            <div className="p-3 border-t border-[#e2e7e1] space-y-2 bg-[#fafbf9]/70">
+              <div className="flex items-center justify-between px-1 text-[11px]">
+                <span className="flex items-center gap-1.5 font-medium text-[#171917]">
+                  <span className={`w-2 h-2 rounded-full ${isOnline ? "bg-[#00c875]" : "bg-rose-500"}`} />
+                  {isOnline ? "Live Session" : "Disconnected"}
+                </span>
+                <span className={`font-medium ${violationCount > 0 ? "text-rose-600" : "text-[#008a52]"}`}>
+                  {violationCount > 0 ? `${violationCount} Alerts` : "Secure"}
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleCopyLink}
+                className="w-full px-3 py-1.5 rounded-lg border border-[#e2e7e1] bg-white hover:bg-[#f5f7f4] text-xs font-medium text-[#171917] flex items-center justify-center gap-1.5 transition-colors"
+              >
+                <Copy className="w-3.5 h-3.5 text-[#5d635d]" />
+                Copy Invite Link
+              </button>
+            </div>
+          </div>
+        </aside>
 
         {/* PANEL 2: Center Main Content area */}
         <div className="flex-1 h-full min-w-0 overflow-hidden">
@@ -2320,6 +2306,56 @@ export default function InterviewRoom() {
                   </div>
                 )}
 
+                {/* TAB: AI Co-Pilot view (Interviewer only, Coming soon) */}
+                {activeTab === "copilot" && identity.role === "interviewer" && (
+                  <div className="flex-1 p-6 space-y-6 overflow-y-auto pb-24 max-w-2xl select-none">
+                    <div className="flex items-center justify-between border-b border-[#e2e7e1] pb-3">
+                      <h2 className="text-lg font-semibold tracking-tight text-[#171917] flex items-center gap-2">
+                        <Sparkles className="w-5 h-5 text-[#008a52]" />
+                        AI Co-Pilot
+                      </h2>
+                      <span className="inline-flex items-center rounded-full bg-[#e3f4e8] text-[#0d5216] px-2.5 py-0.5 text-[11px] font-medium">
+                        Coming soon · Phase 5
+                      </span>
+                    </div>
+
+                    <div className="p-4 rounded-xl border border-[#e2e7e1] bg-white space-y-2">
+                      <div className="text-xs font-semibold uppercase tracking-wider text-[#5d635d]">
+                        Private Interviewer Assistant
+                      </div>
+                      <p className="text-sm text-[#5d635d] leading-relaxed">
+                        Real-time, interviewer-only assistance will surface contextual follow-up questions, live complexity estimates, and structured hint ladders as the candidate codes — without being visible to the candidate.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="p-4 rounded-xl border border-[#e2e7e1] bg-white space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-semibold text-[#171917]">Follow-up Prompts</span>
+                          <span className="text-[10px] font-medium text-[#5d635d] bg-[#fafbf9] border border-[#e2e7e1] px-2 py-0.5 rounded-full">
+                            Planned
+                          </span>
+                        </div>
+                        <p className="text-xs text-[#5d635d] leading-relaxed">
+                          Context-aware probing questions tailored to the candidate&apos;s current approach and edge cases.
+                        </p>
+                      </div>
+
+                      <div className="p-4 rounded-xl border border-[#e2e7e1] bg-white space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-semibold text-[#171917]">Complexity &amp; Hint Ladder</span>
+                          <span className="text-[10px] font-medium text-[#5d635d] bg-[#fafbf9] border border-[#e2e7e1] px-2 py-0.5 rounded-full">
+                            Planned
+                          </span>
+                        </div>
+                        <p className="text-xs text-[#5d635d] leading-relaxed">
+                          Live time/space complexity estimate and graduated nudges you can choose to share when a candidate gets stuck.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* TAB: Room Settings view */}
                 {activeTab === "settings" && (
                   <div className="flex-1 p-6 space-y-6 overflow-y-auto pb-24 max-w-2xl select-none">
@@ -2400,16 +2436,16 @@ export default function InterviewRoom() {
 
             {showRightSidebar && (
               <>
-                <ResizableHandle withHandle className="w-1 bg-border/40 hover:bg-primary/50 transition-all cursor-col-resize z-40" />
+                <ResizableHandle withHandle className="w-1 bg-[#e2e7e1] hover:bg-[#008a52]/50 transition-all cursor-col-resize z-40" />
 
                 <ResizablePanel defaultSize={25} minSize={15} maxSize={40} className="flex flex-col min-w-0">
                   {/* PANEL 3: Right Sidebar Panel (Always visible Participants + Chat) */}
-                  <section className="w-full h-full border-none bg-card/45 dark:bg-[#111612]/45 backdrop-blur-xl flex flex-col overflow-hidden select-none" aria-label="Room details panel">
+                  <section className="w-full h-full border-none bg-white flex flex-col overflow-hidden select-none" aria-label="Room details panel">
                     {/* Top Half: Participants */}
-                    <div className="flex-1 flex flex-col min-h-0 border-b border-border/50 dark:border-white/5">
-                      <div className="h-12 flex items-center justify-between px-4 border-b border-border/50 dark:border-white/5 bg-background/20 dark:bg-muted/30 shrink-0">
-                        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Participants</span>
-                        <span className="text-[10px] bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-full font-bold">
+                    <div className="flex-1 flex flex-col min-h-0 border-b border-[#e2e7e1]">
+                      <div className="h-12 flex items-center justify-between px-4 border-b border-[#e2e7e1] bg-[#fafbf9] shrink-0">
+                        <span className="text-xs font-semibold uppercase tracking-wider text-[#5d635d]">Participants</span>
+                        <span className="text-[11px] bg-[#e3f4e8] text-[#0d5216] px-2 py-0.5 rounded-full font-semibold">
                           {participants.length}
                         </span>
                       </div>
@@ -2467,10 +2503,10 @@ export default function InterviewRoom() {
                     </div>
 
                     {/* Bottom Half: Chat */}
-                    <div className="flex-1 flex flex-col min-h-0">
-                      <div className="h-12 flex items-center justify-between px-4 border-b border-border/50 dark:border-white/5 bg-background/20 dark:bg-muted/30 shrink-0">
-                        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Chat Room</span>
-                        <div className="w-1.5 h-1.5 rounded-full room-pulse-green" />
+                    <div className="flex-1 flex flex-col min-h-0 bg-white">
+                      <div className="h-12 flex items-center justify-between px-4 border-b border-[#e2e7e1] bg-[#fafbf9] shrink-0">
+                        <span className="text-xs font-semibold uppercase tracking-wider text-[#5d635d]">Chat Room</span>
+                        <div className="w-2 h-2 rounded-full bg-[#00c875]" />
                       </div>
 
                       <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -2480,19 +2516,19 @@ export default function InterviewRoom() {
                         <div ref={chatEndRef} />
                       </div>
 
-                      <form onSubmit={handleSendMessage} className="p-3 border-t border-border/50 dark:border-white/5 bg-background/30 backdrop-blur-md">
+                      <form onSubmit={handleSendMessage} className="p-3 border-t border-[#e2e7e1] bg-[#fafbf9]">
                         <div className="relative group">
                           <Input
                             value={chatInput}
                             onChange={(e) => setChatInput(e.target.value.slice(0, 500))}
                             placeholder="Type message..."
-                            className="pr-10 bg-secondary/40 dark:bg-[#111612]/60 border-border/60 dark:border-white/5 focus-visible:ring-primary h-9.5 rounded-xl text-xs focus-visible:border-primary placeholder:text-muted-foreground/60"
+                            className="pr-10 bg-white border-[#e2e7e1] focus-visible:ring-[#008a52] h-9.5 rounded-full text-xs focus-visible:border-[#008a52] placeholder:text-[#868c86]"
                             maxLength={500}
                           />
                           <button
                             type="submit"
                             disabled={!chatInput.trim()}
-                            className="absolute right-1 top-1 h-7.5 w-7.5 rounded-lg bg-primary text-primary-foreground flex items-center justify-center hover:opacity-90 disabled:opacity-30 transition-all shadow-sm"
+                            className="absolute right-1 top-1 h-7.5 w-7.5 rounded-full bg-[#080a09] text-white flex items-center justify-center hover:bg-[#171917] disabled:opacity-30 transition-all shadow-sm"
                           >
                             <Send className="w-3.5 h-3.5" />
                           </button>
@@ -2508,20 +2544,20 @@ export default function InterviewRoom() {
       </div>
 
       {/* Centered Floating Control Bar overlay */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 bg-card/75 dark:bg-[#111612]/85 backdrop-blur-xl px-5 py-3 rounded-2xl border border-primary/20 dark:border-primary/30 shadow-[0_12px_40px_rgba(0,0,0,0.12)] dark:shadow-[0_12px_40px_rgba(0,0,0,0.4)] select-none w-max max-w-[95vw] overflow-x-auto">
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2.5 bg-white/95 backdrop-blur-xl px-4 py-2.5 rounded-full border border-[#e2e7e1] shadow-[0_12px_40px_rgba(23,25,23,0.08)] select-none w-max max-w-[95vw] overflow-x-auto">
 
         {/* Mic Button */}
         <Button
           onClick={handleToggleMic}
           variant="ghost"
           size="icon"
-          className={`w-10 h-10 rounded-xl transition-all duration-300 active:scale-90 hover:scale-105 shrink-0 ${micOn
-              ? "bg-secondary/50 dark:bg-muted/70 text-foreground border border-border/40 dark:border-white/5 hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/25 dark:hover:text-primary"
-              : "bg-rose-500/15 text-rose-600 border border-rose-500/30 dark:bg-rose-500/20 dark:text-rose-400 dark:border-rose-500/30"
+          className={`w-10 h-10 rounded-full transition-all duration-200 active:scale-95 shrink-0 ${micOn
+              ? "bg-[#fafbf9] text-[#171917] border border-[#e2e7e1] hover:bg-[#e3f4e8] hover:text-[#0d5216] hover:border-[#008a52]/30"
+              : "bg-rose-500/10 text-rose-600 border border-rose-500/25 hover:bg-rose-500/15"
             }`}
           title={micOn ? "Mute Microphone" : "Unmute Microphone"}
         >
-          {micOn ? <Mic className="w-4.5 h-4.5" /> : <MicOff className="w-4.5 h-4.5" />}
+          {micOn ? <Mic className="w-4.5 h-4.5" strokeWidth={1.75} /> : <MicOff className="w-4.5 h-4.5" strokeWidth={1.75} />}
         </Button>
 
         {/* Camera Button */}
@@ -2529,13 +2565,13 @@ export default function InterviewRoom() {
           onClick={handleToggleCam}
           variant="ghost"
           size="icon"
-          className={`w-10 h-10 rounded-xl transition-all duration-300 active:scale-90 hover:scale-105 shrink-0 ${camOn
-              ? "bg-secondary/50 dark:bg-muted/70 text-foreground border border-border/40 dark:border-white/5 hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/25 dark:hover:text-primary"
-              : "bg-rose-500/15 text-rose-600 border border-rose-500/30 dark:bg-rose-500/20 dark:text-rose-400 dark:border-rose-500/30"
+          className={`w-10 h-10 rounded-full transition-all duration-200 active:scale-95 shrink-0 ${camOn
+              ? "bg-[#fafbf9] text-[#171917] border border-[#e2e7e1] hover:bg-[#e3f4e8] hover:text-[#0d5216] hover:border-[#008a52]/30"
+              : "bg-rose-500/10 text-rose-600 border border-rose-500/25 hover:bg-rose-500/15"
             }`}
           title={camOn ? "Turn Camera Off" : "Turn Camera On"}
         >
-          {camOn ? <VideoIcon className="w-4.5 h-4.5" /> : <VideoOff className="w-4.5 h-4.5" />}
+          {camOn ? <VideoIcon className="w-4.5 h-4.5" strokeWidth={1.75} /> : <VideoOff className="w-4.5 h-4.5" strokeWidth={1.75} />}
         </Button>
 
         {/* Screen Share Button */}
@@ -2543,13 +2579,13 @@ export default function InterviewRoom() {
           onClick={handleToggleScreenShare}
           variant="ghost"
           size="icon"
-          className={`w-10 h-10 rounded-xl transition-all duration-300 active:scale-90 hover:scale-105 shrink-0 ${isSharingScreen
-              ? "bg-primary/20 text-primary border border-primary/30 dark:bg-primary/30 dark:text-primary-foreground dark:border-primary/45 shadow-sm"
-              : "bg-secondary/50 dark:bg-muted/70 text-foreground border border-border/40 dark:border-white/5 hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/25 dark:hover:text-primary"
+          className={`w-10 h-10 rounded-full transition-all duration-200 active:scale-95 shrink-0 ${isSharingScreen
+              ? "bg-[#e3f4e8] text-[#0d5216] border border-[#008a52]/30 shadow-sm"
+              : "bg-[#fafbf9] text-[#171917] border border-[#e2e7e1] hover:bg-[#e3f4e8] hover:text-[#0d5216] hover:border-[#008a52]/30"
             }`}
           title={isSharingScreen ? "Stop Screen Share" : "Share Screen"}
         >
-          <Monitor className="w-4.5 h-4.5" />
+          <Monitor className="w-4.5 h-4.5" strokeWidth={1.75} />
         </Button>
 
         {/* Raise Hand Button */}
@@ -2566,18 +2602,18 @@ export default function InterviewRoom() {
           }}
           variant="ghost"
           size="icon"
-          className={`w-10 h-10 rounded-xl transition-all duration-300 active:scale-90 hover:scale-105 shrink-0 ${raisedHands[identity.userId]
-              ? "bg-amber-500/15 text-amber-600 border border-amber-500/30 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30 shadow-sm"
-              : "bg-secondary/50 dark:bg-muted/70 text-foreground border border-border/40 dark:border-white/5 hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/25 dark:hover:text-primary"
+          className={`w-10 h-10 rounded-full transition-all duration-200 active:scale-95 shrink-0 ${raisedHands[identity.userId]
+              ? "bg-amber-500/15 text-amber-700 border border-amber-500/35 shadow-sm"
+              : "bg-[#fafbf9] text-[#171917] border border-[#e2e7e1] hover:bg-[#e3f4e8] hover:text-[#0d5216] hover:border-[#008a52]/30"
             }`}
           title="Raise Hand"
         >
-          <span className="text-sm">✋</span>
+          <Hand className="w-4.5 h-4.5" strokeWidth={1.75} />
         </Button>
 
         {/* Interviewer Extra Moderation Controls inside Control Bar */}
         {identity.role === "interviewer" && (
-          <div className="h-6 w-[1px] bg-border/40 dark:bg-white/10 mx-1.5 self-center shrink-0" />
+          <div className="h-6 w-[1px] bg-[#e2e7e1] mx-1 self-center shrink-0" />
         )}
 
         {identity.role === "interviewer" && (
@@ -2587,13 +2623,13 @@ export default function InterviewRoom() {
               onClick={handleToggleLock}
               variant="ghost"
               size="icon"
-              className={`w-10 h-10 rounded-xl transition-all duration-300 active:scale-90 hover:scale-105 shrink-0 ${roomLocked
-                  ? "bg-amber-500/15 text-amber-600 border border-amber-500/30 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30 shadow-sm"
-                  : "bg-secondary/50 dark:bg-muted/70 text-foreground border border-border/40 dark:border-white/5 hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/25 dark:hover:text-primary"
+              className={`w-10 h-10 rounded-full transition-all duration-200 active:scale-95 shrink-0 ${roomLocked
+                  ? "bg-amber-500/15 text-amber-700 border border-amber-500/35 shadow-sm"
+                  : "bg-[#fafbf9] text-[#171917] border border-[#e2e7e1] hover:bg-[#e3f4e8] hover:text-[#0d5216] hover:border-[#008a52]/30"
                 }`}
               title={roomLocked ? "Unlock Room" : "Lock Room"}
             >
-              {roomLocked ? <Lock className="w-4 h-4 text-amber-500" /> : <Unlock className="w-4 h-4" />}
+              {roomLocked ? <Lock className="w-4 h-4 text-amber-600" strokeWidth={1.75} /> : <Unlock className="w-4 h-4" strokeWidth={1.75} />}
             </Button>
 
             {/* Copy Meeting Link */}
@@ -2601,10 +2637,10 @@ export default function InterviewRoom() {
               onClick={handleCopyLink}
               variant="ghost"
               size="icon"
-              className="w-10 h-10 rounded-xl bg-secondary/50 dark:bg-muted/70 text-foreground border border-border/40 dark:border-white/5 hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/25 dark:hover:text-primary transition-all duration-300 active:scale-90 hover:scale-105 shrink-0"
+              className="w-10 h-10 rounded-full bg-[#fafbf9] text-[#171917] border border-[#e2e7e1] hover:bg-[#e3f4e8] hover:text-[#0d5216] hover:border-[#008a52]/30 transition-all duration-200 active:scale-95 shrink-0"
               title="Copy Meeting Link"
             >
-              <Copy className="w-4 h-4" />
+              <Copy className="w-4 h-4" strokeWidth={1.75} />
             </Button>
 
             {/* Mute All Candidates */}
@@ -2612,25 +2648,25 @@ export default function InterviewRoom() {
               onClick={handleMuteAll}
               variant="ghost"
               size="icon"
-              className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500/20 dark:bg-rose-500/20 dark:text-rose-400 dark:border-rose-500/30 transition-all duration-300 active:scale-90 hover:scale-105 shrink-0"
+              className="w-10 h-10 rounded-full bg-rose-500/10 text-rose-600 border border-rose-500/25 hover:bg-rose-500/15 transition-all duration-200 active:scale-95 shrink-0"
               title="Mute All Candidates"
             >
-              <VolumeX className="w-4 h-4" />
+              <VolumeX className="w-4 h-4" strokeWidth={1.75} />
             </Button>
           </>
         )}
 
-        <div className="h-6 w-[1px] bg-border/40 dark:bg-white/10 mx-1.5 self-center shrink-0" />
+        <div className="h-6 w-[1px] bg-[#e2e7e1] mx-1 self-center shrink-0" />
 
         {/* End Call Button */}
         <Button
           size="sm"
           variant="ghost"
-          className="h-10 text-xs font-bold px-4 bg-rose-600 text-white hover:bg-rose-700 shadow-md shadow-rose-600/15 dark:bg-rose-500 dark:text-black dark:hover:bg-rose-400 active:scale-[0.96] hover:scale-105 transition-all duration-300 rounded-xl flex items-center gap-1.5 shrink-0"
+          className="h-10 text-xs font-semibold px-4 bg-rose-600 text-white hover:bg-rose-700 shadow-sm active:scale-[0.97] transition-all duration-200 rounded-full flex items-center gap-1.5 shrink-0"
           aria-label="End interview session"
           onClick={() => setShowEndSessionConfirm(true)}
         >
-          <PhoneOff className="w-3.5 h-3.5" />
+          <PhoneOff className="w-4 h-4" strokeWidth={1.75} />
           <span className="hidden xs:inline">End Session</span>
         </Button>
       </div>

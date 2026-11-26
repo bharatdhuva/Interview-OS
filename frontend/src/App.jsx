@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/Tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import { useAuthStore } from "./store/authStore";
 import api from "./lib/api";
 import LandingPage from "./pages/LandingPage";
@@ -17,6 +18,7 @@ import FeedbackPage from "./pages/feedback/FeedbackPage";
 import SessionReplayPage from "./pages/room/SessionReplayPage";
 import NotFound from "./pages/NotFound";
 import OnboardingPage from "./pages/auth/OnboardingPage";
+import InfoPage from "./pages/InfoPage";
 import SiteLoader from "./components/layout/SiteLoader";
 import { subscribeToApiActivity } from "./lib/api";
 const queryClient = new QueryClient();
@@ -87,6 +89,23 @@ const AppRoutes = () => {
             isFirstRender.current = false;
             return;
         }
+        const smoothRoutes = [
+            "/",
+            "/login",
+            "/register",
+            "/forgot-password",
+            "/terms",
+            "/privacy",
+            "/about",
+            "/careers",
+            "/contact",
+            "/support",
+            "/changelog",
+        ];
+        if (smoothRoutes.includes(location.pathname)) {
+            window.scrollTo({ top: 0, behavior: "instant" });
+            return;
+        }
         setIsRouteLoading(true);
         const timer = window.setTimeout(() => setIsRouteLoading(false), 280);
         return () => window.clearTimeout(timer);
@@ -98,11 +117,26 @@ const AppRoutes = () => {
 
     return (<>
       <SiteLoader visible={isRouteLoading}/>
-            <Routes>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={location.pathname}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+        >
+            <Routes location={location}>
                 <Route path="/" element={<LandingPage />}/>
                 <Route path="/login" element={<LoginPage />}/>
                 <Route path="/register" element={<RegisterPage />}/>
                 <Route path="/forgot-password" element={<ForgotPasswordPage />}/>
+                <Route path="/terms" element={<InfoPage page="terms" />}/>
+                <Route path="/privacy" element={<InfoPage page="privacy" />}/>
+                <Route path="/about" element={<InfoPage page="about" />}/>
+                <Route path="/careers" element={<InfoPage page="careers" />}/>
+                <Route path="/contact" element={<InfoPage page="contact" />}/>
+                <Route path="/support" element={<InfoPage page="support" />}/>
+                <Route path="/changelog" element={<InfoPage page="changelog" />}/>
 
         <Route path="/dashboard/candidate" element={<ProtectedRoute><CandidateDashboard /></ProtectedRoute>}/>
         <Route path="/dashboard/interviewer" element={<ProtectedRoute><InterviewerDashboard /></ProtectedRoute>}/>
@@ -112,6 +146,8 @@ const AppRoutes = () => {
         <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>}/>
         <Route path="*" element={<NotFound />}/>
       </Routes>
+        </motion.div>
+      </AnimatePresence>
     </>);
 };
 const App = () => (<QueryClientProvider client={queryClient}>

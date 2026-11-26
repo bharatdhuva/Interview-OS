@@ -1,15 +1,16 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
 import { useToast } from "@/hooks/useToast";
 import api from "@/lib/api";
-import { Loader2 } from "lucide-react";
+import { Loader2, Users, Code2 } from "lucide-react";
+import { motion } from "framer-motion";
 
 const OnboardingPage = () => {
   const [role, setRole] = useState("candidate");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  
+
   const navigate = useNavigate();
   const { toast } = useToast();
   const user = useAuthStore((s) => s.user);
@@ -23,8 +24,7 @@ const OnboardingPage = () => {
     try {
       const res = await api.post("/auth/onboard", { role });
       const updatedUser = res.data.data;
-      
-      // Update local auth store with updated user details
+
       const token = localStorage.getItem("accessToken");
       loginAction(updatedUser, token);
 
@@ -33,147 +33,163 @@ const OnboardingPage = () => {
         description: `Welcome aboard! You are signed in as a ${role}.`,
       });
 
-      // Redirect to correct dashboard or saved redirect URL
       const redirectUrl = sessionStorage.getItem("redirectUrl");
       if (redirectUrl) {
         sessionStorage.removeItem("redirectUrl");
         navigate(redirectUrl);
       } else {
-        navigate(role === "interviewer" ? "/dashboard/interviewer" : "/dashboard/candidate");
+        navigate(
+          role === "interviewer"
+            ? "/dashboard/interviewer"
+            : "/dashboard/candidate"
+        );
       }
     } catch (err) {
-      setError(err?.response?.data?.message || "Failed to complete onboarding. Please try again.");
+      setError(
+        err?.response?.data?.message ||
+          "Failed to complete onboarding. Please try again."
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="onboarding-container min-h-screen w-full flex flex-col justify-center bg-surface relative overflow-hidden">
-      <style dangerouslySetInnerHTML={{ __html: `
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
-        @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
+    <div
+      className="min-h-screen w-full flex flex-col bg-[#fafbf9] text-[#171917]"
+      style={{
+        fontFamily:
+          '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif',
+      }}
+    >
+      <header className="sticky top-0 z-30 w-full h-[74px] bg-[#fafbf9]/90 backdrop-blur-md border-b border-[#1d2d22]/[0.09] px-6 lg:px-11 flex items-center justify-between select-none shrink-0">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-[5px] text-[#111111] text-[21px] font-bold tracking-[-0.01em] leading-none"
+          aria-label="InterviewOS home"
+        >
+          InterviewOS
+          <span
+            className="inline-block w-[8px] h-[17px] bg-[#00c875]"
+            aria-hidden="true"
+          />
+        </Link>
+        <span className="text-[13px] text-[#707870]">Account Setup</span>
+      </header>
 
-        :root {
-          --outline-variant: #bfcaba;
-          --on-secondary-container: #307231;
-          --surface-bright: #f8faf8;
-          --on-surface-variant: #40493d;
-          --on-surface: #191c1b;
-          --secondary: #2a6b2c;
-          --background: #f8faf8;
-          --primary: #0d631b;
-        }
-
-        .onboarding-container {
-          font-family: 'Montserrat', sans-serif;
-          background-color: var(--background);
-          color: var(--on-surface);
-        }
-
-        .active-role {
-          background-color: #acf4a4 !important;
-          border-color: #0d631b !important;
-          color: #191c1b !important;
-        }
-
-        .active-role span {
-          color: #191c1b !important;
-        }
-
-        .glass-panel {
-          background: rgba(255, 255, 255, 0.85);
-          backdrop-filter: blur(12px);
-          border: 1px solid rgba(191, 202, 186, 0.3);
-        }
-
-        .material-symbols-outlined {
-          font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
-      ` }} />
-
-      {/* Decorative Blurs */}
-      <div className="absolute top-0 right-0 w-80 h-80 bg-[#e8f5e9]/40 rounded-full blur-3xl pointer-events-none"></div>
-      <div className="absolute bottom-0 left-0 w-80 h-80 bg-[#0d631b]/5 rounded-full blur-3xl pointer-events-none"></div>
-
-      <main className="w-full max-w-[520px] mx-auto p-6 relative z-10">
-        <div className="glass-panel rounded-2xl p-8 shadow-2xl">
+      <main
+        className="flex-1 flex items-center justify-center px-5 py-10"
+        style={{
+          background:
+            "radial-gradient(ellipse at 50% 0%, rgba(202, 250, 222, 0.55), transparent 55%), linear-gradient(180deg, #f5fbf6 0%, #fafbf9 65%)",
+        }}
+      >
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          className="w-full max-w-[540px] bg-white border border-[#e2e7e1] rounded-2xl p-8 sm:p-10 shadow-[0_18px_50px_rgba(20,31,23,0.06)]"
+        >
           <header className="mb-8 text-center">
-            <span className="inline-block px-3 py-1 bg-[#2e7d32] text-white rounded-full text-xs font-semibold mb-4 uppercase tracking-wider">
+            <p className="text-[11.5px] uppercase tracking-[0.13em] text-[#657168] mb-2">
               Onboarding
-            </span>
-            <h1 className="text-3xl font-bold text-on-surface mb-2">
-              Let's complete your profile
+            </p>
+            <h1
+              className="text-[32px] leading-[1.08] font-semibold tracking-[-0.04em] text-[#171917] mb-2"
+              style={{
+                fontFamily:
+                  '-apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif',
+              }}
+            >
+              Choose your <span className="text-[#008a52]">role</span>
             </h1>
-            <p className="text-sm text-on-surface-variant">
-              Welcome {user?.name || "there"}! Choose how you would like to use InterviewOS.
+            <p className="text-[14.5px] text-[#566059]">
+              Welcome {user?.name || "there"}! Select how you will use InterviewOS.
             </p>
           </header>
 
           <form className="space-y-6" onSubmit={handleSubmit}>
-            {/* Role Selection */}
-            <div>
-              <label className="text-sm font-semibold text-on-surface-variant mb-3 block text-center">
-                I will use InterviewOS as an...
-              </label>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Interviewer Card */}
-                <button
-                  type="button"
-                  onClick={() => setRole("interviewer")}
-                  className={`flex flex-col items-center justify-center p-6 border border-outline-variant/30 rounded-2xl transition-all duration-200 hover:border-secondary group text-center cursor-pointer bg-white/50 active:scale-[0.98] ${
-                    role === "interviewer" ? "active-role shadow-md" : "text-on-surface-variant"
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <button
+                type="button"
+                onClick={() => setRole("interviewer")}
+                className={`flex flex-col items-start p-5 rounded-2xl border text-left transition-all cursor-pointer ${
+                  role === "interviewer"
+                    ? "border-[#008a52] bg-[#f4fbf6] ring-1 ring-[#008a52]"
+                    : "border-[#e2e7e1] bg-[#fafbf9] hover:border-[#bfcaba]"
+                }`}
+              >
+                <div
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${
+                    role === "interviewer"
+                      ? "bg-[#008a52] text-white"
+                      : "bg-[#e8eee9] text-[#414740]"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-[48px] text-[#0d631b] mb-3 group-hover:scale-110 transition-transform">
-                    psychology
-                  </span>
-                  <span className="font-bold text-base mb-1 block">Interviewer</span>
-                  <span className="text-xs opacity-75">Create rooms, run sessions, and submit feedback</span>
-                </button>
+                  <Users size={20} />
+                </div>
+                <span className="text-[16px] font-semibold text-[#171917] mb-1">
+                  Interviewer
+                </span>
+                <span className="text-[13px] text-[#566059] leading-relaxed">
+                  Create rooms, run live sessions, and review AI evaluation drafts.
+                </span>
+              </button>
 
-                {/* Candidate Card */}
-                <button
-                  type="button"
-                  onClick={() => setRole("candidate")}
-                  className={`flex flex-col items-center justify-center p-6 border border-outline-variant/30 rounded-2xl transition-all duration-200 hover:border-secondary group text-center cursor-pointer bg-white/50 active:scale-[0.98] ${
-                    role === "candidate" ? "active-role shadow-md" : "text-on-surface-variant"
+              <button
+                type="button"
+                onClick={() => setRole("candidate")}
+                className={`flex flex-col items-start p-5 rounded-2xl border text-left transition-all cursor-pointer ${
+                  role === "candidate"
+                    ? "border-[#008a52] bg-[#f4fbf6] ring-1 ring-[#008a52]"
+                    : "border-[#e2e7e1] bg-[#fafbf9] hover:border-[#bfcaba]"
+                }`}
+              >
+                <div
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${
+                    role === "candidate"
+                      ? "bg-[#008a52] text-white"
+                      : "bg-[#e8eee9] text-[#414740]"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-[48px] text-[#0d631b] mb-3 group-hover:scale-110 transition-transform">
-                    terminal
-                  </span>
-                  <span className="font-bold text-base mb-1 block">Candidate</span>
-                  <span className="text-xs opacity-75">Join rooms, write code, and view interview history</span>
-                </button>
-              </div>
+                  <Code2 size={20} />
+                </div>
+                <span className="text-[16px] font-semibold text-[#171917] mb-1">
+                  Candidate
+                </span>
+                <span className="text-[13px] text-[#566059] leading-relaxed">
+                  Join interview rooms, write and run code, and view shared feedback.
+                </span>
+              </button>
             </div>
 
-            {/* Error Message */}
             {error && (
-              <p className="text-xs text-red-600 font-semibold text-center" role="alert">
+              <div
+                className="p-3 rounded-xl bg-[#ffdad6]/40 border border-[#ba1a1a]/25 text-xs text-[#ba1a1a] font-medium text-center"
+                role="alert"
+              >
                 {error}
-              </p>
+              </div>
             )}
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-[#0d631b] hover:bg-[#094713] disabled:opacity-50 text-white rounded-xl font-bold shadow-md hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 text-base"
+              className="w-full min-h-[48px] rounded-full bg-[#080a09] hover:bg-[#242925] disabled:opacity-50 text-white text-[14px] font-semibold transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer"
             >
               {loading ? (
                 <>
-                  <Loader2 size={18} className="animate-spin" />
+                  <Loader2 size={16} className="animate-spin" />
                   Saving Profile...
                 </>
               ) : (
-                "Get Started"
+                <>
+                  Continue <span aria-hidden="true">↗</span>
+                </>
               )}
             </button>
           </form>
-        </div>
+        </motion.div>
       </main>
     </div>
   );

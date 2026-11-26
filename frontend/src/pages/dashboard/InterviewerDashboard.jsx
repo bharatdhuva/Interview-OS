@@ -1,606 +1,962 @@
-import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { format } from 'date-fns';
-import { Plus, Calendar, Clock, Users, Copy, ArrowRight, BarChart3, CheckCircle2, User, LogOut, Terminal, X, AlertCircle, CreditCard } from 'lucide-react';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
-import { Input } from '@/components/ui/Input';
-import { Label } from '@/components/ui/Label';
-import { Textarea } from '@/components/ui/Textarea';
-import { useAuthStore } from '@/store/authStore';
-import CustomSelect from '@/components/ui/CustomSelect';
-import SegmentedControl from '@/components/ui/SegmentedControl';
-import { useToast } from '@/hooks/useToast';
-import api from '@/lib/api';
-import { createRoomSchema } from '@/lib/validations';
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { format } from "date-fns";
+import {
+  Plus,
+  Calendar,
+  Clock,
+  Users,
+  Copy,
+  ArrowRight,
+  LogOut,
+  X,
+  AlertCircle,
+  BarChart3,
+  Sparkles,
+  FileText,
+  PanelLeftClose,
+  PanelLeftOpen,
+  ChevronRight,
+  Check,
+} from "lucide-react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
+import { Textarea } from "@/components/ui/Textarea";
+import { useAuthStore } from "@/store/authStore";
+import CustomSelect from "@/components/ui/CustomSelect";
+import SegmentedControl from "@/components/ui/SegmentedControl";
+import DateTimePicker from "@/components/ui/DateTimePicker";
+import { useToast } from "@/hooks/useToast";
+import api from "@/lib/api";
+import { createRoomSchema } from "@/lib/validations";
+
 const getSessionStorageKey = (roomId) => `interviewos:room-session:${roomId}`;
+
 const normalizeUser = (value, fallbackRole) => {
-    if (!value || typeof value === 'string') {
-        return undefined;
-    }
-    return {
-        id: value._id || value.id || '',
-        name: value.name || '',
-        email: value.email || '',
-        role: value.role || fallbackRole,
-        avatar: value.avatar || '',
-        isEmailVerified: value.isEmailVerified ?? true,
-        createdAt: value.createdAt || new Date().toISOString(),
-    };
+  if (!value || typeof value === "string") return undefined;
+  return {
+    id: value._id || value.id || "",
+    name: value.name || "",
+    email: value.email || "",
+    role: value.role || fallbackRole,
+    avatar: value.avatar || "",
+    isEmailVerified: value.isEmailVerified ?? true,
+    createdAt: value.createdAt || new Date().toISOString(),
+  };
 };
+
 const mapApiRoomToRoom = (room, currentUser, fallbackCandidateEmail) => {
-    const interviewer = normalizeUser(room.interviewer, 'interviewer') || currentUser || {
-        id: '',
-        name: 'Interviewer',
-        email: '',
-        role: 'interviewer',
-        avatar: '',
-        isEmailVerified: true,
-        createdAt: new Date().toISOString(),
+  const interviewer = normalizeUser(room.interviewer, "interviewer") ||
+    currentUser || {
+      id: "",
+      name: "Interviewer",
+      email: "",
+      role: "interviewer",
+      avatar: "",
+      isEmailVerified: true,
+      createdAt: new Date().toISOString(),
     };
-    const candidate = normalizeUser(room.candidate, 'candidate');
-    return {
-        id: room._id || room.id || room.roomId,
-        roomId: room.roomId,
-        title: room.title,
-        description: room.description,
-        interviewer,
-        candidate,
-        candidateEmail: candidate?.email || room.candidateEmail || fallbackCandidateEmail || '',
-        scheduledAt: room.scheduledAt,
-        durationMinutes: room.durationMinutes,
-        status: room.status,
-        problemStatement: room.problemStatement,
-        techStack: room.techStack || [],
-        difficultyLevel: room.difficultyLevel || 'medium',
-        createdAt: room.createdAt || new Date().toISOString(),
-    };
+  const candidate = normalizeUser(room.candidate, "candidate");
+  return {
+    id: room._id || room.id || room.roomId,
+    roomId: room.roomId,
+    title: room.title,
+    description: room.description,
+    interviewer,
+    candidate,
+    candidateEmail:
+      candidate?.email || room.candidateEmail || fallbackCandidateEmail || "",
+    scheduledAt: room.scheduledAt,
+    durationMinutes: room.durationMinutes,
+    status: room.status,
+    problemStatement: room.problemStatement,
+    techStack: room.techStack || [],
+    difficultyLevel: room.difficultyLevel || "medium",
+    createdAt: room.createdAt || new Date().toISOString(),
+  };
 };
-const statusConfig = {
-    scheduled: { label: 'Scheduled', className: 'bg-info/10 text-info border-info/20' },
-    active: { label: 'Live', className: 'bg-success/10 text-success border-success/20' },
-    completed: { label: 'Completed', className: 'bg-muted text-muted-foreground border-border' },
-    cancelled: { label: 'Cancelled', className: 'bg-destructive/10 text-destructive border-destructive/20' },
+
+const statusLabel = {
+  scheduled: { label: "Scheduled", dot: "bg-[#0284c7]" },
+  active: { label: "Live now", dot: "bg-[#00c875]" },
+  completed: { label: "Completed", dot: "bg-[#828b83]" },
+  cancelled: { label: "Cancelled", dot: "bg-[#ba1a1a]" },
 };
-export default function InterviewerDashboard() {
-    const [showCreate, setShowCreate] = useState(false);
-    const [filter, setFilter] = useState('all');
-    const [rooms, setRooms] = useState([]);
-    const [isLoadingRooms, setIsLoadingRooms] = useState(true);
-    const [startingRoomId, setStartingRoomId] = useState(null);
-    const [showProfileTip, setShowProfileTip] = useState(false);
-    const user = useAuthStore((s) => s.user);
-    const logout = useAuthStore((s) => s.logout);
-    const navigate = useNavigate();
-    const { toast } = useToast();
-    const filtered = filter === 'all' ? rooms : rooms.filter((r) => r.status === filter);
-    const completedCount = rooms.filter((r) => r.status === 'completed').length;
-    const candidateCount = new Set(rooms.map((room) => room.candidateEmail).filter(Boolean)).size;
 
-    useEffect(() => {
-        const justLoggedIn = sessionStorage.getItem("justLoggedIn");
-        if (justLoggedIn === "true") {
-            toast({
-                title: `Welcome back, ${user?.name?.split(" ")[0] || "there"}! 👋`,
-                description: "Great to see you again on InterviewOS.",
-            });
-            setShowProfileTip(true);
-            sessionStorage.removeItem("justLoggedIn");
-        }
-    }, [user, toast]);
-    useEffect(() => {
-        const loadRooms = async () => {
-            try {
-                setIsLoadingRooms(true);
-                const response = await api.get('/rooms');
-                const nextRooms = (response.data.data || []).map((room) => mapApiRoomToRoom(room, user));
-                setRooms(nextRooms);
-            }
-            catch (error) {
-                toast({
-                    title: 'Failed to load rooms',
-                    description: error?.response?.data?.message || 'Unable to fetch interview rooms right now.',
-                    variant: 'destructive',
-                });
-            }
-            finally {
-                setIsLoadingRooms(false);
-            }
-        };
-        loadRooms();
-    }, [toast, user]);
-    const handleCreateRoom = async (data) => {
-        if (!user) {
-            toast({
-                title: 'Unable to create room',
-                description: 'Please sign in again and retry.',
-                variant: 'destructive',
-            });
-            return;
-        }
-        try {
-            const response = await api.post('/rooms', {
-                title: data.title.trim(),
-                description: data.problemStatement.trim(),
-                candidateEmail: data.candidateEmail.trim(),
-                scheduledAt: new Date(data.dateTime).toISOString(),
-                durationMinutes: Number(data.duration),
-                problemStatement: data.problemStatement.trim(),
-                techStack: data.techStack
-                    .split(',')
-                    .map((item) => item.trim())
-                    .filter(Boolean),
-                difficultyLevel: data.difficulty,
-            });
-            const createdRoom = mapApiRoomToRoom(response.data.data, user, data.candidateEmail.trim());
-            setRooms((prev) => [createdRoom, ...prev]);
-            setShowCreate(false);
-            toast({
-                title: 'Room created!',
-                description: 'The interview room is now available in your list.',
-            });
-        }
-        catch (error) {
-            toast({
-                title: 'Unable to create room',
-                description: error?.response?.data?.message || 'Please try again.',
-                variant: 'destructive',
-            });
-        }
-    };
-    const handleStartRoom = async (room) => {
-        try {
-            setStartingRoomId(room.id);
-            const response = await api.post(`/rooms/${room.id}/start`);
-            const sessionId = response.data.data?._id || response.data.data?.id;
-            if (sessionId) {
-                sessionStorage.setItem(getSessionStorageKey(room.roomId), sessionId);
-            }
-            setRooms((prev) => prev.map((item) => (item.id === room.id ? { ...item, status: 'active' } : item)));
-            navigate(`/room/${room.roomId}`);
-        }
-        catch (error) {
-            toast({
-                title: 'Unable to start room',
-                description: error?.response?.data?.message || 'Please try again.',
-                variant: 'destructive',
-            });
-        }
-        finally {
-            setStartingRoomId(null);
-        }
-    };
-    const handleLogout = () => {
-        logout();
-        navigate('/');
-    };
-    const copyInvite = (roomId) => {
-        navigator.clipboard.writeText(`${window.location.origin}/room/${roomId}`);
-        toast({ title: 'Invite link copied!' });
-    };
-    return (<div className="dashboard-container min-h-screen bg-background bg-dashboard-dot-pattern pb-12">
-        <style dangerouslySetInnerHTML={{
-          __html: `
-            @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
-            @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
- 
-            .dashboard-container {
-              font-family: 'Montserrat', sans-serif !important;
-              --primary: 130 77% 22% !important; /* #0d631b */
-              --primary-foreground: 0 0% 100% !important;
-              --background: 120 10% 98% !important; /* #f8faf8 */
-              --foreground: 160 5% 10% !important; /* #191c1b */
-              --card: 0 0% 100% !important; /* #ffffff */
-              --card-foreground: 160 5% 10% !important;
-              --popover: 120 10% 98% !important;
-              --popover-foreground: 160 5% 10% !important;
-              --secondary: 120 5% 93% !important; /* #eceeec */
-              --secondary-foreground: 121 40% 32% !important; /* #307231 */
-              --muted: 120 5% 95% !important; /* #f2f4f2 */
-              --muted-foreground: 110 9% 26% !important; /* #40493d */
-              --accent: 130 77% 22% !important;
-              --accent-foreground: 0 0% 100% !important;
-              --border: 101 14% 76% !important; /* #bfcaba */
-              --input: 101 14% 76% !important;
-              --ring: 130 77% 22% !important;
-              --gradient-primary: linear-gradient(135deg, hsl(130, 77%, 22%), hsl(120, 45%, 34%)) !important;
-            }
- 
-            .dark .dashboard-container, .dashboard-container.dark {
-              --primary: 116 53% 68% !important; /* #88d982 */
-              --primary-foreground: 131 100% 11% !important; /* #00390a */
-              --background: 130 15% 5% !important; /* #0c0f0d */
-              --foreground: 120 10% 95% !important; /* #eff2ef */
-              --card: 130 12% 8% !important; /* #111612 */
-              --card-foreground: 120 10% 95% !important;
-              --popover: 130 12% 8% !important;
-              --popover-foreground: 120 10% 95% !important;
-              --secondary: 128 17% 11% !important; /* #182219 */
-              --secondary-foreground: 115 88% 79% !important; /* #a3f69c */
-              --muted: 128 12% 12% !important; /* #1b221c */
-              --muted-foreground: 127 6% 56% !important; /* #8a948b */
-              --accent: 116 53% 68% !important;
-              --accent-foreground: 131 100% 11% !important;
-              --border: 131 8% 19% !important; /* #2d362f */
-              --input: 131 8% 19% !important;
-              --ring: 116 53% 68% !important;
-              --gradient-primary: linear-gradient(135deg, hsl(116, 53%, 68%), hsl(128, 17% , 15%)) !important;
-            }
- 
-            .dashboard-container button,
-            .dashboard-container input,
-            .dashboard-container select,
-            .dashboard-container textarea,
-            .dashboard-container span,
-            .dashboard-container div,
-            .dashboard-container h1,
-            .dashboard-container h2,
-            .dashboard-container h3,
-            .dashboard-container h4,
-            .dashboard-container a {
-              font-family: 'Montserrat', sans-serif !important;
-            }
+function InterviewerRoomRow({
+  room,
+  startingRoomId,
+  onStartRoom,
+  onCopyInvite,
+  onNavigate,
+}) {
+  const status = statusLabel[room.status] || statusLabel.scheduled;
+  return (
+    <div className="py-5 border-b border-[#e2e7e1] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="space-y-1.5">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <span className={`w-2 h-2 rounded-full ${status.dot}`} />
+          <h3 className="text-[16px] font-semibold text-[#171917] tracking-[-0.01em]">
+            {room.title}
+          </h3>
+          <span className="text-[12px] text-[#707870]">· {status.label}</span>
+          <span className="text-[11px] uppercase tracking-wider text-[#707870] border border-[#e2e7e1] px-1.5 py-0.5 rounded capitalize">
+            {room.difficultyLevel}
+          </span>
+        </div>
 
-            .bg-dashboard-dot-pattern {
-              background-image: radial-gradient(circle, rgba(13, 99, 27, 0.05) 1px, transparent 1px);
-              background-size: 24px 24px;
-            }
-            .dark .bg-dashboard-dot-pattern, .dashboard-container.dark .bg-dashboard-dot-pattern {
-              background-image: radial-gradient(circle, rgba(136, 217, 130, 0.04) 1px, transparent 1px);
-              background-size: 24px 24px;
-            }
-          `
-        }} />
-        <header className="border-b border-border bg-card/60 backdrop-blur-md sticky top-0 z-40">
-          <div className="container flex items-center justify-between h-16">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-primary">
-                <Terminal className="w-4 h-4 text-primary-foreground"/>
-              </div>
-              <span className="font-bold text-primary">InterviewOS</span>
-            </Link>
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <div 
-                  className="flex items-center gap-2 cursor-pointer hover:opacity-85 select-none"
-                  onClick={() => setShowProfileTip(prev => !prev)}
-                >
-                  <div className="relative w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                    <User className="w-4 h-4 text-primary"/>
-                    <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-background animate-pulse" />
-                  </div>
-                  <span className="text-sm font-medium hidden sm:inline">{user?.name}</span>
-                </div>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-[#566059]">
+          <span className="inline-flex items-center gap-1.5">
+            <Calendar className="w-3.5 h-3.5 text-[#707870]" />
+            {format(new Date(room.scheduledAt), "MMM d, yyyy")}
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <Clock className="w-3.5 h-3.5 text-[#707870]" />
+            {format(new Date(room.scheduledAt), "h:mm a")} · {room.durationMinutes}m
+          </span>
+          {room.candidateEmail && (
+            <span className="inline-flex items-center gap-1.5 break-all">
+              <Users className="w-3.5 h-3.5 text-[#707870] shrink-0" />
+              {room.candidateEmail}
+            </span>
+          )}
+        </div>
 
-                <AnimatePresence>
-                  {showProfileTip && (
-                    <motion.div 
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="absolute top-11 right-0 z-50 w-64 p-4 rounded-xl bg-card border border-border shadow-xl text-left"
-                    >
-                      <div className="flex items-center gap-1.5 mb-2.5 select-none">
-                        <span className="w-1.5 h-1.5 rounded-full bg-red-400/80" />
-                        <span className="w-1.5 h-1.5 rounded-full bg-yellow-400/80" />
-                        <span className="w-1.5 h-1.5 rounded-full bg-green-400/80" />
-                        <span className="font-mono text-[9px] text-muted-foreground ml-1">profile_helper.sh</span>
-                      </div>
-                      <p className="text-xs text-foreground font-semibold mb-1">Set up your profile</p>
-                      <p className="text-[11px] text-muted-foreground mb-3 leading-normal">
-                        Add your details to customize your interview experience.
-                      </p>
-                      <div className="flex gap-2 justify-end">
-                        <Button 
-                          variant="ghost" 
-                          className="text-[10px] h-7 px-2"
-                          onClick={() => setShowProfileTip(false)}
-                        >
-                          Later
-                        </Button>
-                        <Button 
-                          className="text-[10px] h-7 px-3 bg-gradient-primary hover:opacity-90 text-primary-foreground"
-                          onClick={() => {
-                            setShowProfileTip(false);
-                            navigate("/onboarding");
-                          }}
-                        >
-                          Complete Now
-                        </Button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-              <Button variant="ghost" size="sm" onClick={handleLogout}>
-                <LogOut className="w-4 h-4"/>
-              </Button>
-            </div>
-          </div>
-        </header>
-
-        <div className="container py-6 sm:py-8 relative z-10">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-              <h1 className="text-3xl font-bold mb-1">Interviewer Dashboard</h1>
-              <p className="text-muted-foreground">Manage your interviews and candidates.</p>
-            </motion.div>
-            <Button onClick={() => setShowCreate(true)} className="bg-gradient-primary hover:opacity-90 w-full sm:w-auto active:scale-95 transition-all">
-              <Plus className="w-4 h-4 mr-2"/> Create Room
-            </Button>
-          </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-10">
-            {[
-              { icon: Calendar, label: 'Total Interviews', value: rooms.length },
-              { icon: CheckCircle2, label: 'Completed', value: completedCount },
-              { icon: Users, label: 'Candidates', value: candidateCount },
-              { icon: BarChart3, label: 'Avg Rating', value: '4.2' },
-            ].map((stat) => (
-              <div key={stat.label} className="relative overflow-hidden p-5 rounded-xl bg-card border border-border hover:border-primary/30 transition-all hover:shadow-md group">
-                <div className="absolute top-0 right-0 p-3 text-primary/10 group-hover:text-primary/20 transition-colors">
-                  <stat.icon className="w-12 h-12 stroke-[1]"/>
-                </div>
-                <div className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">{stat.label}</div>
-                <div className="text-3xl font-bold tracking-tight text-foreground">{stat.value}</div>
-              </div>
+        {room.techStack?.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {room.techStack.map((t) => (
+              <span
+                key={t}
+                className="px-2 py-0.5 text-[11px] rounded bg-[#eef5ef] text-[#008a52] font-medium"
+              >
+                {t}
+              </span>
             ))}
           </div>
+        )}
+      </div>
 
-          {/* Filters */}
-          <div className="flex gap-2 mb-6 flex-wrap">
-            {['all', 'scheduled', 'active', 'completed', 'cancelled'].map((status) => (<button key={status} onClick={() => setFilter(status)} className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all active:scale-95 ${filter === status
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'bg-secondary text-muted-foreground hover:text-foreground'}`}>
-                {status === 'all' ? 'All' : status.charAt(0).toUpperCase() + status.slice(1)}
-              </button>))}
+      <div className="flex items-center gap-2 shrink-0">
+        <button
+          type="button"
+          onClick={() => onCopyInvite(room.roomId)}
+          className="h-9 w-9 rounded-full border border-[#e2e7e1] text-[#566059] hover:text-[#171917] hover:border-[#bfcaba] inline-flex items-center justify-center transition-colors bg-transparent cursor-pointer"
+          title="Copy invite link"
+          aria-label="Copy invite link"
+        >
+          <Copy className="w-3.5 h-3.5" />
+        </button>
+
+        {room.status === "scheduled" && (
+          <button
+            type="button"
+            disabled={startingRoomId === room.id}
+            onClick={() => onStartRoom(room)}
+            className="inline-flex items-center gap-1.5 px-4 h-9 rounded-full bg-[#080a09] hover:bg-[#242925] disabled:opacity-50 text-white text-[13px] font-semibold transition-colors cursor-pointer"
+          >
+            {startingRoomId === room.id ? "Starting..." : "Start"}{" "}
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        )}
+
+        {room.status === "active" && (
+          <button
+            type="button"
+            onClick={() => onNavigate(`/room/${room.roomId}`)}
+            className="inline-flex items-center gap-1.5 px-4 h-9 rounded-full bg-[#008a52] hover:bg-[#007344] text-white text-[13px] font-semibold transition-colors cursor-pointer"
+          >
+            Rejoin <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        )}
+
+        {room.status === "completed" && (
+          <>
+            <button
+              type="button"
+              onClick={() => onNavigate(`/feedback/${room.roomId}`)}
+              className="px-4 h-9 rounded-full border border-[#171917] text-[#171917] hover:bg-[#eef5ef] text-[13px] font-semibold transition-colors cursor-pointer bg-transparent"
+            >
+              Feedback / AI Draft
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigate(`/room/${room.roomId}/replay`)}
+              className="px-4 h-9 rounded-full border border-[#e2e7e1] text-[#566059] hover:text-[#171917] hover:border-[#bfcaba] text-[13px] font-medium transition-colors cursor-pointer bg-transparent"
+            >
+              Replay
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function InterviewerDashboard() {
+  const [showCreate, setShowCreate] = useState(false);
+  const [activeNav, setActiveNav] = useState("overview"); // "overview" | "interviews" | "evaluations" | "ai-copilot" | "question-bank"
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [filter, setFilter] = useState("all");
+  const [rooms, setRooms] = useState([]);
+  const [isLoadingRooms, setIsLoadingRooms] = useState(true);
+  const [startingRoomId, setStartingRoomId] = useState(null);
+
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const filtered =
+    filter === "all" ? rooms : rooms.filter((r) => r.status === filter);
+  const completedRooms = rooms.filter((r) => r.status === "completed");
+  const candidateCount = new Set(
+    rooms.map((room) => room.candidateEmail).filter(Boolean)
+  ).size;
+
+  useEffect(() => {
+    const justLoggedIn = sessionStorage.getItem("justLoggedIn");
+    if (justLoggedIn === "true") {
+      toast({
+        title: `Welcome back, ${user?.name?.split(" ")[0] || "there"}`,
+        description: "Your interviewer workspace is ready.",
+      });
+      sessionStorage.removeItem("justLoggedIn");
+    }
+  }, [user, toast]);
+
+  useEffect(() => {
+    const loadRooms = async () => {
+      try {
+        setIsLoadingRooms(true);
+        const response = await api.get("/rooms");
+        const nextRooms = (response.data.data || []).map((room) =>
+          mapApiRoomToRoom(room, user)
+        );
+        setRooms(nextRooms);
+      } catch (error) {
+        toast({
+          title: "Failed to load rooms",
+          description:
+            error?.response?.data?.message ||
+            "Unable to fetch interview rooms right now.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoadingRooms(false);
+      }
+    };
+    loadRooms();
+  }, [toast, user]);
+
+  const handleCreateRoom = async (data) => {
+    if (!user) {
+      toast({
+        title: "Unable to create room",
+        description: "Please sign in again and retry.",
+        variant: "destructive",
+      });
+      return;
+    }
+    try {
+      const response = await api.post("/rooms", {
+        title: data.title.trim(),
+        description: data.problemStatement.trim(),
+        candidateEmail: data.candidateEmail.trim(),
+        scheduledAt: new Date(data.dateTime).toISOString(),
+        durationMinutes: Number(data.duration),
+        problemStatement: data.problemStatement.trim(),
+        techStack: data.techStack
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean),
+        difficultyLevel: data.difficulty,
+      });
+      const createdRoom = mapApiRoomToRoom(
+        response.data.data,
+        user,
+        data.candidateEmail.trim()
+      );
+      setRooms((prev) => [createdRoom, ...prev]);
+      setShowCreate(false);
+      toast({
+        title: "Room created!",
+        description: "The interview room is now available in your list.",
+      });
+    } catch (error) {
+      toast({
+        title: "Unable to create room",
+        description: error?.response?.data?.message || "Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleStartRoom = async (room) => {
+    try {
+      setStartingRoomId(room.id);
+      const response = await api.post(`/rooms/${room.id}/start`);
+      const sessionId = response.data.data?._id || response.data.data?.id;
+      if (sessionId) {
+        sessionStorage.setItem(getSessionStorageKey(room.roomId), sessionId);
+      }
+      setRooms((prev) =>
+        prev.map((item) =>
+          item.id === room.id ? { ...item, status: "active" } : item
+        )
+      );
+      navigate(`/room/${room.roomId}`);
+    } catch (error) {
+      toast({
+        title: "Unable to start room",
+        description: error?.response?.data?.message || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setStartingRoomId(null);
+    }
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/");
+  };
+
+  const copyInvite = (roomId) => {
+    navigator.clipboard.writeText(`${window.location.origin}/room/${roomId}`);
+    toast({ title: "Invite link copied!" });
+  };
+
+  return (
+    <div
+      className="interviewer-workspace min-h-screen bg-[#fafbf9] text-[#171917] flex flex-col"
+      style={{
+        fontFamily:
+          '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif',
+      }}
+    >
+      <style>{`
+        .interviewer-workspace h1,
+        .interviewer-workspace h2,
+        .interviewer-workspace h3,
+        .interviewer-workspace h4 {
+          font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+        }
+      `}</style>
+
+      {/* Single Persistent Top Bar */}
+      <header className="sticky top-0 z-40 h-[64px] w-full bg-[#fafbf9]/90 backdrop-blur-md border-b border-[#e2e7e1] px-5 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setSidebarOpen((prev) => !prev)}
+            className="hidden md:inline-flex p-1.5 rounded-lg text-[#566059] hover:text-[#171917] hover:bg-[#eef5ef] transition-colors bg-transparent border-none cursor-pointer"
+            aria-label={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
+            title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
+          >
+            {sidebarOpen ? (
+              <PanelLeftClose className="w-4 h-4" />
+            ) : (
+              <PanelLeftOpen className="w-4 h-4" />
+            )}
+          </button>
+          <Link
+            to="/"
+            className="inline-flex items-center gap-[5px] text-[#111111] text-[19px] font-bold tracking-[-0.01em] leading-none"
+          >
+            InterviewOS
+            <span
+              className="inline-block w-[7px] h-[15px] bg-[#00c875]"
+              aria-hidden="true"
+            />
+          </Link>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => setShowCreate(true)}
+            className="inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-[#080a09] hover:bg-[#242925] text-white text-[13px] font-semibold transition-colors cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" /> Create Room
+          </button>
+          <div className="h-4 w-[1px] bg-[#e2e7e1] hidden sm:block" />
+          <span className="text-[13.5px] font-medium text-[#171917] hidden sm:inline">
+            {user?.name}
+          </span>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="p-1.5 rounded-lg text-[#566059] hover:text-[#171917] hover:bg-[#f4f6f3] transition-colors bg-transparent border-none cursor-pointer"
+            aria-label="Log out"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
+      </header>
+
+      <div className="flex-1 flex min-h-0">
+        {/* Smoothly Collapsible Left Workspace Sidebar */}
+        <aside
+          className={`hidden md:flex shrink-0 flex-col justify-between bg-white sticky top-[64px] h-[calc(100vh-64px)] overflow-hidden transition-all duration-300 ease-out ${
+            sidebarOpen
+              ? "w-[228px] border-r border-[#e2e7e1] px-4 py-5 opacity-100"
+              : "w-0 border-r-0 px-0 py-5 opacity-0 pointer-events-none"
+          }`}
+        >
+          <div className="w-[196px]">
+            <p className="px-2.5 text-[10.5px] uppercase tracking-[0.12em] text-[#828b83] mb-2 whitespace-nowrap">
+              Interviewer workspace
+            </p>
+            <nav className="space-y-1">
+              {[
+                { id: "overview", label: "Overview", icon: Users },
+                { id: "interviews", label: "Interviews", icon: Calendar },
+                { id: "evaluations", label: "Evaluations", icon: BarChart3 },
+                { id: "ai-copilot", label: "AI Co-Pilot", icon: Sparkles, soon: true },
+                { id: "question-bank", label: "Question Bank", icon: FileText, soon: true },
+              ].map((item) => {
+                const Icon = item.icon;
+                const isActive = activeNav === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setActiveNav(item.id)}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[13.5px] font-medium transition-colors cursor-pointer whitespace-nowrap ${
+                      isActive
+                        ? "bg-[#e3f4e8] text-[#0d5216]"
+                        : "text-[#566059] hover:bg-[#f4f6f3] hover:text-[#171917]"
+                    }`}
+                  >
+                    <span className="inline-flex items-center gap-2.5">
+                      <Icon className="w-4 h-4 shrink-0" />
+                      {item.label}
+                    </span>
+                    {item.soon ? (
+                      <span className="text-[9.5px] px-1.5 py-0.5 rounded bg-[#eff1ee] text-[#717b73]">
+                        Soon
+                      </span>
+                    ) : isActive ? (
+                      <ChevronRight className="w-3.5 h-3.5 shrink-0" />
+                    ) : null}
+                  </button>
+                );
+              })}
+            </nav>
           </div>
+        </aside>
 
-          {/* Room List */}
-          <div className="space-y-4">
-            {isLoadingRooms ? (
-              <div className="space-y-4">
-                {[1, 2, 3].map((n) => (
-                  <div key={n} className="rounded-xl overflow-hidden bg-card border border-border p-5 space-y-4 animate-pulse select-none">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="h-6 w-36 bg-secondary rounded" />
-                        <div className="h-5 w-16 bg-secondary rounded" />
-                      </div>
-                      <div className="h-4 w-24 bg-secondary rounded" />
-                    </div>
-                    <div className="flex gap-4">
-                      <div className="h-4 w-20 bg-secondary rounded" />
-                      <div className="h-4 w-20 bg-secondary rounded" />
-                      <div className="h-4 w-12 bg-secondary rounded" />
-                    </div>
-                    <div className="flex gap-2 pt-2">
-                      <div className="h-5 w-16 bg-secondary rounded" />
-                      <div className="h-5 w-12 bg-secondary rounded" />
-                    </div>
+        <div className="flex-1 min-w-0 flex flex-col">
+          <main className="w-full max-w-[1060px] mx-auto px-6 py-9">
+            {/* Page Header */}
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-8 border-b border-[#e2e7e1]">
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.13em] text-[#657168] mb-2">
+                  Interviewer workspace
+                </p>
+                <h1 className="text-[34px] leading-[1.06] font-semibold tracking-[-0.04em] text-[#171917]">
+                  Manage your interviews.
+                </h1>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCreate(true)}
+                className="inline-flex items-center justify-center gap-1.5 h-10 px-5 rounded-full bg-[#080a09] hover:bg-[#242925] text-white text-[13.5px] font-semibold transition-colors cursor-pointer shrink-0"
+              >
+                <Plus className="w-4 h-4" /> New Interview Room
+              </button>
+            </div>
+
+            {activeNav === "ai-copilot" ? (
+              <div className="py-12 max-w-2xl">
+                <span className="inline-block px-2.5 py-1 rounded bg-[#eff1ee] text-[#717b73] text-[11px] font-medium mb-4">
+                  Coming soon · Phase 5
+                </span>
+                <h2 className="text-[24px] font-semibold text-[#171917] tracking-[-0.02em] mb-2">
+                  Private Interviewer AI Co-Pilot
+                </h2>
+                <p className="text-[14.5px] text-[#566059] leading-relaxed">
+                  A live, interviewer-only sidebar inside the room that streams suggested follow-up questions, complexity estimates, edge-case checks, and an escalating hint ladder—never visible to candidates.
+                </p>
+              </div>
+            ) : activeNav === "question-bank" ? (
+              <div className="py-12 max-w-2xl">
+                <span className="inline-block px-2.5 py-1 rounded bg-[#eff1ee] text-[#717b73] text-[11px] font-medium mb-4">
+                  Coming soon · Phase 8
+                </span>
+                <h2 className="text-[24px] font-semibold text-[#171917] tracking-[-0.02em] mb-2">
+                  RAG Problem &amp; Rubric Bank
+                </h2>
+                <p className="text-[14.5px] text-[#566059] leading-relaxed">
+                  Search original coding and system design problems matched to your job description and role, complete with expected edge cases and grading rubrics.
+                </p>
+              </div>
+            ) : activeNav === "evaluations" ? (
+              <div className="py-10 space-y-6">
+                <div>
+                  <h2 className="text-[20px] font-semibold text-[#171917] mb-1">
+                    AI Evaluation Drafts &amp; Feedback
+                  </h2>
+                  <p className="text-[14px] text-[#566059]">
+                    Generate an evidence-linked AI draft after any completed interview, edit ratings, and share with the candidate.
+                  </p>
+                </div>
+                {completedRooms.length > 0 ? (
+                  <div>
+                    {completedRooms.map((room) => (
+                      <InterviewerRoomRow
+                        key={room.id}
+                        room={room}
+                        startingRoomId={startingRoomId}
+                        onStartRoom={handleStartRoom}
+                        onCopyInvite={copyInvite}
+                        onNavigate={navigate}
+                      />
+                    ))}
                   </div>
-                ))}
+                ) : (
+                  <div className="p-8 rounded-xl border border-[#e2e7e1] bg-white text-[14px] text-[#566059]">
+                    No completed interviews yet. Once you end an interview session, you can generate an AI evaluation draft and inspect its replay evidence here.
+                  </div>
+                )}
               </div>
             ) : (
-              <>
-                {rooms.length === 0 && (
-                  <div className="flex flex-col items-center justify-center p-12 text-center rounded-2xl border border-dashed border-primary/30 bg-primary/5 max-w-2xl mx-auto my-8">
-                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-4">
-                      <Plus className="w-8 h-8" />
-                    </div>
-                    <h3 className="text-xl font-bold mb-2">No Interviews Yet</h3>
-                    <p className="text-sm text-muted-foreground max-w-md mb-6 leading-relaxed">
-                      You have not created or scheduled any interviews yet. Get started by scheduling your first technical assessment room.
-                    </p>
-                    <Button onClick={() => setShowCreate(true)} className="bg-gradient-primary hover:opacity-90 active:scale-95 transition-all">
-                      <Plus className="w-4 h-4 mr-2"/> Create Interview Room
-                    </Button>
+              /* Default Overview & Interviews */
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 pt-8">
+                <div className="lg:col-span-8 space-y-6">
+                  <div className="flex items-center gap-6 border-b border-[#e2e7e1] pb-3 overflow-x-auto">
+                    {[
+                      { id: "all", label: `All (${rooms.length})` },
+                      { id: "scheduled", label: "Scheduled" },
+                      { id: "active", label: "Live" },
+                      { id: "completed", label: "Completed" },
+                      { id: "cancelled", label: "Cancelled" },
+                    ].map((tab) => (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setFilter(tab.id)}
+                        className={`text-[13.5px] font-medium pb-3 -mb-[13px] border-b-2 transition-colors bg-transparent cursor-pointer whitespace-nowrap ${
+                          filter === tab.id
+                            ? "border-[#008a52] text-[#171917]"
+                            : "border-transparent text-[#707870] hover:text-[#171917]"
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
                   </div>
-                )}
-                {rooms.length > 0 && filtered.length === 0 && (
-                  <div className="rounded-xl border border-dashed border-border bg-card/50 p-8 text-center text-sm text-muted-foreground">
-                    No interviews match the selected filter.
-                  </div>
-                )}
-                {filtered.map((room, i) => (
-                  <motion.div 
-                    key={room.id} 
-                    initial={{ opacity: 0, y: 10 }} 
-                    animate={{ opacity: 1, y: 0 }} 
-                    transition={{ delay: i * 0.05 }} 
-                    className="rounded-xl overflow-hidden bg-card border border-border hover:border-primary/30 transition-all hover:shadow-md group"
-                  >
-                    {/* Simulated Tab Bar / Window Header */}
-                    <div className="bg-muted/40 px-4 py-2.5 border-b border-border/60 flex items-center justify-between text-xs select-none">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-red-400/80" />
-                        <span className="w-2 h-2 rounded-full bg-yellow-400/80" />
-                        <span className="w-2 h-2 rounded-full bg-green-400/80" />
-                      </div>
-                      <span className="font-mono text-[10px] text-muted-foreground tracking-wider group-hover:text-primary transition-colors">
-                        {room.roomId}.session
-                      </span>
-                    </div>
 
-                    <div className="p-5">
-                      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">{room.title}</h3>
-                            <Badge variant="outline" className={statusConfig[room.status].className}>
-                              {statusConfig[room.status].label}
-                            </Badge>
-                          </div>
-                          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground mb-3">
-                            <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5"/>{format(new Date(room.scheduledAt), 'MMM d, yyyy')}</span>
-                            <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5"/>{format(new Date(room.scheduledAt), 'h:mm a')}</span>
-                            <span>{room.durationMinutes}min</span>
-                            <span className="flex items-center gap-1 break-all"><Users className="w-3.5 h-3.5 shrink-0"/>{room.candidateEmail}</span>
-                          </div>
-                          <div className="flex flex-wrap gap-1.5">
-                            {room.techStack.map((t) => (<span key={t} className="px-2 py-0.5 text-[10px] font-medium rounded-md bg-primary/10 text-primary">{t}</span>))}
-                            <span className={`px-2 py-0.5 text-[10px] font-medium rounded-md ${room.difficultyLevel === 'hard' ? 'bg-destructive/10 text-destructive' :
-                      room.difficultyLevel === 'medium' ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success'}`}>
-                              {room.difficultyLevel}
+                  {isLoadingRooms ? (
+                    <div className="space-y-4 py-4">
+                      {[1, 2].map((n) => (
+                        <div
+                          key={n}
+                          className="py-5 border-b border-[#e2e7e1] animate-pulse space-y-2"
+                        >
+                          <div className="h-5 w-48 bg-[#eceeec] rounded" />
+                          <div className="h-4 w-72 bg-[#eceeec] rounded" />
+                        </div>
+                      ))}
+                    </div>
+                  ) : filtered.length > 0 ? (
+                    <div>
+                      {filtered.map((room) => (
+                        <InterviewerRoomRow
+                          key={room.id}
+                          room={room}
+                          startingRoomId={startingRoomId}
+                          onStartRoom={handleStartRoom}
+                          onCopyInvite={copyInvite}
+                          onNavigate={navigate}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="py-12 border-b border-[#e2e7e1]">
+                      <h2 className="text-[18px] font-semibold text-[#171917] mb-1.5">
+                        {rooms.length === 0
+                          ? "No interviews scheduled yet"
+                          : "No interviews match this filter"}
+                      </h2>
+                      <p className="text-[14px] text-[#566059] max-w-md leading-relaxed mb-5">
+                        {rooms.length === 0
+                          ? "Create your first interview room to invite a candidate, collaborate live on code and whiteboard, and generate AI evaluation drafts."
+                          : "Switch tabs above or create a new interview room."}
+                      </p>
+                      {rooms.length === 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setShowCreate(true)}
+                          className="inline-flex items-center gap-1.5 h-9 px-5 rounded-full bg-[#080a09] hover:bg-[#242925] text-white text-[13px] font-semibold transition-colors cursor-pointer"
+                        >
+                          <Plus className="w-3.5 h-3.5" /> Create Interview Room
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {activeNav === "overview" && (
+                    <div className="space-y-3 pt-2">
+                      <div className="p-5 rounded-xl border border-[#e2e7e1] bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[14px] font-semibold text-[#171917]">
+                              Live AI Co-Pilot
+                            </span>
+                            <span className="px-2 py-0.5 text-[10px] font-medium rounded bg-[#eff1ee] text-[#717b73]">
+                              Coming soon
                             </span>
                           </div>
+                          <p className="text-[13px] text-[#566059]">
+                            Private follow-up questions, complexity estimates, and hint ladder streamed only to you during live interviews.
+                          </p>
                         </div>
-                        <div className="flex flex-wrap gap-2 lg:ml-4 self-center">
-                          <Button size="sm" variant="outline" className="active:scale-95 transition-all" onClick={() => copyInvite(room.roomId)}>
-                            <Copy className="w-3.5 h-3.5"/>
-                          </Button>
-                          {room.status === 'scheduled' && (<Button size="sm" onClick={() => handleStartRoom(room)} className="bg-gradient-primary hover:opacity-90 active:scale-95 transition-all" disabled={startingRoomId === room.id}>
-                              {startingRoomId === room.id ? 'Starting...' : 'Start'} <ArrowRight className="ml-1 w-3.5 h-3.5"/>
-                            </Button>)}
-                          {room.status === 'completed' && (
-                            <div className="flex gap-2">
-                              <Button size="sm" variant="outline" className="active:scale-95 transition-all" onClick={() => navigate(`/feedback/${room.roomId}`)}>
-                                Feedback
-                              </Button>
-                              <Button size="sm" variant="secondary" className="active:scale-95 transition-all bg-secondary/80 border border-border/40 hover:bg-primary/10 hover:text-primary" onClick={() => navigate(`/room/${room.roomId}/replay`)}>
-                                Replay
-                              </Button>
-                            </div>
-                          )}
+                      </div>
+
+                      <div className="p-5 rounded-xl border border-[#e2e7e1] bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[14px] font-semibold text-[#171917]">
+                              Smart Question Bank
+                            </span>
+                            <span className="px-2 py-0.5 text-[10px] font-medium rounded bg-[#eff1ee] text-[#717b73]">
+                              Coming soon
+                            </span>
+                          </div>
+                          <p className="text-[13px] text-[#566059]">
+                            Vector-retrieved coding and system design problems matched to role and tech stack.
+                          </p>
                         </div>
                       </div>
                     </div>
-                  </motion.div>
-                ))}
-              </>
+                  )}
+                </div>
+
+                {/* Right Side Rail */}
+                <aside className="lg:col-span-4 space-y-6">
+                  <div className="grid grid-cols-3 border border-[#e2e7e1] rounded-xl bg-white divide-x divide-[#e2e7e1]">
+                    <div className="p-4">
+                      <div className="text-[11px] uppercase tracking-wider text-[#707870]">
+                        Total
+                      </div>
+                      <div className="text-[22px] font-semibold text-[#171917] mt-0.5 tabular-nums">
+                        {rooms.length}
+                      </div>
+                    </div>
+                    <div className="p-4">
+                      <div className="text-[11px] uppercase tracking-wider text-[#707870]">
+                        Completed
+                      </div>
+                      <div className="text-[22px] font-semibold text-[#008a52] mt-0.5 tabular-nums">
+                        {completedRooms.length}
+                      </div>
+                    </div>
+                    <div className="p-4">
+                      <div className="text-[11px] uppercase tracking-wider text-[#707870]">
+                        Candidates
+                      </div>
+                      <div className="text-[22px] font-semibold text-[#171917] mt-0.5 tabular-nums">
+                        {candidateCount}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-6 rounded-xl border border-[#e2e7e1] bg-white space-y-3">
+                    <h2 className="text-[16px] font-semibold text-[#171917]">
+                      Schedule an interview
+                    </h2>
+                    <p className="text-[13px] text-[#566059] leading-relaxed">
+                      Set up a live room with Monaco editor, E2E-encrypted Excalidraw, Judge0 execution, and post-session AI evaluation drafts.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setShowCreate(true)}
+                      className="w-full h-9 rounded-full border border-[#171917] text-[#171917] hover:bg-[#eef5ef] text-[13px] font-semibold transition-colors cursor-pointer bg-transparent"
+                    >
+                      + Create Room
+                    </button>
+                  </div>
+
+                  <div className="p-5 rounded-xl border border-[#e2e7e1] bg-white space-y-2.5">
+                    <p className="text-[11px] uppercase tracking-[0.12em] text-[#707870]">
+                      Workflow checklist
+                    </p>
+                    {[
+                      { label: "Create an interview room", done: rooms.length > 0 },
+                      { label: "Conduct live session", done: completedRooms.length > 0 },
+                      { label: "Review AI draft & share", done: completedRooms.length > 0 },
+                    ].map((item) => (
+                      <div
+                        key={item.label}
+                        className="flex items-center gap-2.5 text-[13px] text-[#414740]"
+                      >
+                        <span
+                          className={`w-4 h-4 rounded-full flex items-center justify-center ${
+                            item.done
+                              ? "bg-[#eef5ef] text-[#008a52]"
+                              : "border border-[#d9e0da] text-transparent"
+                          }`}
+                        >
+                          <Check className="w-2.5 h-2.5" />
+                        </span>
+                        <span className={item.done ? "text-[#171917]" : "text-[#828b83]"}>
+                          {item.label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </aside>
+              </div>
             )}
-          </div>
+          </main>
         </div>
+      </div>
 
-        {/* System Status Indicator */}
-        <div className="fixed bottom-4 right-4 z-40 bg-background/80 backdrop-blur-sm border border-border px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm opacity-80 hover:opacity-100 transition-opacity">
-          <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
-          <span className="font-mono text-[10px] text-muted-foreground">InterviewOS Core v4.2 Online</span>
-        </div>
-
-        {/* Create Room Modal */}
-        <AnimatePresence>
-          {showCreate && (<CreateRoomModal onClose={() => setShowCreate(false)} onCreateRoom={handleCreateRoom}/>)}
-        </AnimatePresence>
-      </div>);
+      {/* Create Room Modal */}
+      <AnimatePresence>
+        {showCreate && (
+          <CreateRoomModal
+            onClose={() => setShowCreate(false)}
+            onCreateRoom={handleCreateRoom}
+          />
+        )}
+      </AnimatePresence>
+    </div>
+  );
 }
+
 /* ─── Create Room Modal Component ─── */
 function CreateRoomModal({ onClose, onCreateRoom }) {
-    const { register, handleSubmit, control, formState: { errors }, } = useForm({
-        resolver: zodResolver(createRoomSchema),
-        mode: "onTouched",
-        defaultValues: {
-            title: "",
-            candidateEmail: "",
-            dateTime: "",
-            duration: "60",
-            techStack: "",
-            difficulty: "medium",
-            problemStatement: "",
-        },
-    });
-    const onSubmit = (data) => {
-        onCreateRoom(data);
-    };
-    const FieldError = ({ message }) => message ? (<motion.p initial={{ y: -4, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-[11px] mt-1 flex items-center gap-1 text-destructive" role="alert">
-          <AlertCircle className="w-3 h-3"/> {message}
-        </motion.p>) : null;
-    return (<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
-        <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} onClick={(e) => e.stopPropagation()} className="w-full max-w-3xl rounded-xl bg-card border border-border p-6 max-h-[95vh] md:max-h-none overflow-y-auto md:overflow-visible shadow-xl">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-display font-bold">Create Interview Room</h2>
-            <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
-              <X className="w-5 h-5"/>
-            </button>
-          </div>
-          <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Left Column: Basic Details */}
-              <div className="space-y-4">
-                <div>
-                  <Label>Title <span className="text-destructive">*</span></Label>
-                  <Input placeholder="Frontend Engineer — React Assessment" className={`mt-1.5 bg-secondary border-border ${errors.title ? "!border-destructive" : ""}`} {...register("title")}/>
-                  <FieldError message={errors.title?.message}/>
-                </div>
-                <div>
-                  <Label>Candidate Email <span className="text-destructive">*</span></Label>
-                  <Input type="email" placeholder="candidate@example.com" className={`mt-1.5 bg-secondary border-border ${errors.candidateEmail ? "!border-destructive" : ""}`} {...register("candidateEmail")}/>
-                  <FieldError message={errors.candidateEmail?.message}/>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Date & Time <span className="text-destructive">*</span></Label>
-                    <Input type="datetime-local" className={`mt-1.5 bg-secondary border-border ${errors.dateTime ? "!border-destructive" : ""}`} {...register("dateTime")}/>
-                    <FieldError message={errors.dateTime?.message}/>
-                  </div>
-                  <div>
-                    <Label>Duration (min) <span className="text-destructive">*</span></Label>
-                    <Controller
-                      name="duration"
-                      control={control}
-                      render={({ field }) => (
-                        <CustomSelect
-                          value={field.value}
-                          onChange={field.onChange}
-                          options={[
-                            { value: "30", label: "30 min" },
-                            { value: "45", label: "45 min" },
-                            { value: "60", label: "60 min" },
-                            { value: "90", label: "90 min" },
-                          ]}
-                          className={`mt-1.5 bg-secondary border-border ${errors.duration ? "!border-destructive" : ""}`}
-                        />
-                      )}
-                    />
-                    <FieldError message={errors.duration?.message}/>
-                  </div>
-                </div>
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(createRoomSchema),
+    mode: "onTouched",
+    defaultValues: {
+      title: "",
+      candidateEmail: "",
+      dateTime: "",
+      duration: "60",
+      techStack: "",
+      difficulty: "medium",
+      problemStatement: "",
+    },
+  });
+
+  const onSubmit = (data) => {
+    onCreateRoom(data);
+  };
+
+  const FieldError = ({ message }) =>
+    message ? (
+      <motion.p
+        initial={{ y: -4, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="text-[11px] mt-1 flex items-center gap-1 text-[#ba1a1a]"
+        role="alert"
+      >
+        <AlertCircle className="w-3 h-3" /> {message}
+      </motion.p>
+    ) : null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: 12 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.96, y: 12 }}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-3xl rounded-2xl bg-white border border-[#e2e7e1] p-6 max-h-[92vh] overflow-y-auto shadow-xl"
+      >
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-[#171917]">
+            Create Interview Room
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-[#707870] hover:text-[#171917] bg-transparent border-none cursor-pointer"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div>
+                <Label>
+                  Title <span className="text-[#ba1a1a]">*</span>
+                </Label>
+                <Input
+                  placeholder="Frontend Engineer — React Assessment"
+                  className={`mt-1.5 bg-[#fafbf9] border-[#e2e7e1] ${
+                    errors.title ? "!border-[#ba1a1a]" : ""
+                  }`}
+                  {...register("title")}
+                />
+                <FieldError message={errors.title?.message} />
               </div>
 
-              {/* Right Column: Assessment Details */}
-              <div className="space-y-4">
+              <div>
+                <Label>
+                  Candidate Email <span className="text-[#ba1a1a]">*</span>
+                </Label>
+                <Input
+                  type="email"
+                  placeholder="candidate@example.com"
+                  className={`mt-1.5 bg-[#fafbf9] border-[#e2e7e1] ${
+                    errors.candidateEmail ? "!border-[#ba1a1a]" : ""
+                  }`}
+                  {...register("candidateEmail")}
+                />
+                <FieldError message={errors.candidateEmail?.message} />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>Tech Stack <span className="text-destructive">*</span></Label>
-                  <Input placeholder="React, TypeScript, Node.js" className={`mt-1.5 bg-secondary border-border ${errors.techStack ? "!border-destructive" : ""}`} {...register("techStack")}/>
-                  <FieldError message={errors.techStack?.message}/>
-                </div>
-                <div>
-                  <Label>Difficulty <span className="text-destructive">*</span></Label>
+                  <Label>
+                    Date &amp; Time <span className="text-[#ba1a1a]">*</span>
+                  </Label>
                   <Controller
-                    name="difficulty"
+                    name="dateTime"
                     control={control}
                     render={({ field }) => (
-                      <SegmentedControl
+                      <DateTimePicker
                         value={field.value}
                         onChange={field.onChange}
-                        options={[
-                          { value: "easy", label: "Easy", activeBg: "bg-emerald-600 dark:bg-emerald-500", activeText: "text-white" },
-                          { value: "medium", label: "Medium", activeBg: "bg-amber-600 dark:bg-amber-500", activeText: "text-white" },
-                          { value: "hard", label: "Hard", activeBg: "bg-rose-600 dark:bg-rose-500", activeText: "text-white" },
-                        ]}
-                        className="mt-1.5"
+                        hasError={Boolean(errors.dateTime)}
                       />
                     )}
                   />
-                  <FieldError message={errors.difficulty?.message}/>
+                  <FieldError message={errors.dateTime?.message} />
                 </div>
                 <div>
-                  <Label>Problem Statement <span className="text-destructive">*</span></Label>
-                  <Textarea placeholder="Describe the coding problem (min 10 characters)..." className={`mt-1.5 bg-secondary border-border min-h-[92px] ${errors.problemStatement ? "!border-destructive" : ""}`} {...register("problemStatement")}/>
-                  <FieldError message={errors.problemStatement?.message}/>
+                  <Label>
+                    Duration (min) <span className="text-[#ba1a1a]">*</span>
+                  </Label>
+                  <Controller
+                    name="duration"
+                    control={control}
+                    render={({ field }) => (
+                      <CustomSelect
+                        value={field.value}
+                        onChange={field.onChange}
+                        options={[
+                          { value: "30", label: "30 min" },
+                          { value: "45", label: "45 min" },
+                          { value: "60", label: "60 min" },
+                          { value: "90", label: "90 min" },
+                        ]}
+                        className={`mt-1.5 bg-[#fafbf9] border-[#e2e7e1] ${
+                          errors.duration ? "!border-[#ba1a1a]" : ""
+                        }`}
+                      />
+                    )}
+                  />
+                  <FieldError message={errors.duration?.message} />
                 </div>
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 border-t border-border pt-4 mt-2">
-              <Button type="button" variant="outline" onClick={onClose} className="px-6">Cancel</Button>
-              <Button type="submit" className="px-8 bg-gradient-primary hover:opacity-90">Create Room</Button>
+            <div className="space-y-4">
+              <div>
+                <Label>
+                  Tech Stack <span className="text-[#ba1a1a]">*</span>
+                </Label>
+                <Input
+                  placeholder="React, TypeScript, Node.js"
+                  className={`mt-1.5 bg-[#fafbf9] border-[#e2e7e1] ${
+                    errors.techStack ? "!border-[#ba1a1a]" : ""
+                  }`}
+                  {...register("techStack")}
+                />
+                <FieldError message={errors.techStack?.message} />
+              </div>
+
+              <div>
+                <Label>
+                  Difficulty <span className="text-[#ba1a1a]">*</span>
+                </Label>
+                <Controller
+                  name="difficulty"
+                  control={control}
+                  render={({ field }) => (
+                    <SegmentedControl
+                      value={field.value}
+                      onChange={field.onChange}
+                      options={[
+                        {
+                          value: "easy",
+                          label: "Easy",
+                          activeBg: "bg-[#008a52]",
+                          activeText: "text-white",
+                        },
+                        {
+                          value: "medium",
+                          label: "Medium",
+                          activeBg: "bg-amber-600",
+                          activeText: "text-white",
+                        },
+                        {
+                          value: "hard",
+                          label: "Hard",
+                          activeBg: "bg-rose-600",
+                          activeText: "text-white",
+                        },
+                      ]}
+                      className="mt-1.5"
+                    />
+                  )}
+                />
+                <FieldError message={errors.difficulty?.message} />
+              </div>
+
+              <div>
+                <Label>
+                  Problem Statement <span className="text-[#ba1a1a]">*</span>
+                </Label>
+                <Textarea
+                  placeholder="Describe the coding problem (min 10 characters)..."
+                  className={`mt-1.5 bg-[#fafbf9] border-[#e2e7e1] min-h-[92px] ${
+                    errors.problemStatement ? "!border-[#ba1a1a]" : ""
+                  }`}
+                  {...register("problemStatement")}
+                />
+                <FieldError message={errors.problemStatement?.message} />
+              </div>
             </div>
-          </form>
-        </motion.div>
-      </motion.div>);
+          </div>
+
+          <div className="flex justify-end gap-3 border-t border-[#e2e7e1] pt-4 mt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 h-10 rounded-full border border-[#e2e7e1] text-[13px] font-medium text-[#171917] hover:bg-[#f4f6f3] cursor-pointer bg-transparent"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-7 h-10 rounded-full bg-[#080a09] hover:bg-[#242925] text-white text-[13px] font-semibold cursor-pointer"
+            >
+              Create Room
+            </button>
+          </div>
+        </form>
+      </motion.div>
+    </motion.div>
+  );
 }
