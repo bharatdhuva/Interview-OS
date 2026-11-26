@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Star, Terminal, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, Star, Terminal, CheckCircle2, AlertCircle, Loader2, Sparkles, RefreshCw, ExternalLink, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
 import { Slider } from '@/components/ui/Slider';
 import { Textarea } from '@/components/ui/Textarea';
 import { Label } from '@/components/ui/Label';
@@ -18,6 +19,29 @@ const recommendations = [
 ];
 
 const defaultRatings = { problemSolving: 3, codeQuality: 3, communication: 3, efficiency: 3 };
+
+const AI_RUBRIC_LABELS = {
+    problemSolving: 'Problem Solving',
+    codeQuality: 'Code Quality',
+    timeSpaceComplexity: 'Time / Space Complexity',
+    communication: 'Communication',
+    edgeCaseHandling: 'Edge-Case Handling',
+    testingDebugging: 'Testing & Debugging',
+};
+
+function formatReplayMs(ms) {
+    const totalSecs = Math.max(0, Math.floor((ms || 0) / 1000));
+    const mins = Math.floor(totalSecs / 60);
+    const secs = totalSecs % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
+function mapAiRecommendation(rec) {
+    if (rec === 'lean_yes') return 'yes';
+    if (rec === 'lean_no') return 'no';
+    if (['strong_yes', 'yes', 'no', 'strong_no'].includes(rec)) return rec;
+    return '';
+}
 
 function RatingBar({ label, value, max = 5 }) {
     return (<div className="flex items-center gap-3">
@@ -50,6 +74,11 @@ export default function FeedbackPage() {
     const [improvements, setImprovements] = useState('');
     const [notes, setNotes] = useState('');
     const [fieldErrors, setFieldErrors] = useState({});
+
+    // AI Draft state (interviewer only)
+    const [aiDraft, setAiDraft] = useState(null);
+    const [aiLoading, setAiLoading] = useState(false);
+    const [aiError, setAiError] = useState('');
 
     // Fetch room details + existing feedback on mount
     useEffect(() => {
@@ -88,6 +117,18 @@ export default function FeedbackPage() {
                     }
                     // 404 is fine — interviewer is submitting new feedback
                 }
+
+                // 3. If interviewer, check if an AI draft already exists
+                if (user?.role === 'interviewer') {
+                    try {
+                        const draftRes = await api.get(`/feedback/${room._id}/ai-draft`);
+                        if (draftRes.data?.data?.status === 'ready') {
+                            setAiDraft(draftRes.data.data);
+                        }
+                    } catch {
+                        // 404 expected when no AI draft has been generated yet
+                    }
+                }
             } catch (error) {
                 console.error('Failed to load feedback page data', error);
                 toast({
@@ -100,7 +141,73 @@ export default function FeedbackPage() {
             }
         };
         loadData();
-    }, [roomId, navigate, toast]);
+    }, [roomId, navigate, toast, user?.role]);
+
+    const applyAiDraftToForm = (draft) => {
+        if (!draft || draft.status !== 'ready') return;
+        const rs = draft.rubricScores || {};
+        setRatings({
+            problemSolving: rs.problemSolving?.score || 3,
+            codeQuality: rs.codeQuality?.score || 3,
+            communication: rs.communication?.score || 3,
+            efficiency: rs.timeSpaceComplexity?.score || 3,
+        });
+        if (draft.recommendation) {
+            setRecommendation(mapAiRecommendation(draft.recommendation));
+        }
+        if (Array.isArray(draft.strengths) && draft.strengths.length > 0) {
+            setStrengths(draft.strengths.map((s) => `• ${s}`).join('\n').slice(0, 1000));
+        }
+        if (Array.isArray(draft.improvements) && draft.improvements.length > 0) {
+            setImprovements(draft.improvements.map((s) => `• ${s}`).join('\n').slice(0, 1000));
+        }
+        if (draft.summary) {
+            setNotes(draft.summary.slice(0, 1000));
+        }
+    };
+
+    const handleGenerateAiDraft = async (forceRegenerate = false) => {
+        if (!roomData?._id) return;
+        setAiLoading(true);
+        setAiError('');
+        try {
+            const res = await api.post(`/feedback/${roomData._id}/ai-draft`, {
+                async: true,
+                forceRegenerate,
+            });
+            let draft = res.data?.data;
+
+            if (draft?.status === 'pending') {
+                for (let i = 0; i < 30; i++) {
+                    await new Promise((r) => setTimeout(r, 1500));
+                    const pollRes = await api.get(`/feedback/${roomData._id}/ai-draft`);
+                    draft = pollRes.data?.data;
+                    if (draft?.status === 'ready' || draft?.status === 'failed') {
+                        break;
+                    }
+                }
+            }
+
+            if (draft?.status === 'failed') {
+                setAiError(draft.errorMessage || 'AI evaluation failed.');
+                return;
+            }
+            if (draft?.status === 'ready') {
+                setAiDraft(draft);
+                applyAiDraftToForm(draft);
+                toast({
+                    title: 'AI draft ready',
+                    description: 'Review and edit the pre-filled feedback before submitting.',
+                });
+            } else {
+                setAiError('AI evaluation timed out. Please retry.');
+            }
+        } catch (err) {
+            setAiError(err.response?.data?.message || 'Failed to generate AI draft.');
+        } finally {
+            setAiLoading(false);
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -243,6 +350,105 @@ export default function FeedbackPage() {
         </motion.div>
 
         {isInterviewer && !existingFeedback ? (<form onSubmit={handleSubmit} className="space-y-6">
+            {/* AI Draft Generator Panel */}
+            <div className="p-5 rounded-xl bg-card border border-primary/30 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-primary" />
+                  <h3 className="font-display font-semibold text-sm">AI Evaluation Assistant</h3>
+                  {aiDraft?.status === 'ready' && (
+                    <Badge variant="outline" className="text-[11px] border-warning/40 text-warning bg-warning/10">
+                      AI draft, review before sharing
+                    </Badge>
+                  )}
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={aiDraft ? 'outline' : 'default'}
+                  disabled={aiLoading || roomData?.status !== 'completed'}
+                  onClick={() => handleGenerateAiDraft(Boolean(aiDraft))}
+                >
+                  {aiLoading ? (
+                    <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Analyzing Session...</>
+                  ) : aiDraft ? (
+                    <><RefreshCw className="w-3.5 h-3.5 mr-1.5" /> Regenerate AI Draft</>
+                  ) : (
+                    <><Sparkles className="w-3.5 h-3.5 mr-1.5" /> Generate AI Draft</>
+                  )}
+                </Button>
+              </div>
+
+              {roomData?.status !== 'completed' && (
+                <p className="text-xs text-muted-foreground">
+                  AI evaluation becomes available once the interview session is marked completed.
+                </p>
+              )}
+
+              {aiError && (
+                <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 flex items-center justify-between gap-2 text-xs text-destructive">
+                  <span className="flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {aiError}
+                  </span>
+                  <Button type="button" size="sm" variant="outline" onClick={() => handleGenerateAiDraft(true)}>
+                    Retry
+                  </Button>
+                </div>
+              )}
+
+              {aiDraft?.status === 'ready' && (
+                <div className="space-y-3 pt-2 border-t border-border/60">
+                  {(aiDraft.needsHumanReview || aiDraft.injectionSuspected || aiDraft.insufficientEvidence) && (
+                    <div className="p-3 rounded-lg bg-warning/10 border border-warning/30 text-xs text-warning flex items-start gap-2">
+                      <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-medium">Human review recommended</p>
+                        {aiDraft.injectionSuspected && <p>Prompt-injection pattern detected in candidate input.</p>}
+                        {aiDraft.insufficientEvidence && <p>Limited session evidence available.</p>}
+                        {aiDraft.anomalies?.map((a, idx) => <p key={idx}>{a}</p>)}
+                      </div>
+                    </div>
+                  )}
+
+                  {aiDraft.missingSignals?.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                      <span className="font-medium">Missing signals:</span>
+                      {aiDraft.missingSignals.map((sig, i) => (
+                        <Badge key={i} variant="secondary" className="text-[11px]">{sig}</Badge>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {Object.entries(aiDraft.rubricScores || {}).map(([key, dim]) => (
+                      <div key={key} className="p-3 rounded-lg bg-secondary/50 border border-border/60 space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-semibold">{AI_RUBRIC_LABELS[key] || key}</span>
+                          <Badge variant="outline" className="text-xs">{dim.score}/5</Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{dim.rationale}</p>
+                        {dim.evidence?.length > 0 && (
+                          <div className="flex flex-wrap gap-1 pt-1">
+                            {dim.evidence.map((ev, idx) => (
+                              <Link
+                                key={idx}
+                                to={`/room/${roomData?.roomId || roomId}/replay?t=${ev.replayTimestampMs}`}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-primary/10 hover:bg-primary/20 text-primary text-[11px] transition-colors"
+                                title={ev.quoteOrSummary}
+                              >
+                                <span>{formatReplayMs(ev.replayTimestampMs)} · {ev.source}</span>
+                                <ExternalLink className="w-2.5 h-2.5" />
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Sliders */}
             <div className="p-6 rounded-xl bg-card border border-border space-y-5">
               <h3 className="font-display font-semibold">Adjust Ratings</h3>

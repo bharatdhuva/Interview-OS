@@ -20,3 +20,9 @@ exports.submitFeedbackSchema = zod.z.object({
     overallNotes: zod.z.string().optional(), // any additional notes
     recommendation: zod.z.enum(['strong_yes', 'yes', 'no', 'strong_no']),
 });
+
+/** Schema for POST /api/v1/feedback/:roomId/ai-draft */
+exports.generateAiDraftSchema = zod.z.object({
+    async: zod.z.boolean().optional().default(true),
+    forceRegenerate: zod.z.boolean().optional().default(false),
+});

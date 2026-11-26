@@ -19,6 +19,8 @@ const roomModel = require("../models/room.model");
 const sessionModel = require("../models/session.model");
 const logger = require("../utils/logger");
 const feedbackValidation = require("../middleware/validation/feedback.validation");
+const { AiEvaluation } = require("../models/aiEvaluation.model");
+const { runEvaluationPipeline } = require("../services/ai/evaluator");
 /**
  * POST /api/v1/feedback  (interviewer only)
  *
@@ -141,3 +143,109 @@ const shareFeedbackWithCandidate = async (req, res) => {
     }
 };
 exports.shareFeedbackWithCandidate = shareFeedbackWithCandidate;
+
+/**
+ * POST /api/v1/feedback/:roomId/ai-draft  (interviewer only)
+ *
+ * Generates (or returns cached) AI evaluation draft for a completed interview.
+ */
+const generateAiDraft = async (req, res) => {
+    try {
+        const { async: runAsync, forceRegenerate } = feedbackValidation.generateAiDraftSchema.parse(req.body || {});
+        const roomId = req.params.roomId;
+        const roomQuery = mongoose.Types.ObjectId.isValid(roomId) ? { _id: roomId } : { roomId };
+        const room = await roomModel.InterviewRoom.findOne(roomQuery);
+        if (!room) {
+            res.status(404).json({ success: false, message: 'Room not found' });
+            return;
+        }
+        if (room.interviewer.toString() !== req.user.id) {
+            res.status(403).json({ success: false, message: 'Only the room interviewer can generate an AI draft' });
+            return;
+        }
+        if (room.status !== 'completed') {
+            res.status(400).json({ success: false, message: 'AI evaluation is only available after the session is completed' });
+            return;
+        }
+        const session = await sessionModel.InterviewSession.findOne({ room: room._id }).sort({ startTime: -1 });
+        if (!session) {
+            res.status(404).json({ success: false, message: 'No interview session found for this room' });
+            return;
+        }
+        if (!forceRegenerate) {
+            const existing = await AiEvaluation.findOne({
+                room: room._id,
+                session: session._id,
+                status: { $in: ['pending', 'ready'] },
+            }).sort({ createdAt: -1 });
+            if (existing) {
+                res.status(existing.status === 'pending' ? 202 : 200).json({ success: true, data: existing });
+                return;
+            }
+        }
+        const evaluation = await AiEvaluation.create({
+            room: room._id,
+            roomId: room.roomId,
+            session: session._id,
+            status: 'pending',
+        });
+        if (runAsync) {
+            setImmediate(() => {
+                runEvaluationPipeline({
+                    evaluationId: evaluation._id,
+                    room,
+                    session,
+                    userId: req.user.id,
+                }).catch((err) => {
+                    logger.error('Async AI evaluation failed', { roomId: room.roomId, error: err.message });
+                });
+            });
+            res.status(202).json({ success: true, data: evaluation });
+            return;
+        }
+        const completed = await runEvaluationPipeline({
+            evaluationId: evaluation._id,
+            room,
+            session,
+            userId: req.user.id,
+        });
+        res.status(200).json({ success: true, data: completed });
+    }
+    catch (error) {
+        logger.error('Error generating AI draft', error);
+        res.status(400).json({ success: false, message: error.message || 'Failed to generate AI draft' });
+    }
+};
+exports.generateAiDraft = generateAiDraft;
+
+/**
+ * GET /api/v1/feedback/:roomId/ai-draft  (interviewer only)
+ *
+ * Returns the latest AI evaluation draft (pending | ready | failed) for this room.
+ */
+const getAiDraft = async (req, res) => {
+    try {
+        const roomId = req.params.roomId;
+        const roomQuery = mongoose.Types.ObjectId.isValid(roomId) ? { _id: roomId } : { roomId };
+        const room = await roomModel.InterviewRoom.findOne(roomQuery);
+        if (!room) {
+            res.status(404).json({ success: false, message: 'Room not found' });
+            return;
+        }
+        if (room.interviewer.toString() !== req.user.id) {
+            res.status(403).json({ success: false, message: 'Only the room interviewer can view AI drafts' });
+            return;
+        }
+        const draft = await AiEvaluation.findOne({ room: room._id }).sort({ createdAt: -1 });
+        if (!draft) {
+            res.status(404).json({ success: false, message: 'No AI draft found for this room' });
+            return;
+        }
+        res.status(200).json({ success: true, data: draft });
+    }
+    catch (error) {
+        logger.error('Error fetching AI draft', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+exports.getAiDraft = getAiDraft;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import Editor from "@monaco-editor/react";
 import { Excalidraw } from "@excalidraw/excalidraw";
 import {
@@ -27,8 +27,10 @@ import { useToast } from "@/hooks/useToast";
 
 export default function SessionReplayPage() {
   const { roomId } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const initialSeekAppliedRef = useRef(false);
 
   const [isLoading, setIsLoading] = useState(true);
   const [room, setRoom] = useState(null);
@@ -133,6 +135,20 @@ export default function SessionReplayPage() {
     const duration = Math.max(1000, end - start); // minimum 1s duration
     return { start, end, duration };
   }, [frames]);
+
+  // Apply deep-link seek (?t=ms) once frames are loaded
+  useEffect(() => {
+    if (initialSeekAppliedRef.current || frames.length === 0) return;
+    const tParam = searchParams.get("t");
+    if (tParam !== null) {
+      const targetMs = Number(tParam);
+      if (Number.isFinite(targetMs) && targetMs >= 0) {
+        const clamped = Math.min(timelineBounds.duration, Math.max(0, targetMs));
+        setCurrentOffset(clamped);
+      }
+    }
+    initialSeekAppliedRef.current = true;
+  }, [frames, searchParams, timelineBounds.duration]);
 
   // Derive current state at currentOffset
   const currentState = useMemo(() => {

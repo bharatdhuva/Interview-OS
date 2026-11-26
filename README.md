@@ -113,6 +113,14 @@ JUDGE0_API_KEY= # only required for RapidAPI/custom secured Judge0 deployments
 
 # Client URL (frontend)
 CLIENT_URL=http://localhost:8080
+
+# AI Foundation (Phase 0 & 1)
+AI_PROVIDER=groq
+AI_MODEL=llama-3.3-70b-versatile
+AI_FALLBACK_PROVIDER=gemini
+GROQ_API_KEY=
+OPENAI_API_KEY=
+GEMINI_API_KEY=
 ```
 
 ---
@@ -152,6 +160,10 @@ Interview-OS/
 - [x] **Anti-Cheat Proctoring**: Tab-switch tracking, browser visibility checks, and fullscreen enforcement with a 3-strike auto-end system.
 - [x] **Session Replay**: Time-travel playback of code changes and whiteboard checkpoints for post-interview reviews.
 - [x] **Real-time Chat & Feedback**: Built-in chat inside interview rooms and structured feedback summaries.
+- [x] **AI Foundation & Post-Interview Evaluator (Phase 0 & 1)**: Provider-agnostic LLM client (`groq`, `gemini`, `openai`) with Zod-validated structured outputs, automatic repair/fallback, `AiCallLog` observability, prompt-injection delimiter isolation, and interviewer-only AI draft generation with `?t=ms` replay-timestamped evidence chips.
+
+### AI Evaluation Metrics:
+- Eval harness & benchmark metrics: *not yet measured* (scheduled for Phase 9).
 
 ### 🔮 Future Scaling & Architectural Scope:
 - [ ] **Horizontal WebSocket Scaling**: Integrate a **Redis Pub/Sub adapter** to allow Socket.IO rooms to communicate across multiple instances behind a load balancer.
