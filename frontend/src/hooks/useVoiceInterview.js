@@ -5,7 +5,9 @@ export function useVoiceInterview({ persona = "technical", onAutoSend } = {}) {
   const [isListening, setIsListening] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [speechMode, setSpeechMode] = useState("idle"); // "idle" | "loading" | "audio" | "browser"
   const [speechLevel, setSpeechLevel] = useState(0);
+  const [speechProgress, setSpeechProgress] = useState(0);
   const [muted, setMuted] = useState(false);
   const [speechRate, setSpeechRate] = useState(1.0);
   const [transcript, setTranscript] = useState("");
@@ -64,6 +66,8 @@ export function useVoiceInterview({ persona = "technical", onAutoSend } = {}) {
       ttsAudioCtxRef.current = null;
     }
     setSpeechLevel(0);
+    setSpeechProgress(0);
+    setSpeechMode("idle");
   }, []);
 
   const stopSpeaking = useCallback(() => {
@@ -268,13 +272,18 @@ export function useVoiceInterview({ persona = "technical", onAutoSend } = {}) {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = rateRef.current || 1.0;
-    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onstart = () => {
+      setIsSpeaking(true);
+      setSpeechMode("browser");
+    };
     utterance.onend = () => {
       setIsSpeaking(false);
+      setSpeechMode("idle");
       onEnd?.();
     };
     utterance.onerror = () => {
       setIsSpeaking(false);
+      setSpeechMode("idle");
       onEnd?.();
     };
     window.speechSynthesis.speak(utterance);
@@ -289,6 +298,7 @@ export function useVoiceInterview({ persona = "technical", onAutoSend } = {}) {
 
       stopSpeaking();
       setIsSpeaking(true);
+      setSpeechMode("loading");
 
       try {
         const res = await api.post(
@@ -312,6 +322,13 @@ export function useVoiceInterview({ persona = "technical", onAutoSend } = {}) {
         const audio = new Audio(url);
         audioElRef.current = audio;
 
+        audio.ontimeupdate = () => {
+          if (Number.isFinite(audio.duration) && audio.duration > 0) {
+            setSpeechProgress(Math.min(1, audio.currentTime / audio.duration));
+          }
+        };
+
+        let attachedAnalyser = false;
         if (typeof AudioContext !== "undefined") {
           try {
             const ctx = new AudioContext();
@@ -337,15 +354,23 @@ export function useVoiceInterview({ persona = "technical", onAutoSend } = {}) {
               const rms = Math.min(1, Math.sqrt(sumSq / samples.length) * 3.4);
               smoothed = smoothed * 0.8 + rms * 0.2;
               setSpeechLevel(smoothed);
+              if (Number.isFinite(audio.duration) && audio.duration > 0) {
+                setSpeechProgress(Math.min(1, audio.currentTime / audio.duration));
+              }
               ttsRafRef.current = window.requestAnimationFrame(updateLevel);
             };
             audio.onplay = () => {
+              setSpeechMode("audio");
               if (ctx.state === "suspended") ctx.resume().catch(() => { });
               ttsRafRef.current = window.requestAnimationFrame(updateLevel);
             };
+            attachedAnalyser = true;
           } catch {
             // Fall back to CSS cadence animation if Web Audio attach fails
           }
+        }
+        if (!attachedAnalyser) {
+          audio.onplay = () => setSpeechMode("audio");
         }
 
         audio.onended = () => {
@@ -388,7 +413,9 @@ export function useVoiceInterview({ persona = "technical", onAutoSend } = {}) {
     isListening,
     isTranscribing,
     isSpeaking,
+    speechMode,
     speechLevel,
+    speechProgress,
     muted,
     setMuted,
     speechRate,

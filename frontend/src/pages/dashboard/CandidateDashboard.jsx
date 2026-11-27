@@ -331,7 +331,66 @@ export default function CandidateDashboard() {
         </div>
       </header>
 
-      <div className="flex-1 flex min-h-0">
+      {/* Mobile Post-Login Landing + AI Voice Interviewer (< 768px) */}
+      <div className="md:hidden flex-1 flex flex-col">
+        <section
+          className="px-5 pt-8 pb-7 border-b border-[#e2e7e1]"
+          style={{
+            background:
+              "radial-gradient(ellipse at 50% 0%, rgba(202, 250, 222, 0.55), transparent 65%), linear-gradient(180deg, #f5fbf6 0%, #fafbf9 80%)",
+          }}
+        >
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#008a52] mb-2">
+            AI Voice Interviewer
+          </p>
+          <h1
+            className="text-[30px] leading-[1.08] font-semibold tracking-[-0.035em] text-[#171917] mb-2.5"
+            style={{
+              fontFamily:
+                '-apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif',
+            }}
+          >
+            Welcome back, {user?.name?.split(" ")[0] || "there"}.
+          </h1>
+          <p className="text-[14px] text-[#566059] leading-relaxed mb-5">
+            Practice spoken technical or behavioral interviews tailored to your resume — with instant rubric feedback.
+          </p>
+
+          <button
+            type="button"
+            onClick={() => {
+              document
+                .getElementById("mobile-ai-hub")
+                ?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }}
+            className="w-full h-12 rounded-full bg-[#080a09] active:scale-[0.99] text-white text-[14px] font-semibold inline-flex items-center justify-center gap-2 cursor-pointer transition-transform"
+          >
+            Start AI Interview <ArrowRight className="w-4 h-4 text-[#00c875]" />
+          </button>
+
+          <div className="grid grid-cols-3 gap-2 mt-5 pt-5 border-t border-[#e2e7e1]/80 text-center">
+            <div>
+              <p className="text-[12px] font-semibold text-[#171917]">Voice-first</p>
+              <p className="text-[11px] text-[#5d635d]">Natural flow</p>
+            </div>
+            <div>
+              <p className="text-[12px] font-semibold text-[#171917]">Resume-fit</p>
+              <p className="text-[11px] text-[#5d635d]">Custom rounds</p>
+            </div>
+            <div>
+              <p className="text-[12px] font-semibold text-[#171917]">4-axis score</p>
+              <p className="text-[11px] text-[#5d635d]">Rubric report</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="mobile-ai-hub" className="px-4 py-6">
+          <AiInterviewerHub user={user} />
+        </section>
+      </div>
+
+      {/* Desktop Candidate Workspace (>= 768px) */}
+      <div className="hidden md:flex flex-1 min-h-0">
         {/* Smoothly Collapsible Left Workspace Sidebar */}
         <aside
           className={`hidden md:flex shrink-0 flex-col justify-between bg-white sticky top-[64px] h-[calc(100vh-64px)] overflow-hidden transition-all duration-300 ease-out ${

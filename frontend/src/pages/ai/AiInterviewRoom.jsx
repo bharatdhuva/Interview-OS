@@ -67,6 +67,7 @@ export default function AiInterviewRoom() {
   const [autoSendOnPause] = useState(true);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [showReportTranscript, setShowReportTranscript] = useState(false);
+  const [typedChars, setTypedChars] = useState(0);
 
   const turnStartedAtRef = useRef(Date.now());
   const transcriptEndRef = useRef(null);
@@ -244,6 +245,47 @@ export default function AiInterviewRoom() {
     }
   };
 
+  const latestInterviewerMsg = [...(session?.messages || [])]
+    .reverse()
+    .find((m) => m.role === "interviewer");
+
+  const activeCaptionText =
+    latestInterviewerMsg?.content ||
+    `Hi, I'm ${personaName}. Speak naturally whenever you're ready.`;
+
+  useEffect(() => {
+    setTypedChars(0);
+  }, [activeCaptionText]);
+
+  useEffect(() => {
+    if (!voice.isSpeaking || voice.speechMode === "idle") {
+      setTypedChars(activeCaptionText.length);
+      return;
+    }
+    if (voice.speechMode === "loading") {
+      setTypedChars(0);
+      return;
+    }
+    if (voice.speechMode === "audio") {
+      const target = Math.ceil(
+        activeCaptionText.length * Math.min(1, voice.speechProgress * 1.03)
+      );
+      setTypedChars(target);
+      return;
+    }
+    // Browser SpeechSynthesis fallback
+    const id = window.setInterval(() => {
+      setTypedChars((prev) => {
+        if (prev >= activeCaptionText.length) {
+          window.clearInterval(id);
+          return prev;
+        }
+        return Math.min(activeCaptionText.length, prev + 1);
+      });
+    }, 52);
+    return () => window.clearInterval(id);
+  }, [activeCaptionText, voice.isSpeaking, voice.speechMode, voice.speechProgress]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#fafbf9] flex items-center justify-center">
@@ -253,10 +295,6 @@ export default function AiInterviewRoom() {
   }
 
   if (!session) return null;
-
-  const latestInterviewerMsg = [...(session.messages || [])]
-    .reverse()
-    .find((m) => m.role === "interviewer");
 
   const combinedInput = voice.interimTranscript
     ? `${voice.transcript} ${voice.interimTranscript}`.trim()
@@ -431,8 +469,12 @@ export default function AiInterviewRoom() {
                   </span>
                 </div>
                 <h1>
-                  {latestInterviewerMsg?.content ||
-                    `Hi, I'm ${personaName}. Speak naturally whenever you're ready.`}
+                  {voice.isSpeaking
+                    ? activeCaptionText.slice(0, typedChars)
+                    : activeCaptionText}
+                  {voice.isSpeaking && typedChars < activeCaptionText.length && (
+                    <span className="caption-caret" aria-hidden="true" />
+                  )}
                 </h1>
                 <div className="question-bottom">
                   <span>
@@ -473,11 +515,21 @@ export default function AiInterviewRoom() {
                     {thinking
                       ? `${personaName} is thinking…`
                       : voice.isListening
-                      ? "Listening · tap to finish answer"
+                      ? "Listening · tap to finish"
                       : voice.isSpeaking
-                      ? "Interviewer speaking · tap to answer"
-                      : "Tap to answer by voice"}
+                      ? "Speaking · tap to reply"
+                      : "Tap to answer"}
                   </span>
+                </button>
+
+                <button
+                  type="button"
+                  className="mobile-captions-btn"
+                  onClick={() => setShowTranscript((v) => !v)}
+                  aria-label="Open captions and chat"
+                  aria-expanded={showTranscript}
+                >
+                  <Captions size={18} />
                 </button>
 
                 <span className="voice-control-hint">
@@ -502,10 +554,19 @@ export default function AiInterviewRoom() {
             </div>
           </section>
 
+          {showTranscript && (
+            <div
+              className="transcript-backdrop"
+              onClick={() => setShowTranscript(false)}
+              aria-hidden="true"
+            />
+          )}
+
           <aside
             className={`transcript-panel ${showTranscript ? "is-open" : ""}`}
             aria-label="Conversation transcript and participants"
           >
+            <div className="sheet-handle" aria-hidden="true" />
             <div className="transcript-header">
               <div>
                 <span className="transcript-kicker">PEOPLE IN THIS SESSION</span>
@@ -646,19 +707,20 @@ export default function AiInterviewRoom() {
       }}
     >
       {/* Top Bar */}
-      <header className="sticky top-0 z-30 h-[62px] bg-white/90 backdrop-blur-md border-b border-[#e2e7e1] px-5 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <header className="sticky top-0 z-30 h-[58px] sm:h-[62px] bg-white/92 backdrop-blur-md border-b border-[#e2e7e1] px-4 sm:px-5 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
           <Link
             to="/dashboard/candidate"
-            className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#566059] hover:text-[#171917]"
+            className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#566059] hover:text-[#171917] shrink-0"
           >
             <ArrowLeft className="w-4 h-4" />
+            <span className="sm:hidden">Back</span>
             <span className="hidden sm:inline">Dashboard</span>
           </Link>
-          <div className="h-4 w-[1px] bg-[#e2e7e1]" />
-          <div className="flex items-center gap-2">
+          <div className="h-4 w-[1px] bg-[#e2e7e1] shrink-0" />
+          <div className="flex items-center gap-2 min-w-0">
             <span
-              className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase ${
+              className={`px-2.5 py-0.5 rounded-full text-[10.5px] font-semibold uppercase shrink-0 ${
                 persona === "technical"
                   ? "bg-[#e3f4e8] text-[#0d5216]"
                   : "bg-[#e8f0fe] text-[#1a4fa3]"
@@ -666,75 +728,93 @@ export default function AiInterviewRoom() {
             >
               {persona === "technical" ? "Technical" : "HR Behavioral"}
             </span>
-            <span className="text-[13.5px] font-semibold text-[#171917] hidden md:inline">
+            <span className="text-[13.5px] font-semibold text-[#171917] hidden md:inline truncate">
               {session.targetRole || `${personaName} · ${personaTitle}`}
             </span>
           </div>
         </div>
+
+        <Link
+          to="/dashboard/candidate"
+          className="inline-flex items-center gap-[4px] text-[#111111] text-[15px] font-bold tracking-[-0.01em] leading-none shrink-0"
+          aria-label="InterviewOS"
+        >
+          InterviewOS
+          <span className="inline-block w-[5px] h-[12px] bg-[#00c875]" aria-hidden="true" />
+        </Link>
       </header>
 
       {/* Setup / Pre-flight View */}
       {session.status === "setup" && (
-        <main className="flex-1 flex items-center justify-center px-6 py-12 bg-[#fafbf9]">
-          <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-12 gap-10 items-center">
+        <main className="flex-1 flex items-start md:items-center justify-center px-4 py-6 sm:px-6 sm:py-12 bg-[#fafbf9]">
+          <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-12 gap-5 md:gap-10 items-center">
             {/* Left: Session Briefing */}
-            <div className="md:col-span-7 space-y-6">
-              <div className="space-y-2">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5d635d]">
+            <div className="md:col-span-7 space-y-5">
+              <div className="space-y-1.5">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#008a52]">
                   {persona === "technical" ? "Technical Interview" : "Behavioral Interview"}
                 </p>
-                <h1 className="text-[28px] sm:text-[32px] font-semibold text-[#171917] tracking-[-0.025em] leading-[1.15]">
+                <h1 className="text-[26px] sm:text-[32px] font-semibold text-[#171917] tracking-[-0.025em] leading-[1.15]">
                   {session.targetRole
-                    ? `${session.targetRole} with ${personaName}`
+                    ? `${session.targetRole.length <= 4 ? session.targetRole.toUpperCase() : session.targetRole} with ${personaName}`
                     : `Interview with ${personaName}`}
                 </h1>
-                <p className="text-[14px] text-[#5d635d]">
+                <p className="text-[13.5px] text-[#5d635d]">
                   {personaName} · {personaTitle}
                 </p>
               </div>
 
-              <dl className="divide-y divide-[#e2e7e1] border-y border-[#e2e7e1] text-[13.5px]">
-                <div className="py-3 flex items-center justify-between gap-4">
-                  <dt className="text-[#5d635d]">Difficulty</dt>
-                  <dd className="font-medium text-[#171917] capitalize">{session.difficulty}</dd>
+              <div className="grid grid-cols-3 divide-x divide-[#e2e7e1] rounded-xl border border-[#e2e7e1] bg-white">
+                <div className="px-3.5 py-3">
+                  <p className="text-[10px] uppercase tracking-wider text-[#707870]">Level</p>
+                  <p className="text-[13.5px] font-semibold text-[#171917] capitalize mt-0.5">
+                    {session.difficulty}
+                  </p>
                 </div>
-                <div className="py-3 flex items-center justify-between gap-4">
-                  <dt className="text-[#5d635d]">Format</dt>
-                  <dd className="font-medium text-[#171917]">
-                    {session.totalQuestions} questions · ~{session.totalQuestions * 2}–
-                    {session.totalQuestions * 3} min
-                  </dd>
+                <div className="px-3.5 py-3">
+                  <p className="text-[10px] uppercase tracking-wider text-[#707870]">Rounds</p>
+                  <p className="text-[13.5px] font-semibold text-[#171917] mt-0.5">
+                    {session.totalQuestions} questions
+                  </p>
                 </div>
-                <div className="py-3 flex items-center justify-between gap-4">
-                  <dt className="text-[#5d635d]">Resume</dt>
-                  <dd className="font-medium text-[#171917] truncate max-w-[260px]">
+                <div className="px-3.5 py-3">
+                  <p className="text-[10px] uppercase tracking-wider text-[#707870]">Est. Time</p>
+                  <p className="text-[13.5px] font-semibold text-[#171917] mt-0.5">
+                    ~{session.totalQuestions * 2}–{session.totalQuestions * 3}m
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-[#e2e7e1] bg-white px-4 py-3 space-y-1.5 text-[13px]">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-[#5d635d] shrink-0">Resume</span>
+                  <span className="font-medium text-[#171917] truncate">
                     {session.resume?.fileName || "Attached"}
-                  </dd>
+                  </span>
                 </div>
                 {session.focusArea && (
-                  <div className="py-3 flex items-center justify-between gap-4">
-                    <dt className="text-[#5d635d]">Focus</dt>
-                    <dd className="font-medium text-[#171917] truncate max-w-[260px]">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-[#5d635d] shrink-0">Focus</span>
+                    <span className="font-medium text-[#171917] truncate">
                       {session.focusArea}
-                    </dd>
+                    </span>
                   </div>
                 )}
-              </dl>
-
-              {session.resume?.parsedSkills?.length > 0 && (
-                <p className="text-[12.5px] text-[#5d635d] leading-relaxed">
-                  <span className="text-[#171917] font-medium">Topics: </span>
-                  {session.resume.parsedSkills.slice(0, 8).join(", ")}
-                  {session.resume.parsedSkills.length > 8
-                    ? ` +${session.resume.parsedSkills.length - 8} more`
-                    : ""}
-                </p>
-              )}
+                {session.resume?.parsedSkills?.length > 0 && (
+                  <p className="text-[12px] text-[#5d635d] pt-1 border-t border-[#edf1ed] leading-relaxed">
+                    <span className="text-[#171917] font-medium">Topics: </span>
+                    {session.resume.parsedSkills.slice(0, 6).join(", ")}
+                    {session.resume.parsedSkills.length > 6
+                      ? ` +${session.resume.parsedSkills.length - 6} more`
+                      : ""}
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* Right: Pre-flight Join Card */}
-            <div className="md:col-span-5 rounded-2xl border border-[#e2e7e1] bg-white p-6 space-y-5">
-              <div className="flex items-center gap-3 pb-4 border-b border-[#edf1ed]">
+            <div className="md:col-span-5 rounded-2xl border border-[#e2e7e1] bg-white p-5 sm:p-6 space-y-4 sm:space-y-5">
+              <div className="flex items-center gap-3 pb-3.5 border-b border-[#edf1ed]">
                 <div className="w-10 h-10 rounded-full bg-[#e3f4e8] text-[#0d5216] font-semibold text-[14px] flex items-center justify-center shrink-0">
                   {candidateInitial}
                 </div>
@@ -746,7 +826,7 @@ export default function AiInterviewRoom() {
                 </div>
               </div>
 
-              <div className="space-y-2.5 text-[13px]">
+              <div className="space-y-2 text-[13px]">
                 <div className="flex items-center justify-between">
                   <span className="text-[#5d635d] flex items-center gap-2">
                     <Mic className="w-4 h-4 text-[#5d635d]" /> Microphone
@@ -778,12 +858,12 @@ export default function AiInterviewRoom() {
                 </div>
               )}
 
-              <div className="space-y-2.5 pt-1">
+              <div className="space-y-2 pt-1">
                 <button
                   type="button"
                   onClick={handleStart}
                   disabled={starting}
-                  className="w-full inline-flex items-center justify-center gap-2 h-11 rounded-full bg-[#080a09] hover:bg-[#1f2420] disabled:opacity-50 text-white text-[13.5px] font-semibold cursor-pointer transition-colors"
+                  className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-full bg-[#080a09] hover:bg-[#1f2420] active:scale-[0.99] disabled:opacity-50 text-white text-[14px] font-semibold cursor-pointer transition-all"
                 >
                   {starting ? (
                     <>
@@ -795,7 +875,7 @@ export default function AiInterviewRoom() {
                 </button>
                 <Link
                   to="/dashboard/candidate"
-                  className="block text-center text-[12.5px] text-[#5d635d] hover:text-[#171917] py-1"
+                  className="hidden md:block text-center text-[12.5px] text-[#5d635d] hover:text-[#171917] py-1"
                 >
                   Back to dashboard
                 </Link>
@@ -842,7 +922,7 @@ export default function AiInterviewRoom() {
           .join(" ");
 
         return (
-          <main className="flex-1 max-w-5xl w-full mx-auto px-6 py-10 space-y-8">
+          <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-6 sm:px-6 sm:py-10 space-y-6 sm:space-y-8">
             {/* Report Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-5 pb-6 border-b border-[#e2e7e1]">
               <div className="space-y-2.5">

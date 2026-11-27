@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
 import { useToast } from "@/hooks/useToast";
@@ -9,12 +9,64 @@ import { motion } from "framer-motion";
 const OnboardingPage = () => {
   const [role, setRole] = useState("candidate");
   const [loading, setLoading] = useState(false);
+  const [autoMobileOnboarding, setAutoMobileOnboarding] = useState(
+    () => typeof window !== "undefined" && window.innerWidth < 768
+  );
   const [error, setError] = useState("");
 
   const navigate = useNavigate();
   const { toast } = useToast();
   const user = useAuthStore((s) => s.user);
   const loginAction = useAuthStore((s) => s.login);
+
+  useEffect(() => {
+    if (!autoMobileOnboarding) return;
+    let cancelled = false;
+    const completeMobileCandidateOnboarding = async () => {
+      try {
+        const res = await api.post("/auth/onboard", { role: "candidate" });
+        if (cancelled) return;
+        const updatedUser = res.data.data;
+        const token = localStorage.getItem("accessToken");
+        loginAction(updatedUser, token);
+        const redirectUrl = sessionStorage.getItem("redirectUrl");
+        if (redirectUrl) {
+          sessionStorage.removeItem("redirectUrl");
+          navigate(redirectUrl, { replace: true });
+        } else {
+          navigate("/dashboard/candidate", { replace: true });
+        }
+      } catch (err) {
+        if (cancelled) return;
+        setAutoMobileOnboarding(false);
+        setError(
+          err?.response?.data?.message ||
+            "Failed to complete setup. Please continue below."
+        );
+      }
+    };
+    completeMobileCandidateOnboarding();
+    return () => {
+      cancelled = true;
+    };
+  }, [autoMobileOnboarding, loginAction, navigate]);
+
+  if (autoMobileOnboarding) {
+    return (
+      <div
+        className="min-h-screen w-full flex flex-col items-center justify-center bg-[#fafbf9] text-[#171917] px-6 text-center"
+        style={{
+          fontFamily:
+            '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif',
+        }}
+      >
+        <Loader2 className="w-6 h-6 animate-spin text-[#008a52] mb-3" />
+        <p className="text-[14px] font-medium text-[#171917]">
+          Setting up your candidate workspace...
+        </p>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();

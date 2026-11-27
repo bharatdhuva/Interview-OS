@@ -378,7 +378,7 @@ export default function InterviewerDashboard() {
           <button
             type="button"
             onClick={() => setShowCreate(true)}
-            className="inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-[#080a09] hover:bg-[#242925] text-white text-[13px] font-semibold transition-colors cursor-pointer"
+            className="hidden md:inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-[#080a09] hover:bg-[#242925] text-white text-[13px] font-semibold transition-colors cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" /> Create Room
           </button>
@@ -397,7 +397,36 @@ export default function InterviewerDashboard() {
         </div>
       </header>
 
-      <div className="flex-1 flex min-h-0">
+      {/* Mobile: Live Interviewer / Coding Studio is desktop-only; route to AI Voice Interviewer */}
+      <div
+        className="md:hidden flex-1 flex flex-col justify-center px-6 py-12"
+        style={{
+          background:
+            "radial-gradient(ellipse at 50% 0%, rgba(202, 250, 222, 0.55), transparent 65%), linear-gradient(180deg, #f5fbf6 0%, #fafbf9 80%)",
+        }}
+      >
+        <div className="max-w-sm mx-auto space-y-5">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#008a52]">
+            Mobile Experience
+          </p>
+          <h1 className="text-[28px] leading-[1.1] font-semibold tracking-[-0.03em] text-[#171917]">
+            Practice with the AI Voice Interviewer.
+          </h1>
+          <p className="text-[14px] text-[#566059] leading-relaxed">
+            Live interviewer rooms and collaborative code sessions require a desktop browser. On mobile, you can launch the AI Voice Interviewer directly.
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate("/dashboard/candidate")}
+            className="w-full h-12 rounded-full bg-[#080a09] text-white text-[14px] font-semibold inline-flex items-center justify-center gap-2 cursor-pointer"
+          >
+            Start AI Interview <ArrowUpRight className="w-4 h-4 text-[#00c875]" />
+          </button>
+        </div>
+      </div>
+
+      {/* Desktop Interviewer Workspace (>= 768px) */}
+      <div className="hidden md:flex flex-1 min-h-0">
         {/* Smoothly Collapsible Left Workspace Sidebar */}
         <aside
           className={`hidden md:flex shrink-0 flex-col justify-between bg-white sticky top-[64px] h-[calc(100vh-64px)] overflow-hidden transition-all duration-300 ease-out ${
