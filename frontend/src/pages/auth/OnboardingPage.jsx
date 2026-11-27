@@ -116,7 +116,13 @@ const OnboardingPage = () => {
     >
       <header className="sticky top-0 z-30 w-full h-[74px] bg-[#fafbf9]/90 backdrop-blur-md border-b border-[#1d2d22]/[0.09] px-6 lg:px-11 flex items-center justify-between select-none shrink-0">
         <Link
-          to="/"
+          to={
+            user?.isOnboarded
+              ? user.role === "interviewer"
+                ? "/dashboard/interviewer"
+                : "/dashboard/candidate"
+              : "/"
+          }
           className="inline-flex items-center gap-[5px] text-[#111111] text-[21px] font-bold tracking-[-0.01em] leading-none"
           aria-label="InterviewOS home"
         >

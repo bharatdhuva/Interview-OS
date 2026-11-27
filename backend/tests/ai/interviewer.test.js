@@ -96,4 +96,31 @@ describe("AI Interviewer Service & Prompts", () => {
     });
     expect(evaluation.success).toBe(true);
   });
+
+  it("validates genuine resumes and rejects non-resume or empty PDFs", () => {
+    const validResume = `
+      Bharat Dhuva
+      bharat@example.com | github.com/bharatdhuva | +91 9876543210
+      Education
+      B.Tech in Computer Science, University Institute of Technology (CGPA: 8.8)
+      Experience
+      Software Engineering Intern — Built real-time collaborative interview workspace using React, Node.js, TypeScript, WebRTC, Socket.IO, and MongoDB.
+      Skills
+      JavaScript, TypeScript, React, Node.js, Express, PostgreSQL, Docker, AWS
+    `;
+    expect(interviewerService.validateResumeContent(validResume).valid).toBe(true);
+
+    const tooShort = "Hello world PDF";
+    expect(interviewerService.validateResumeContent(tooShort).valid).toBe(false);
+
+    const invoicePdf = `
+      Tax Invoice #INV-2026-0491
+      Billed To: Acme Corporation, 123 Market Street.
+      Item 1: Office Chairs (Qty 4) - $800.00
+      Item 2: Standing Desks (Qty 2) - $1,200.00
+      Subtotal: $2,000.00 | Tax (18%): $360.00 | Total Due: $2,360.00
+      Payment terms: Net 30 days via wire transfer to account 9988776655.
+    `;
+    expect(interviewerService.validateResumeContent(invoicePdf).valid).toBe(false);
+  });
 });

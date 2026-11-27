@@ -33,6 +33,24 @@ export default defineConfig({
                         if (id.includes("excalidraw") || id.includes("@excalidraw")) {
                             return "excalidraw";
                         }
+                        if (id.includes("framer-motion")) {
+                            return "motion";
+                        }
+                        if (id.includes("lucide-react")) {
+                            return "icons";
+                        }
+                        if (id.includes("recharts") || id.includes("d3-")) {
+                            return "charts";
+                        }
+                        if (id.includes("socket.io-client") || id.includes("engine.io-client")) {
+                            return "socket";
+                        }
+                        if (id.includes("three")) {
+                            return "three-vendor";
+                        }
+                        if (id.includes("react-dom") || id.includes("react-router") || id.includes("/react/")) {
+                            return "react-vendor";
+                        }
                     }
                 }
             }

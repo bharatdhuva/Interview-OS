@@ -54,6 +54,15 @@ exports.parseResume = async (req, res, next) => {
       });
     }
 
+    const validation = aiInterviewerService.validateResumeContent(parsed.rawText);
+    if (!validation.valid) {
+      return res.status(400).json({
+        success: false,
+        code: "INVALID_RESUME",
+        message: validation.reason,
+      });
+    }
+
     res.status(200).json({
       success: true,
       data: parsed,
@@ -91,6 +100,14 @@ exports.createSession = async (req, res, next) => {
     }
 
     const data = parsed.data;
+    const resumeValidation = aiInterviewerService.validateResumeContent(data.resumeText);
+    if (!resumeValidation.valid) {
+      return res.status(400).json({
+        success: false,
+        code: "INVALID_RESUME",
+        message: resumeValidation.reason,
+      });
+    }
     const sessionId = `ai-${crypto.randomUUID().slice(0, 8)}`;
 
     const session = await AiInterviewSession.create({

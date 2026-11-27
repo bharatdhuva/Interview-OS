@@ -300,7 +300,8 @@ export default function CandidateDashboard() {
             )}
           </button>
           <Link
-            to="/"
+            to="/dashboard/candidate"
+            onClick={() => setActiveNav("overview")}
             className="inline-flex items-center gap-[5px] text-[#111111] text-[19px] font-bold tracking-[-0.01em] leading-none"
           >
             InterviewOS

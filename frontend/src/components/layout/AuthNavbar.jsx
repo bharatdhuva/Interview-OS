@@ -1,11 +1,19 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useAuthStore } from "@/store/authStore";
 
 const AuthNavbar = ({ pageType = "login" }) => {
+  const user = useAuthStore((s) => s.user);
+  const homeTo = user
+    ? user.role === "interviewer"
+      ? "/dashboard/interviewer"
+      : "/dashboard/candidate"
+    : "/";
+
   return (
     <header className="sticky top-0 z-30 w-full h-[74px] bg-[#fafbf9]/90 backdrop-blur-md border-b border-[#1d2d22]/[0.09] px-6 lg:px-11 flex items-center justify-between select-none shrink-0">
       <Link
-        to="/"
+        to={homeTo}
         className="inline-flex items-center gap-[5px] text-[#111111] text-[21px] font-bold tracking-[-0.01em] leading-none hover:opacity-85 transition-opacity"
         aria-label="InterviewOS home"
       >

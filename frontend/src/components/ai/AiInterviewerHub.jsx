@@ -47,6 +47,7 @@ export default function AiInterviewerHub({ user }) {
   // Resume state
   const [resumeFileName, setResumeFileName] = useState("");
   const [resumeText, setResumeText] = useState("");
+  const [resumeError, setResumeError] = useState("");
   const [parsedSkills, setParsedSkills] = useState(user?.skills || []);
   const [showPasteResume, setShowPasteResume] = useState(false);
   const [parsingResume, setParsingResume] = useState(false);
@@ -75,6 +76,23 @@ export default function AiInterviewerHub({ user }) {
 
   const handleResumeFile = async (file) => {
     if (!file) return;
+    setResumeError("");
+    const lowerName = (file.name || "").toLowerCase();
+    if (!/\.(pdf|txt|md)$/i.test(lowerName)) {
+      const msg = "Only PDF, TXT, or Markdown resume files are supported.";
+      setResumeError(msg);
+      toast({ title: "Unsupported file", description: msg, variant: "destructive" });
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      const msg = "File exceeds 5 MB limit. Please upload a smaller resume PDF.";
+      setResumeError(msg);
+      toast({ title: "File too large", description: msg, variant: "destructive" });
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
     setParsingResume(true);
     try {
       const formData = new FormData();
@@ -89,22 +107,28 @@ export default function AiInterviewerHub({ user }) {
         setParsedSkills(data.parsedSkills);
       }
       toast({
-        title: "Resume parsed",
+        title: "Resume validated",
         description: `Extracted ${data.charCount.toLocaleString()} characters and ${data.parsedSkills?.length || 0} skills.`,
       });
     } catch (err) {
+      const msg =
+        err.response?.data?.message ||
+        "This PDF could not be verified as a resume. Upload a valid CV with education, skills, or experience.";
+      setResumeError(msg);
       toast({
-        title: "Resume parse failed",
-        description: err.response?.data?.message || "Try a PDF, TXT, or MD file, or paste your resume text.",
+        title: "Invalid resume",
+        description: msg,
         variant: "destructive",
       });
     } finally {
       setParsingResume(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
   const handleParsePastedText = async () => {
     if (!resumeText.trim()) return;
+    setResumeError("");
     setParsingResume(true);
     try {
       const res = await api.post("/ai-interview/parse-resume", {
@@ -117,13 +141,15 @@ export default function AiInterviewerHub({ user }) {
         setParsedSkills(data.parsedSkills);
       }
       toast({
-        title: "Resume processed",
+        title: "Resume validated",
         description: `Detected ${data.parsedSkills?.length || 0} skills from your resume.`,
       });
     } catch (err) {
+      const msg = err.response?.data?.message || "Please paste a valid resume with your skills and experience.";
+      setResumeError(msg);
       toast({
-        title: "Could not process resume",
-        description: err.response?.data?.message || "Please check your text.",
+        title: "Invalid resume",
+        description: msg,
         variant: "destructive",
       });
     } finally {
@@ -304,7 +330,7 @@ export default function AiInterviewerHub({ user }) {
                       Drop your resume here, or <span className="text-[#008a52]">browse</span>
                     </p>
                     <p className="text-[12px] text-[#707870]">
-                      Supports PDF, TXT, or Markdown (max 5 MB)
+                      Supports valid PDF, TXT, or Markdown resumes (max 5 MB)
                     </p>
                   </div>
                 )}
@@ -327,6 +353,13 @@ export default function AiInterviewerHub({ user }) {
                     {parsingResume ? "Processing..." : "Extract Skills"}
                   </button>
                 </div>
+              </div>
+            )}
+
+            {resumeError && (
+              <div className="p-3 rounded-xl border border-[#f5bcbc] bg-[#fdecec] flex items-start gap-2 text-[12.5px] text-[#8c1111]">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{resumeError}</span>
               </div>
             )}
 

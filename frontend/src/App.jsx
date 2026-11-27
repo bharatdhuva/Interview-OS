@@ -2,26 +2,26 @@ import { Toaster } from "@/components/ui/Toaster";
 import { Toaster as Sonner } from "@/components/ui/Sonner";
 import { TooltipProvider } from "@/components/ui/Tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuthStore } from "./store/authStore";
 import api from "./lib/api";
 import LandingPage from "./pages/LandingPage";
-import LoginPage from "./pages/auth/LoginPage";
-import RegisterPage from "./pages/auth/RegisterPage";
-import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
-import CandidateDashboard from "./pages/dashboard/CandidateDashboard";
-import InterviewerDashboard from "./pages/dashboard/InterviewerDashboard";
-import InterviewRoom from "./pages/room/InterviewRoom";
-import FeedbackPage from "./pages/feedback/FeedbackPage";
-import SessionReplayPage from "./pages/room/SessionReplayPage";
-import AiInterviewRoom from "./pages/ai/AiInterviewRoom";
-import NotFound from "./pages/NotFound";
-import OnboardingPage from "./pages/auth/OnboardingPage";
-import InfoPage from "./pages/InfoPage";
 import SiteLoader from "./components/layout/SiteLoader";
-import { subscribeToApiActivity } from "./lib/api";
+
+const LoginPage = lazy(() => import("./pages/auth/LoginPage"));
+const RegisterPage = lazy(() => import("./pages/auth/RegisterPage"));
+const ForgotPasswordPage = lazy(() => import("./pages/auth/ForgotPasswordPage"));
+const CandidateDashboard = lazy(() => import("./pages/dashboard/CandidateDashboard"));
+const InterviewerDashboard = lazy(() => import("./pages/dashboard/InterviewerDashboard"));
+const InterviewRoom = lazy(() => import("./pages/room/InterviewRoom"));
+const FeedbackPage = lazy(() => import("./pages/feedback/FeedbackPage"));
+const SessionReplayPage = lazy(() => import("./pages/room/SessionReplayPage"));
+const AiInterviewRoom = lazy(() => import("./pages/ai/AiInterviewRoom"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const OnboardingPage = lazy(() => import("./pages/auth/OnboardingPage"));
+const InfoPage = lazy(() => import("./pages/InfoPage"));
 const queryClient = new QueryClient();
 const ProtectedRoute = ({ children }) => {
     const user = useAuthStore((s) => s.user);
@@ -38,12 +38,10 @@ const ProtectedRoute = ({ children }) => {
 
 const AppRoutes = () => {
     const location = useLocation();
-    const [isRouteLoading, setIsRouteLoading] = useState(true);
-    const [isApiLoading, setIsApiLoading] = useState(false);
-    const isFirstRender = useRef(true);
-    
     const user = useAuthStore((s) => s.user);
-    const [isRestoringUser, setIsRestoringUser] = useState(true);
+    const [isRestoringUser, setIsRestoringUser] = useState(
+        () => Boolean(localStorage.getItem("accessToken") && !useAuthStore.getState().user)
+    );
 
     useEffect(() => {
         const restoreUser = async () => {
@@ -63,68 +61,20 @@ const AppRoutes = () => {
     }, [user]);
 
     useEffect(() => {
-        const timer = window.setTimeout(() => setIsRouteLoading(false), 650);
-        return () => window.clearTimeout(timer);
-    }, []);
-    useEffect(() => {
-        let hideTimer;
-        const unsubscribe = subscribeToApiActivity((count) => {
-            if (count > 0) {
-                if (hideTimer) {
-                    window.clearTimeout(hideTimer);
-                }
-                setIsApiLoading(true);
-                return;
-            }
-            hideTimer = window.setTimeout(() => setIsApiLoading(false), 150);
-        });
-        return () => {
-            if (hideTimer) {
-                window.clearTimeout(hideTimer);
-            }
-            unsubscribe();
-        };
-    }, []);
-    useEffect(() => {
-        if (isFirstRender.current) {
-            isFirstRender.current = false;
-            return;
-        }
-        const smoothRoutes = [
-            "/",
-            "/login",
-            "/register",
-            "/forgot-password",
-            "/terms",
-            "/privacy",
-            "/about",
-            "/careers",
-            "/contact",
-            "/support",
-            "/changelog",
-        ];
-        if (smoothRoutes.includes(location.pathname)) {
-            window.scrollTo({ top: 0, behavior: "instant" });
-            return;
-        }
-        setIsRouteLoading(true);
-        const timer = window.setTimeout(() => setIsRouteLoading(false), 280);
-        return () => window.clearTimeout(timer);
+        window.scrollTo({ top: 0, behavior: "instant" });
     }, [location.pathname, location.search]);
 
-    if (isRestoringUser && localStorage.getItem("accessToken")) {
-        return <SiteLoader visible={true} />;
-    }
+    const protectedFallback = isRestoringUser && localStorage.getItem("accessToken");
 
-    return (<>
-      <SiteLoader visible={isRouteLoading}/>
+    return (
+      <Suspense fallback={<SiteLoader visible={true} />}>
       <AnimatePresence mode="wait">
         <motion.div
           key={location.pathname}
-          initial={{ opacity: 0, y: 6 }}
+          initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -6 }}
-          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+          exit={{ opacity: 0, y: -4 }}
+          transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
         >
             <Routes location={location}>
                 <Route path="/" element={<LandingPage />}/>
@@ -139,18 +89,19 @@ const AppRoutes = () => {
                 <Route path="/support" element={<InfoPage page="support" />}/>
                 <Route path="/changelog" element={<InfoPage page="changelog" />}/>
 
-        <Route path="/dashboard/candidate" element={<ProtectedRoute><CandidateDashboard /></ProtectedRoute>}/>
-        <Route path="/dashboard/interviewer" element={<ProtectedRoute><InterviewerDashboard /></ProtectedRoute>}/>
-        <Route path="/room/:roomId" element={<ProtectedRoute><InterviewRoom /></ProtectedRoute>}/>
-        <Route path="/room/:roomId/replay" element={<ProtectedRoute><SessionReplayPage /></ProtectedRoute>}/>
-        <Route path="/feedback/:roomId" element={<ProtectedRoute><FeedbackPage /></ProtectedRoute>}/>
-        <Route path="/ai-interview/:sessionId" element={<ProtectedRoute><AiInterviewRoom /></ProtectedRoute>}/>
-        <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>}/>
+        <Route path="/dashboard/candidate" element={protectedFallback ? <SiteLoader visible={true} /> : <ProtectedRoute><CandidateDashboard /></ProtectedRoute>}/>
+        <Route path="/dashboard/interviewer" element={protectedFallback ? <SiteLoader visible={true} /> : <ProtectedRoute><InterviewerDashboard /></ProtectedRoute>}/>
+        <Route path="/room/:roomId" element={protectedFallback ? <SiteLoader visible={true} /> : <ProtectedRoute><InterviewRoom /></ProtectedRoute>}/>
+        <Route path="/room/:roomId/replay" element={protectedFallback ? <SiteLoader visible={true} /> : <ProtectedRoute><SessionReplayPage /></ProtectedRoute>}/>
+        <Route path="/feedback/:roomId" element={protectedFallback ? <SiteLoader visible={true} /> : <ProtectedRoute><FeedbackPage /></ProtectedRoute>}/>
+        <Route path="/ai-interview/:sessionId" element={protectedFallback ? <SiteLoader visible={true} /> : <ProtectedRoute><AiInterviewRoom /></ProtectedRoute>}/>
+        <Route path="/onboarding" element={protectedFallback ? <SiteLoader visible={true} /> : <ProtectedRoute><OnboardingPage /></ProtectedRoute>}/>
         <Route path="*" element={<NotFound />}/>
       </Routes>
         </motion.div>
       </AnimatePresence>
-    </>);
+      </Suspense>
+    );
 };
 const App = () => (<QueryClientProvider client={queryClient}>
     <TooltipProvider>

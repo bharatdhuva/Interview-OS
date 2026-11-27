@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import AuthNavbar from "@/components/layout/AuthNavbar";
+import { useAuthStore } from "@/store/authStore";
 
 const PAGE_CONTENT = {
   terms: {
@@ -181,12 +182,22 @@ export default function InfoPage({ page = "about" }) {
         </div>
 
         <div className="mt-12 pt-6 border-t border-[#e2e7e1] flex flex-wrap items-center justify-between gap-4">
-          <Link
-            to="/"
-            className="text-[14px] font-semibold text-[#008a52] hover:underline"
-          >
-            ← Back to home
-          </Link>
+          {(() => {
+            const authUser = useAuthStore.getState().user;
+            const backTo = authUser
+              ? authUser.role === "interviewer"
+                ? "/dashboard/interviewer"
+                : "/dashboard/candidate"
+              : "/";
+            return (
+              <Link
+                to={backTo}
+                className="text-[14px] font-semibold text-[#008a52] hover:underline"
+              >
+                {authUser ? "← Back to dashboard" : "← Back to home"}
+              </Link>
+            );
+          })()}
 
           {content.showBuilderCtas && (
             <div className="flex flex-wrap items-center gap-3">

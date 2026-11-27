@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Star, Terminal, CheckCircle2, AlertCircle, Loader2, Sparkles, RefreshCw, ExternalLink, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, Star, CheckCircle2, AlertCircle, Loader2, Sparkles, RefreshCw, ExternalLink, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Slider } from '@/components/ui/Slider';
@@ -307,11 +307,12 @@ export default function FeedbackPage() {
           <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
             <ArrowLeft className="w-4 h-4 mr-1"/> Back
           </Button>
-          <Link to="/" className="flex items-center gap-2">
-            <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-primary">
-              <Terminal className="w-3.5 h-3.5 text-primary-foreground"/>
-            </div>
-            <span className="font-display font-bold text-sm">InterviewOS</span>
+          <Link
+            to={isInterviewer ? '/dashboard/interviewer' : '/dashboard/candidate'}
+            className="inline-flex items-center gap-[5px] text-[#111111] text-[18px] font-bold tracking-[-0.01em] leading-none"
+          >
+            InterviewOS
+            <span className="inline-block w-[6px] h-[14px] bg-[#00c875]" aria-hidden="true" />
           </Link>
         </div>
       </header>

@@ -26,7 +26,7 @@ function getProviderStatus() {
       return false;
     }
   });
-  const preferred = (process.env.AI_PROVIDER || "groq").toLowerCase();
+  const preferred = (process.env.AI_PROVIDER || "gemini").toLowerCase();
   const activeProvider = configuredProviders.includes(preferred)
     ? preferred
     : configuredProviders[0] || null;
@@ -111,6 +111,94 @@ async function extractResumeData({ buffer, mimetype, originalname, rawText }) {
     parsedSkills,
     charCount: sanitized.length,
   };
+}
+
+function validateResumeContent(text) {
+  const cleaned = String(text || "").trim();
+  if (cleaned.length < 160) {
+    return {
+      valid: false,
+      reason:
+        "Uploaded document is too short to be a resume. Please upload a full PDF resume with your experience, skills, or education.",
+    };
+  }
+
+  const words = cleaned.match(/[a-zA-Z]{2,}/g) || [];
+  if (words.length < 30) {
+    return {
+      valid: false,
+      reason:
+        "Could not detect enough readable resume text. Scanned image-only or non-text PDFs are not supported — upload a text-based PDF or paste your resume.",
+    };
+  }
+
+  const lower = cleaned.toLowerCase();
+  const hasEmail = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i.test(cleaned);
+  const hasProfileLinkOrPhone =
+    /(linkedin\.com|github\.com|gitlab\.com|portfolio)/i.test(cleaned) ||
+    /(?:\+?\d[\d\s\-()]{7,}\d)/.test(cleaned);
+  const hasContactSignal = hasEmail || hasProfileLinkOrPhone;
+
+  const sectionKeywords = [
+    "experience",
+    "education",
+    "skills",
+    "projects",
+    "summary",
+    "objective",
+    "internship",
+    "employment",
+    "certifications",
+    "achievements",
+    "coursework",
+    "publications",
+    "profile",
+  ];
+  const matchedSections = sectionKeywords.filter((kw) =>
+    new RegExp(`\\b${kw}\\b`, "i").test(lower)
+  );
+
+  const qualificationTerms = [
+    "university",
+    "college",
+    "bachelor",
+    "master",
+    "b.tech",
+    "m.tech",
+    "b.e",
+    "b.sc",
+    "gpa",
+    "cgpa",
+    "engineer",
+    "developer",
+    "intern",
+    "built",
+    "designed",
+    "developed",
+    "implemented",
+    "managed",
+    "technologies",
+    "frameworks",
+  ];
+  const matchedQualifications = qualificationTerms.filter((term) =>
+    new RegExp(`\\b${term.replace(".", "\\.")}\\b`, "i").test(lower)
+  );
+  const matchedSkills = extractSkillsFromText(cleaned);
+
+  const categoryMatches =
+    (hasContactSignal ? 1 : 0) +
+    (matchedSections.length >= 1 ? 1 : 0) +
+    (matchedQualifications.length >= 2 || matchedSkills.length >= 2 ? 1 : 0);
+
+  if (categoryMatches < 2) {
+    return {
+      valid: false,
+      reason:
+        "This PDF does not appear to be a valid resume or CV. Upload a resume containing sections like Education, Skills, Experience, or Projects.",
+    };
+  }
+
+  return { valid: true };
 }
 
 function formatConversationHistory(messages = []) {
@@ -262,6 +350,7 @@ async function generateSessionEvaluation(session) {
 module.exports = {
   getProviderStatus,
   extractResumeData,
+  validateResumeContent,
   generateOpeningTurn,
   generateNextTurn,
   generateSessionEvaluation,

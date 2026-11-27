@@ -2043,7 +2043,7 @@ export default function InterviewRoom() {
           </button>
 
           <Link
-            to="/"
+            to={identity.role === "interviewer" ? "/dashboard/interviewer" : "/dashboard/candidate"}
             className="inline-flex items-center gap-[5px] text-[#111111] text-[18px] font-bold tracking-[-0.01em] leading-none shrink-0"
           >
             InterviewOS

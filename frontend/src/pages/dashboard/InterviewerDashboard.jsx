@@ -220,10 +220,12 @@ export default function InterviewerDashboard() {
   useEffect(() => {
     const justLoggedIn = sessionStorage.getItem("justLoggedIn");
     if (justLoggedIn === "true") {
-      toast({
-        title: `Welcome back, ${user?.name?.split(" ")[0] || "there"}`,
-        description: "Your interviewer workspace is ready.",
-      });
+      if (typeof window === "undefined" || window.innerWidth >= 768) {
+        toast({
+          title: `Welcome back, ${user?.name?.split(" ")[0] || "there"}`,
+          description: "Your interviewer workspace is ready.",
+        });
+      }
       sessionStorage.removeItem("justLoggedIn");
     }
   }, [user, toast]);
@@ -364,7 +366,8 @@ export default function InterviewerDashboard() {
             )}
           </button>
           <Link
-            to="/"
+            to="/dashboard/interviewer"
+            onClick={() => setActiveNav("overview")}
             className="inline-flex items-center gap-[5px] text-[#111111] text-[19px] font-bold tracking-[-0.01em] leading-none"
           >
             InterviewOS
