@@ -9,6 +9,7 @@ import {
   Users,
   Copy,
   ArrowRight,
+  ArrowUpRight,
   LogOut,
   X,
   AlertCircle,

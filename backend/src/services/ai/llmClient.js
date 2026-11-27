@@ -10,7 +10,7 @@ const PROVIDERS = {
 };
 
 function getProvider(name) {
-  const key = (name || process.env.AI_PROVIDER || "groq").toLowerCase();
+  const key = (name || process.env.AI_PROVIDER || "gemini").toLowerCase();
   const provider = PROVIDERS[key];
   if (!provider) {
     throw new Error(`Unsupported AI provider: ${key}`);
