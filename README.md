@@ -1,13 +1,14 @@
 <div align="center">
 
 <h1>InterviewOS 🚀</h1>
-<h3>Real-Time Collaborative Interview Platform</h3>
-<p><em>Stop switching between Zoom, Google Docs, and email. Everything in one tab.</em></p>
+<h3>AI-Powered Real-Time Interview Platform</h3>
+<p><em>AI Voice Interviewer on mobile. Live collaborative rooms on desktop. Zero tab switching.</em></p>
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-interviewos--bharatdhuva.vercel.app-6366f1?style=flat-square&logo=vercel)](https://interviewos-bharatdhuva.vercel.app/)
 [![GitHub stars](https://img.shields.io/github/stars/bharatdhuva/Interview-OS?style=flat-square&color=6366f1)](https://github.com/bharatdhuva/Interview-OS/stargazers)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square&color=6366f1)](LICENSE)
 [![Status](https://img.shields.io/badge/status-Active-brightgreen?style=flat-square)](https://github.com/bharatdhuva/Interview-OS)
-[![Made with](https://img.shields.io/badge/Made%20with-React%20%2B%20WebRTC-6366f1?style=flat-square)](https://github.com/bharatdhuva/Interview-OS)
+[![Made with](https://img.shields.io/badge/Made%20with-React%20%2B%20WebRTC%20%2B%20Gemini-6366f1?style=flat-square)](https://github.com/bharatdhuva/Interview-OS)
 
 </div>
 
@@ -15,30 +16,45 @@
 
 ## What is InterviewOS?
 
-Traditional technical interviews are painful.
+Traditional technical interviews are painful — Zoom for video, Google Docs for coding, Excalidraw for diagrams, email for feedback. Every tool is disconnected.
 
-You juggle Zoom for video, Google Docs for coding, Excalidraw for diagrams, and email for feedback. Every tool is disconnected. Every switch breaks your focus.
+**InterviewOS fixes all of that in two ways:**
 
-**InterviewOS fixes all of that.**
-
-One single link → real-time video call starts automatically. Both interviewer and candidate code together live, draw on a shared whiteboard, run code instantly, and chat — all inside the same room.
+- 📱 **Mobile** → Instant AI Voice Interviewer. Upload your resume, pick a persona (Technical / HR), and have a real spoken conversation with an AI interviewer powered by Gemini + ElevenLabs. Get a scored evaluation report in seconds.
+- 🖥️ **Desktop** → Full live interview room. WebRTC video, collaborative Monaco editor, shared Excalidraw whiteboard, Judge0 code execution, proctoring, session replay, and AI-generated evaluation report — all in one tab.
 
 **Pro-level interviews. Zero tab switching.**
 
 ---
 
-## ✨ Features
+## ✨ Feature Overview
 
-| Feature | What it does |
-|---------|-------------|
-| 📹 **WebRTC P2P Video Calling** | High-quality video + audio with zero lag — no Zoom, no third-party dependency |
-| 💻 **Real-Time Collaborative Editor** | Monaco Editor with Socket.IO real-time sync — live cursors, instant code sharing |
-| 🎨 **Shared Whiteboard** | Excalidraw integration with E2E encryption — draw system designs, flowcharts, and diagrams together in real-time |
-| ⚡ **Instant Code Execution** | Judge0 integration — run code in 7+ languages (Python, Java, C++, JavaScript, etc.) with live output and stdin support |
-| 💬 **Real-Time Chat** | Built-in chat inside every interview room — no external tool needed |
-| 📝 **Structured Feedback** | Interviewer submits detailed feedback at the end. Candidate gets notified and can view it instantly |
-| 🔒 **Proctoring System** | Tab-switch detection, fullscreen monitoring, 3-strike auto-termination |
-| ⏪ **Session Replay** | Time-travel replay of code and whiteboard activity for post-interview review |
+### 🤖 AI Voice Interviewer *(Mobile-First)*
+
+| Feature | Details |
+|---------|---------|
+| 🎙️ **Voice Conversation** | Real spoken interviews via ElevenLabs TTS (Flash v2.5) + STT (Scribe v1) |
+| 🧠 **Multi-Provider LLM** | Gemini (primary) → Groq (fallback) → OpenAI (optional), Zod-validated structured output with auto-repair |
+| 👤 **AI Personas** | **Alex** (Technical — STAR framework, DSA, system design) · **Maya** (HR/Behavioral) |
+| 📄 **Smart Resume Parsing** | PDF upload with strict validation: 160+ chars, 30+ words, 2-of-3 signal categories (contact info, section keywords, qualification terms / tech skills) |
+| 📝 **Live Typewriter Captions** | Captions sync to ElevenLabs audio `currentTime/duration` playback progress in real time |
+| 📊 **4-Dimension Evaluation Report** | Communication · Role Knowledge · Problem Solving · Confidence & Clarity — scored 1–5 with an SVG radial gauge + radar chart |
+| 🛡️ **Prompt Injection Guardrails** | `sanitizeUntrustedTagContent`, `wrapUntrusted`, `detectInjectionAttempts`, `checkOutputForLeaks`, anomaly checks on all LLM I/O |
+| 🖨️ **Printable Report** | One-click print of the full evaluation with dimension breakdown and transcript accordion |
+
+### 🏠 Live Interview Rooms *(Desktop)*
+
+| Feature | Details |
+|---------|---------|
+| 📹 **WebRTC P2P Video** | High-quality peer-to-peer video + audio — no Zoom, no third-party dependency |
+| 💻 **Collaborative Code Editor** | Monaco Editor + Y.js CRDT + Socket.IO real-time sync — live cursors, instant code sharing |
+| 🎨 **Shared Whiteboard** | Excalidraw with E2E encrypted Socket.IO sync — draw system designs and flowcharts together live |
+| ⚡ **Instant Code Execution** | Judge0 sandboxed execution in 7+ languages (Python, Java, C++, JavaScript…) with stdin and live output |
+| 💬 **In-Room Chat** | Built-in real-time chat — no external tool needed |
+| 🔒 **Custom Proctoring** | Tab-switch detection, paste prevention, fullscreen monitoring, 3-strike auto-termination — zero third-party SDK |
+| ⏪ **Session Replay** | Time-travel replay of code and whiteboard checkpoints with `?t=ms` timestamps for post-interview review |
+| 🤖 **AI Evaluation Pipeline** | Evidence-grounded 6-dimension scoring with context compression, Excalidraw snapshots, replay timeline, and anomaly guardrails |
+| 📝 **Structured Feedback** | Interviewer submits detailed feedback; candidate gets notified and views it instantly |
 
 ---
 
@@ -46,15 +62,121 @@ One single link → real-time video call starts automatically. Both interviewer 
 
 | Layer | Technology |
 |-------|-----------|
-| **Frontend** | React.js + javascript + Tailwind CSS |
-| **Editor** | Monaco Editor + Socket.IO real-time sync |
-| **Whiteboard** | Excalidraw (E2E encrypted) |
+| **Frontend** | React 18 + JavaScript + Tailwind CSS + Framer Motion |
+| **Editor** | Monaco Editor + Y.js CRDT + Socket.IO real-time sync |
+| **Whiteboard** | Excalidraw (E2E encrypted, Socket.IO sync) |
 | **Video & Real-time** | WebRTC + Socket.IO |
+| **Code Execution** | Judge0 API (sandboxed, 7+ languages) |
 | **Backend** | Node.js + Express.js |
-| **Database** | MongoDB |
-| **Code Execution** | Judge0 API |
-| **AI** | Groq / OpenAI |
-| **Auth** | JWT (access + refresh token rotation) |
+| **Database** | MongoDB + Mongoose |
+| **AI — LLM** | Gemini 2.0 Flash (primary) · Groq LLaMA 3.3-70B (fallback) · OpenAI (optional) |
+| **AI — Voice** | ElevenLabs TTS Flash v2.5 + STT Scribe v1 |
+| **AI — Validation** | Zod structured output schema + auto-repair retry + cross-provider fallback |
+| **Auth** | JWT (access + refresh token rotation) + GitHub OAuth |
+| **Performance** | Route-level lazy loading, Vite vendor chunk splitting, `preconnect` + `dns-prefetch` |
+
+---
+
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                          FRONTEND (React 18)                     │
+│  Mobile (<768px)                     Desktop (≥768px)            │
+│  └─ AI Voice Interviewer             └─ Live Interview Room       │
+│     ├─ Resume upload + validation       ├─ WebRTC video           │
+│     ├─ ElevenLabs TTS/STT              ├─ Monaco + Y.js editor    │
+│     ├─ Typewriter captions             ├─ Excalidraw whiteboard   │
+│     └─ Radar chart eval report         ├─ Judge0 execution        │
+│                                        ├─ Proctoring system       │
+│                                        └─ Session replay          │
+└────────────────────────┬────────────────────────────────────────┘
+                         │ REST + Socket.IO
+┌────────────────────────▼────────────────────────────────────────┐
+│                     BACKEND (Node.js + Express)                  │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │                    AI Services Layer                      │   │
+│  │  llmClient.js ──► Gemini (default) → Groq → OpenAI       │   │
+│  │  interviewer.js ── extractResumeData, validateResume      │   │
+│  │  evaluator.js ─── 6-dimension evidence-grounded scoring   │   │
+│  │  voice.js ──────── ElevenLabs TTS (Flash) + STT (Scribe) │   │
+│  │  guardrails/ ───── injection detection, leak checks       │   │
+│  │  contextAssembler.js ─ code diffs, Judge0, Excalidraw    │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│  Socket.IO rooms · JWT + RBAC · MongoDB · AiCallLog observability│
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### LLM Orchestration
+`llmClient.js` wraps all three providers behind a single interface. Every response is parsed against a **Zod schema** — if the first parse fails, it attempts a **repair prompt** before falling back to the next provider. All calls are logged to `AiCallLog` for observability.
+
+### AI Evaluation Pipeline
+After an interview session ends:
+1. `contextAssembler.js` gathers code diffs with `?t=ms` replay timestamps, Judge0 run results, Excalidraw canvas snapshots, and replay timeline events
+2. `compression/index.js` summarises the whiteboard and formats the replay timeline to fit the LLM context window
+3. `evaluator.js` scores 6 dimensions with **evidence chips** (timestamped quotes from the actual session)
+4. `guardrails/index.js` checks for injection attempts in untrusted content and anomalies in the output scores before the report is returned
+
+---
+
+## 📱 Mobile Experience
+
+On screens narrower than 768 px, InterviewOS is a **candidate-only AI Voice Interviewer**:
+
+- Onboarding auto-detects mobile and skips the role selector — users are registered as candidates immediately
+- The dashboard shows an AI Interview CTA hero with a stats strip
+- Clicking *Start AI Interview* opens the voice interview room:
+  - Upload your resume PDF → validated for content (not just file type)
+  - Choose a persona: **Alex** (Technical, Liam voice) or **Maya** (HR, Sarah voice)
+  - Tap the mic to speak; ElevenLabs speaks back
+  - Typewriter captions track audio playback in real time
+  - After the session, an SVG radial score gauge + 4-axis radar chart evaluation is shown
+
+Live rooms, collaborative code, and whiteboard require a desktop browser.
+
+---
+
+## 🔑 Environment Variables
+
+### Backend (`backend/.env`)
+
+```env
+# MongoDB
+MONGODB_URI=mongodb+srv://...
+
+# Auth
+JWT_ACCESS_SECRET=
+JWT_REFRESH_SECRET=
+
+# GitHub OAuth
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+
+# AI — LLM (Gemini is primary)
+AI_PROVIDER=gemini
+AI_MODEL=gemini-2.0-flash
+AI_FALLBACK_PROVIDER=groq
+GEMINI_API_KEY=          # Required — primary LLM
+GROQ_API_KEY=            # Required — fallback LLM
+OPENAI_API_KEY=          # Optional — tertiary fallback
+
+# AI — Voice
+ELEVENLABS_API_KEY=      # Required for AI Voice Interviewer
+
+# Code Execution
+JUDGE0_API_URL=https://ce.judge0.com
+JUDGE0_API_KEY=          # Only for RapidAPI / secured Judge0 deployments
+
+# Frontend URL
+CLIENT_URL=http://localhost:8080
+```
+
+### Frontend (`frontend/.env`)
+
+```env
+VITE_API_URL=http://localhost:5000
+VITE_SOCKET_URL=http://localhost:5000
+```
 
 ---
 
@@ -63,65 +185,32 @@ One single link → real-time video call starts automatically. Both interviewer 
 ### Prerequisites
 
 - Node.js 18+
-- MongoDB (local or MongoDB Atlas)
-- Judge0 API key *(optional for code execution)*
+- MongoDB (local or Atlas)
+- Gemini API key (get one free at [aistudio.google.com](https://aistudio.google.com))
+- ElevenLabs API key (for voice)
+- Judge0 API key *(optional — code execution)*
 
 ### Installation
 
-**1. Clone the repository**
-
 ```bash
+# 1. Clone
 git clone https://github.com/bharatdhuva/Interview-OS.git
 cd Interview-OS
-```
 
-**2. Backend setup**
-
-```bash
+# 2. Backend
 cd backend
 npm install
 cp .env.example .env
-# Add your keys in .env
+# Fill in your keys in .env
 npm run dev
-```
 
-**3. Frontend setup** *(open a new terminal)*
-
-```bash
+# 3. Frontend (new terminal)
 cd frontend
 npm install
 npm run dev
 ```
 
-Open [http://localhost:8080](http://localhost:8080) — create a room and start interviewing!
-
----
-
-## 🔑 Environment Variables
-
-```env
-# MongoDB
-MONGO_URI=
-
-# Auth
-JWT_SECRET=
-JWT_REFRESH_SECRET=
-
-# Code Execution
-JUDGE0_API_URL=https://ce.judge0.com
-JUDGE0_API_KEY= # only required for RapidAPI/custom secured Judge0 deployments
-
-# Client URL (frontend)
-CLIENT_URL=http://localhost:8080
-
-# AI Foundation (Phase 0 & 1)
-AI_PROVIDER=groq
-AI_MODEL=llama-3.3-70b-versatile
-AI_FALLBACK_PROVIDER=gemini
-GROQ_API_KEY=
-OPENAI_API_KEY=
-GEMINI_API_KEY=
-```
+Open [http://localhost:8080](http://localhost:8080) — sign up, upload your resume, and start interviewing!
 
 ---
 
@@ -129,48 +218,64 @@ GEMINI_API_KEY=
 
 ```
 Interview-OS/
-├── backend/          # Node.js + Express + Socket.IO + MongoDB
+├── backend/
 │   └── src/
-│       ├── controllers/   # Route handlers
-│       ├── models/        # Mongoose schemas
-│       ├── routes/        # Express routers
-│       ├── sockets/       # Socket.IO event handlers
-│       ├── middleware/    # Auth, validation, rate-limiting
-│       └── utils/         # JWT, email, logging
-├── frontend/         # React + JavaScript + Tailwind CSS
+│       ├── controllers/        # Route handlers (rooms, auth, AI interview)
+│       ├── models/             # Mongoose schemas
+│       ├── routes/             # Express routers
+│       ├── sockets/            # Socket.IO event handlers
+│       ├── middleware/         # Auth (JWT + RBAC), validation, rate-limiting
+│       ├── services/
+│       │   └── ai/
+│       │       ├── llmClient.js          # Multi-provider LLM + Zod + repair + fallback
+│       │       ├── interviewer.js        # Resume parsing + validation
+│       │       ├── evaluator.js          # 6-dimension evidence-grounded scoring
+│       │       ├── voice.js              # ElevenLabs TTS (Flash v2.5) + STT (Scribe v1)
+│       │       ├── contextAssembler.js   # Code diffs, Judge0, Excalidraw, replay
+│       │       ├── guardrails/           # Injection detection, leak checks, anomaly guards
+│       │       ├── compression/          # Whiteboard summary, timeline formatter
+│       │       └── prompts/              # Persona prompt templates (Alex / Maya)
+│       └── utils/              # JWT, email, logging, AiCallLog
+├── frontend/
 │   └── src/
-│       ├── pages/         # Route pages (auth, dashboard, room, feedback)
-│       ├── components/    # Reusable UI components
-│       ├── hooks/         # Custom React hooks (proctoring, toast)
-│       ├── store/         # Zustand auth store
-│       └── lib/           # API client, crypto, validations
+│       ├── pages/
+│       │   ├── ai/             # AiInterviewRoom (voice + eval report)
+│       │   ├── auth/           # Login, Register, Onboarding (mobile auto-candidate)
+│       │   ├── dashboard/      # CandidateDashboard, InterviewerDashboard
+│       │   ├── room/           # InterviewRoom (WebRTC + editor + whiteboard)
+│       │   └── feedback/       # FeedbackPage
+│       ├── components/
+│       │   ├── ai/             # AiInterviewerHub (file validation, session control)
+│       │   ├── layout/         # AuthNavbar (role-aware logo routing)
+│       │   └── ui/             # Toast (dark, always-visible, mobile safe-area)
+│       ├── hooks/
+│       │   ├── useVoiceInterview.js  # speechMode, speechProgress, typewriter sync
+│       │   └── useProctoring.js      # Tab-switch detection, 3-strike auto-terminate
+│       ├── store/              # Zustand auth store
+│       └── lib/               # API client, crypto, validations
 ├── .gitignore
 └── README.md
 ```
 
 ---
 
-## 🗺️ Roadmap & Future Scope
+## 🗺️ What's Shipped
 
-### Completed Core Features:
-- [x] **WebRTC P2P Video Calling**: High-quality P2P video and audio stream communication without Zoom dependencies.
-- [x] **Real-time Collaborative Editor**: Monaco Editor integrated with Socket.IO for real-time cursor sync.
-- [x] **Excalidraw Shared Whiteboard**: E2E encrypted canvas to draw system designs and flowcharts collaboratively.
-- [x] **Judge0 Code Execution**: Run code in 7+ languages (JS, Python, C++, Java, etc.) with custom stdin and live console logs.
-- [x] **Anti-Cheat Proctoring**: Tab-switch tracking, browser visibility checks, and fullscreen enforcement with a 3-strike auto-end system.
-- [x] **Session Replay**: Time-travel playback of code changes and whiteboard checkpoints for post-interview reviews.
-- [x] **Real-time Chat & Feedback**: Built-in chat inside interview rooms and structured feedback summaries.
-- [x] **AI Foundation & Post-Interview Evaluator (Phase 0 & 1)**: Provider-agnostic LLM client (`groq`, `gemini`, `openai`) with Zod-validated structured outputs, automatic repair/fallback, `AiCallLog` observability, prompt-injection delimiter isolation, and interviewer-only AI draft generation with `?t=ms` replay-timestamped evidence chips.
-
-### AI Evaluation Metrics:
-- Eval harness & benchmark metrics: *not yet measured* (scheduled for Phase 9).
-
-### 🔮 Future Scaling & Architectural Scope:
-- [ ] **Horizontal WebSocket Scaling**: Integrate a **Redis Pub/Sub adapter** to allow Socket.IO rooms to communicate across multiple instances behind a load balancer.
-- [ ] **AI-Powered Evaluation**: Build an LLM evaluation agent (OpenAI/Groq) that analyzes final code snapshots, chat logs, and compiles structural reports (efficiency, Big O complexity, communication style).
-- [ ] **CRDT Collaboration (Yjs)**: Implement Conflict-free Replicated Data Types (CRDTs) to handle high-frequency simultaneous typing and conflict resolution in the Monaco Editor.
-- [ ] **System Design Templates**: Add pre-built drag-and-drop structural components (databases, servers, cache, queues) to the Excalidraw canvas.
-- [ ] **Speech-to-Text Transcription**: Integrate the browser's native Web Speech API to auto-transcribe calls and build searchable meeting transcripts.
+- [x] **WebRTC P2P Video** — high-quality peer-to-peer video + audio
+- [x] **Monaco Editor + Y.js CRDT** — real-time collaborative code editing with conflict resolution
+- [x] **Excalidraw Whiteboard** — E2E encrypted, Socket.IO synced shared canvas
+- [x] **Judge0 Code Execution** — sandboxed, 7+ languages, custom stdin, live output
+- [x] **Custom Proctoring** — tab-switch detection, paste prevention, fullscreen, 3-strike auto-end (no third-party SDK)
+- [x] **Session Replay** — time-travel playback with `?t=ms` timestamped evidence chips
+- [x] **In-Room Chat + Structured Feedback** — built-in chat and end-of-session feedback for candidates
+- [x] **Multi-Provider LLM Client** — Gemini → Groq → OpenAI with Zod-validated structured output, auto-repair, and cross-provider fallback
+- [x] **Evidence-Grounded AI Evaluation** — 6-dimension scoring (communication, role knowledge, problem solving, confidence, code quality, whiteboard) with context compression and guardrail checks
+- [x] **AI Voice Interviewer** — ElevenLabs TTS/STT, two AI personas (Alex / Maya), live typewriter captions synced to audio playback
+- [x] **Smart Resume Validation** — strict PDF content validation (not just file type): 160+ chars, 30+ words, 2-of-3 signal categories required
+- [x] **4-Dimension Evaluation Report** — SVG radial score gauge, radar chart, printable with transcript accordion
+- [x] **Mobile-First Candidate Flow** — auto-onboarding, AI interview CTA dashboard, `100dvh` layout, GPU-composited orb animations, fixed voice dock
+- [x] **Performance** — route-level lazy loading, Vite vendor chunk splitting (react, motion, icons, charts, socket, monaco, excalidraw), `preconnect` + `dns-prefetch`
+- [x] **Prompt Injection Guardrails** — sanitize/wrap untrusted content, detect injection attempts, leak checks on all LLM output
 
 ---
 
@@ -180,7 +285,7 @@ I was tired of messy interviews where everyone kept switching tabs and tools.
 
 A good technical interview should feel smooth and focused on problem-solving — not on managing 4 different apps at once.
 
-So I built InterviewOS — a complete real-time platform that makes technical interviews professional, collaborative, and actually enjoyable for both sides.
+So I built InterviewOS — a complete platform that makes interviews professional, collaborative, and actually enjoyable for both sides. And then went further: an AI voice interviewer you can practice with on your phone, any time, with no one else needed.
 
 ---
 
