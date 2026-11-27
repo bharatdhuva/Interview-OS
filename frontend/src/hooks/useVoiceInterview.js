@@ -5,6 +5,7 @@ export function useVoiceInterview({ persona = "technical", onAutoSend } = {}) {
   const [isListening, setIsListening] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [speechLevel, setSpeechLevel] = useState(0);
   const [muted, setMuted] = useState(false);
   const [speechRate, setSpeechRate] = useState(1.0);
   const [transcript, setTranscript] = useState("");
@@ -18,6 +19,8 @@ export function useVoiceInterview({ persona = "technical", onAutoSend } = {}) {
   const silenceIntervalRef = useRef(null);
   const audioElRef = useRef(null);
   const audioUrlRef = useRef(null);
+  const ttsAudioCtxRef = useRef(null);
+  const ttsRafRef = useRef(null);
   const transcriptRef = useRef("");
   const mutedRef = useRef(muted);
   const rateRef = useRef(speechRate);
@@ -51,7 +54,20 @@ export function useVoiceInterview({ persona = "technical", onAutoSend } = {}) {
     onAutoSendRef.current = onAutoSend;
   }, [onAutoSend]);
 
+  const stopTtsMeter = useCallback(() => {
+    if (ttsRafRef.current) {
+      window.cancelAnimationFrame(ttsRafRef.current);
+      ttsRafRef.current = null;
+    }
+    if (ttsAudioCtxRef.current) {
+      ttsAudioCtxRef.current.close().catch(() => { });
+      ttsAudioCtxRef.current = null;
+    }
+    setSpeechLevel(0);
+  }, []);
+
   const stopSpeaking = useCallback(() => {
+    stopTtsMeter();
     if (audioElRef.current) {
       try {
         audioElRef.current.pause();
@@ -69,7 +85,7 @@ export function useVoiceInterview({ persona = "technical", onAutoSend } = {}) {
       window.speechSynthesis?.cancel();
     }
     setIsSpeaking(false);
-  }, []);
+  }, [stopTtsMeter]);
 
   const cleanupAudioMonitor = useCallback(() => {
     if (silenceIntervalRef.current) {
@@ -77,7 +93,7 @@ export function useVoiceInterview({ persona = "technical", onAutoSend } = {}) {
       silenceIntervalRef.current = null;
     }
     if (audioContextRef.current) {
-      audioContextRef.current.close().catch(() => {});
+      audioContextRef.current.close().catch(() => { });
       audioContextRef.current = null;
     }
   }, []);
@@ -129,8 +145,8 @@ export function useVoiceInterview({ persona = "technical", onAutoSend } = {}) {
         const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
           ? "audio/webm;codecs=opus"
           : MediaRecorder.isTypeSupported("audio/webm")
-          ? "audio/webm"
-          : "";
+            ? "audio/webm"
+            : "";
 
         const recorder = mimeType
           ? new MediaRecorder(stream, { mimeType })
@@ -186,7 +202,7 @@ export function useVoiceInterview({ persona = "technical", onAutoSend } = {}) {
             setInterimText("");
             setMicError(
               err.response?.data?.message ||
-                "Could not transcribe audio. You can also type your answer."
+              "Could not transcribe audio. You can also type your answer."
             );
           } finally {
             setIsTranscribing(false);
@@ -296,7 +312,44 @@ export function useVoiceInterview({ persona = "technical", onAutoSend } = {}) {
         const audio = new Audio(url);
         audioElRef.current = audio;
 
+        if (typeof AudioContext !== "undefined") {
+          try {
+            const ctx = new AudioContext();
+            const source = ctx.createMediaElementSource(audio);
+            const analyser = ctx.createAnalyser();
+            analyser.fftSize = 256;
+            source.connect(analyser);
+            analyser.connect(ctx.destination);
+            ttsAudioCtxRef.current = ctx;
+
+            const samples = new Uint8Array(analyser.frequencyBinCount);
+            let smoothed = 0;
+            const updateLevel = () => {
+              if (!audioElRef.current || audioElRef.current.paused || audioElRef.current.ended) {
+                return;
+              }
+              analyser.getByteTimeDomainData(samples);
+              let sumSq = 0;
+              for (let i = 0; i < samples.length; i++) {
+                const v = (samples[i] - 128) / 128;
+                sumSq += v * v;
+              }
+              const rms = Math.min(1, Math.sqrt(sumSq / samples.length) * 3.4);
+              smoothed = smoothed * 0.8 + rms * 0.2;
+              setSpeechLevel(smoothed);
+              ttsRafRef.current = window.requestAnimationFrame(updateLevel);
+            };
+            audio.onplay = () => {
+              if (ctx.state === "suspended") ctx.resume().catch(() => { });
+              ttsRafRef.current = window.requestAnimationFrame(updateLevel);
+            };
+          } catch {
+            // Fall back to CSS cadence animation if Web Audio attach fails
+          }
+        }
+
         audio.onended = () => {
+          stopTtsMeter();
           setIsSpeaking(false);
           if (audioUrlRef.current) {
             URL.revokeObjectURL(audioUrlRef.current);
@@ -306,17 +359,19 @@ export function useVoiceInterview({ persona = "technical", onAutoSend } = {}) {
           onEnd?.();
         };
         audio.onerror = () => {
+          stopTtsMeter();
           setIsSpeaking(false);
           onEnd?.();
         };
 
         await audio.play();
       } catch {
+        stopTtsMeter();
         // Fallback to browser TTS if ElevenLabs TTS fails or browser blocks autoplay
         speakWithBrowserFallback(text, onEnd);
       }
     },
-    [persona, stopSpeaking, speakWithBrowserFallback]
+    [persona, stopSpeaking, stopTtsMeter, speakWithBrowserFallback]
   );
 
   useEffect(() => {
@@ -333,6 +388,7 @@ export function useVoiceInterview({ persona = "technical", onAutoSend } = {}) {
     isListening,
     isTranscribing,
     isSpeaking,
+    speechLevel,
     muted,
     setMuted,
     speechRate,

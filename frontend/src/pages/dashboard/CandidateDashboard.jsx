@@ -521,43 +521,70 @@ export default function CandidateDashboard() {
 
                 {activeNav === "overview" && (
                   <div className="space-y-3 pt-2">
-                    <div className="p-5 rounded-xl border border-[#e2e7e1] bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-[14px] font-semibold text-[#171917]">
+                    <div className="rounded-xl border border-[#e2e7e1] bg-white overflow-hidden">
+                      <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-[#00c875]" />
+                            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#008a52]">
+                              Voice Practice
+                            </span>
+                          </div>
+                          <h3 className="text-[16px] font-semibold text-[#171917] tracking-[-0.01em]">
                             AI Voice Interviewer
+                          </h3>
+                          <p className="text-[13px] text-[#566059]">
+                            Practice spoken technical or behavioral rounds based on your resume.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setActiveNav("ai-mock")}
+                          className="inline-flex items-center justify-center gap-1.5 px-5 h-10 rounded-full bg-[#080a09] hover:bg-[#242925] text-white text-[13px] font-semibold shrink-0 cursor-pointer transition-colors"
+                        >
+                          Start Practice <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#edf1ed] border-t border-[#edf1ed] bg-[#fafbf9] text-[12px]">
+                        <div className="px-5 py-3">
+                          <span className="text-[#707870] block text-[10.5px] uppercase tracking-wider">
+                            Interviewers
                           </span>
-                          <span className="px-2 py-0.5 text-[10px] font-medium rounded bg-[#eef5ef] text-[#008a52]">
-                            Live
+                          <span className="font-medium text-[#171917]">
+                            Technical · HR Behavioral
                           </span>
                         </div>
-                        <p className="text-[13px] text-[#566059]">
-                          Upload your resume, pick Technical or HR mode, and practice a spoken AI interview with instant rubric feedback.
-                        </p>
+                        <div className="px-5 py-3">
+                          <span className="text-[#707870] block text-[10.5px] uppercase tracking-wider">
+                            Personalization
+                          </span>
+                          <span className="font-medium text-[#171917]">
+                            Resume-aware follow-ups
+                          </span>
+                        </div>
+                        <div className="px-5 py-3">
+                          <span className="text-[#707870] block text-[10.5px] uppercase tracking-wider">
+                            Evaluation
+                          </span>
+                          <span className="font-medium text-[#171917]">
+                            Scorecard &amp; transcript
+                          </span>
+                        </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setActiveNav("ai-mock")}
-                        className="inline-flex items-center gap-1.5 px-4 h-9 rounded-full bg-[#080a09] hover:bg-[#242925] text-white text-[12.5px] font-semibold shrink-0 cursor-pointer"
-                      >
-                        Launch <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
                     </div>
 
-                    <div className="p-5 rounded-xl border border-[#e2e7e1] bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-[14px] font-semibold text-[#171917]">
-                            Prep Notes
-                          </span>
-                          <span className="px-2 py-0.5 text-[10px] font-medium rounded bg-[#eff1ee] text-[#717b73]">
-                            Coming soon
-                          </span>
-                        </div>
-                        <p className="text-[13px] text-[#566059]">
-                          Private notes and follow-up checklists across your interview rounds.
-                        </p>
+                    <div className="px-5 py-3.5 rounded-xl border border-[#e2e7e1] bg-white flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="text-[13.5px] font-medium text-[#171917]">
+                          Prep Notes
+                        </span>
+                        <span className="text-[12.5px] text-[#707870] truncate hidden sm:inline">
+                          Private notes and follow-up checklists across rounds
+                        </span>
                       </div>
+                      <span className="px-2 py-0.5 text-[10.5px] font-medium rounded bg-[#eff1ee] text-[#717b73] shrink-0">
+                        Coming soon
+                      </span>
                     </div>
                   </div>
                 )}
