@@ -28,6 +28,7 @@ import { Textarea } from "@/components/ui/Textarea";
 import { useAuthStore } from "@/store/authStore";
 import { useToast } from "@/hooks/useToast";
 import api from "@/lib/api";
+import AiInterviewerHub from "@/components/ai/AiInterviewerHub";
 
 const normalizeUser = (value, fallbackRole) => {
   if (!value || typeof value === "string") return undefined;
@@ -348,7 +349,7 @@ export default function CandidateDashboard() {
                 { id: "overview", label: "Overview", icon: Users },
                 { id: "interviews", label: "Interviews", icon: Calendar },
                 { id: "evaluation", label: "Evaluation", icon: BarChart3 },
-                { id: "ai-mock", label: "AI Interviewer", icon: Sparkles, soon: true },
+                { id: "ai-mock", label: "AI Interviewer", icon: Sparkles },
                 { id: "notes", label: "Notes", icon: FileText, soon: true },
               ].map((item) => {
                 const Icon = item.icon;
@@ -424,17 +425,7 @@ export default function CandidateDashboard() {
           </div>
 
           {activeNav === "ai-mock" ? (
-            <div className="py-12 max-w-2xl">
-              <span className="inline-block px-2.5 py-1 rounded bg-[#eff1ee] text-[#717b73] text-[11px] font-medium mb-4">
-                Coming soon · Phase 7
-              </span>
-              <h2 className="text-[24px] font-semibold text-[#171917] tracking-[-0.02em] mb-2">
-                AI Mock Interviewer
-              </h2>
-              <p className="text-[14.5px] text-[#566059] leading-relaxed mb-6">
-                Practice solo against an AI interviewer that introduces problems, runs your code via Judge0, offers escalating hints, and generates an evidence-linked evaluation report at the end.
-              </p>
-            </div>
+            <AiInterviewerHub user={user} />
           ) : activeNav === "notes" ? (
             <div className="py-12 max-w-2xl">
               <span className="inline-block px-2.5 py-1 rounded bg-[#eff1ee] text-[#717b73] text-[11px] font-medium mb-4">
@@ -534,16 +525,23 @@ export default function CandidateDashboard() {
                       <div>
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-[14px] font-semibold text-[#171917]">
-                            AI Mock Interviewer
+                            AI Voice Interviewer
                           </span>
-                          <span className="px-2 py-0.5 text-[10px] font-medium rounded bg-[#eff1ee] text-[#717b73]">
-                            Coming soon
+                          <span className="px-2 py-0.5 text-[10px] font-medium rounded bg-[#eef5ef] text-[#008a52]">
+                            Live
                           </span>
                         </div>
                         <p className="text-[13px] text-[#566059]">
-                          Solo practice mode with Judge0 test runs, escalating hints, and rubric feedback.
+                          Upload your resume, pick Technical or HR mode, and practice a spoken AI interview with instant rubric feedback.
                         </p>
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => setActiveNav("ai-mock")}
+                        className="inline-flex items-center gap-1.5 px-4 h-9 rounded-full bg-[#080a09] hover:bg-[#242925] text-white text-[12.5px] font-semibold shrink-0 cursor-pointer"
+                      >
+                        Launch <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
                     </div>
 
                     <div className="p-5 rounded-xl border border-[#e2e7e1] bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">

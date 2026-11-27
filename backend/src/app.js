@@ -22,6 +22,7 @@ const executionRoute = require("./routes/execution.route");
 const roomRoute = require("./routes/room.route");
 const userRoute = require("./routes/user.route");
 const feedbackRoute = require("./routes/feedback.route");
+const aiInterviewRoute = require("./routes/aiInterview.route");
 const app = express();
 // ─── Security Headers ─────────────────────────────────────────────────────────
 // helmet() sets a collection of secure HTTP response headers in one call:
@@ -104,6 +105,7 @@ app.use('/api/v1/rooms', roomRoute); // CRUD + session lifecycle
 app.use('/api/v1/rooms/:roomId/code', executionRoute); // code execution (mergeParams)
 app.use('/api/v1/users', userRoute); // profile & interview history
 app.use('/api/v1/feedback', feedbackRoute); // submit / view / share feedback
+app.use('/api/v1/ai-interview', aiInterviewRoute); // AI resume-based voice interviewer
 // ─── Global Error Handler ─────────────────────────────────────────────────────
 // Any error passed to next(err) lands here.  Returns a uniform JSON envelope
 // so no raw stack traces or HTML error pages leak to the client.

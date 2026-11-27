@@ -39,7 +39,7 @@ async function generate({
     temperature,
     max_tokens: maxTokens,
   };
-  if (jsonMode) {
+  if (jsonMode && !String(model).startsWith("openai/gpt-oss")) {
     body.response_format = { type: "json_object" };
   }
 

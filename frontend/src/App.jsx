@@ -16,6 +16,7 @@ import InterviewerDashboard from "./pages/dashboard/InterviewerDashboard";
 import InterviewRoom from "./pages/room/InterviewRoom";
 import FeedbackPage from "./pages/feedback/FeedbackPage";
 import SessionReplayPage from "./pages/room/SessionReplayPage";
+import AiInterviewRoom from "./pages/ai/AiInterviewRoom";
 import NotFound from "./pages/NotFound";
 import OnboardingPage from "./pages/auth/OnboardingPage";
 import InfoPage from "./pages/InfoPage";
@@ -143,6 +144,7 @@ const AppRoutes = () => {
         <Route path="/room/:roomId" element={<ProtectedRoute><InterviewRoom /></ProtectedRoute>}/>
         <Route path="/room/:roomId/replay" element={<ProtectedRoute><SessionReplayPage /></ProtectedRoute>}/>
         <Route path="/feedback/:roomId" element={<ProtectedRoute><FeedbackPage /></ProtectedRoute>}/>
+        <Route path="/ai-interview/:sessionId" element={<ProtectedRoute><AiInterviewRoom /></ProtectedRoute>}/>
         <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>}/>
         <Route path="*" element={<NotFound />}/>
       </Routes>
